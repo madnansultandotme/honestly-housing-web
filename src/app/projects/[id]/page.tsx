@@ -128,7 +128,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
               </Button>
               <Link href={`/projects/${id}/setup`}>
                 <Button variant="outline" size="sm">
-                  Setup
+                  Edit Configuration
                 </Button>
               </Link>
             </>

@@ -95,8 +95,15 @@ export default function BuilderProjectSetup() {
       router.push('/login');
       return;
     }
+    
+    // Check if user has permission to edit (not client)
+    if (profile && profile.role === 'client') {
+      router.push(`/projects/${projectId}`);
+      return;
+    }
+    
     loadProject();
-  }, [user, projectId]);
+  }, [user, profile, projectId]);
 
   useEffect(() => {
     if (!user) return;
@@ -419,7 +426,7 @@ export default function BuilderProjectSetup() {
                 </svg>
               </button>
               <h1 className="text-xl font-display font-bold text-neutral-900">
-                Project Setup: {projectName}
+                Edit Project Configuration: {projectName}
               </h1>
             </div>
             <Button onClick={handleSave} disabled={saving}>

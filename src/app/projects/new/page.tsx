@@ -219,7 +219,7 @@ export default function NewProjectPage() {
         builderOrgId: profile?.builderOrgId || user?.uid,
         clientId: selectedClient.uid,
         clientEmail: selectedClient.email, // Store email for easy access
-        status: 'setup',
+        status: 'active', // Project is active immediately after creation
         address: address || '',
         startDate: new Date().toISOString(),
         rooms: roomsObject,

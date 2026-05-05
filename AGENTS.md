@@ -15,6 +15,286 @@ Honestly Housing is a premium home builder selection management platform built w
 - **Authentication:** Firebase Auth
 - **Database:** Cloud Firestore with subcollections
 
+## Project Lifecycle & Testing Flow
+
+### Project Status Stages
+
+The system uses 3 main project statuses:
+
+1. **active** - Project is in progress with selections being made (default after creation)
+2. **completed** - All selections approved and project finished
+3. **archived** - Project is archived for historical reference
+
+### Project Creation & Configuration
+
+**Project Creation Wizard** (`/projects/new`) - Complete setup in one flow:
+- Creates project with all configuration
+- Sets up rooms, categories, and budgets
+- Project is immediately **active** after creation
+- No separate "setup" phase required
+
+**Edit Configuration Page** (`/projects/[id]/setup`) - Modify existing project:
+- Edit rooms configuration
+- Update categories and budgets
+- Save/load templates
+- **Only accessible to Builder, Designer, and Admin roles**
+- **Clients cannot access this page**
+
+### Complete Testing Flow
+
+#### Phase 1: Project Creation (Builder/Designer/Admin)
+1. **Login as Builder**
+   - Go to `/login`
+   - Use builder credentials
+   - Should redirect to `/builder`
+
+2. **Create New Project** (Complete Setup in One Flow)
+   - Click "New Project" or go to `/projects/new`
+   - **Step 1: Basic Info**
+     - Enter project name (e.g., "Smith Residence")
+     - Enter address
+     - Search and select client by email
+     - Enter budget (optional)
+   - **Step 2: Room Configuration**
+     - Set bedroom count (e.g., 4)
+     - Set bathroom count (e.g., 3)
+     - Set office count (e.g., 1)
+     - Select specific rooms (Primary Bedroom, Kitchen, etc.)
+     - Set fixture counts per room
+   - **Step 3: Categories**
+     - Mark required categories (Flooring, Lighting, Plumbing, etc.)
+     - Mark optional categories (Appliances, Cabinetry)
+   - **Step 4: Allowances**
+     - Set budget for each category
+     - Choose "Fixed Amount" or "Per Sq Ft"
+   - **Step 5: Template (Optional)**
+     - Save configuration as template for future projects
+   - **Step 6: Review & Create**
+     - Review all settings
+     - Click "Create Project"
+   - **Result**: Project created with status **"active"** and ready to use
+
+#### Phase 2: Edit Project Configuration (Builder/Designer/Admin Only)
+1. **Access Edit Page**
+   - Go to project detail page
+   - Click "Edit Configuration" button (only visible to builder/designer/admin)
+   - Or go to `/projects/[id]/setup`
+   - **Clients are automatically redirected if they try to access**
+
+2. **Modify Configuration**
+   - Adjust rooms if needed
+   - Modify categories
+   - Update allowances
+   - Load from template (optional)
+   - Save as new template (optional)
+   - Click "Save Configuration"
+
+3. **Changes Applied**
+   - Configuration updated immediately
+   - Project remains "active"
+   - No status change required
+
+#### Phase 3: Add Team Members (Any Role)
+1. **Add Team Member**
+   - Go to project detail page
+   - Click "Add Team Member"
+   - Enter team member's email
+   - Select role (Builder, Designer, or Client)
+   - Click "Add Team Member"
+
+2. **Verify Team Member**
+   - Check team members list on project page
+   - Team member should appear with role badge
+
+#### Phase 4: Create Selections (Builder/Designer)
+1. **Add Selection Items**
+   - Go to `/projects/[id]/selections`
+   - Click "Add Selection"
+   - Choose category
+   - Enter item details (name, brand, description)
+   - Upload image
+   - Set price
+   - Assign to room (if applicable)
+   - Set due date
+   - Click "Create Selection"
+
+2. **Curate Options**
+   - Add Good/Better/Best options
+   - Set tier pricing
+   - Add product links
+   - Upload product images
+
+#### Phase 5: Client Review & Approval (Client)
+1. **Login as Client**
+   - Use client credentials
+   - Should redirect to `/client`
+
+2. **View Selections**
+   - See project on dashboard
+   - Click project to view details
+   - Go to Selections tab
+   - Review each selection item
+
+3. **Approve or Request Changes**
+   - **To Approve**: Click "Approve" button
+   - **To Request Change**: Click "Request Change"
+     - Enter reason for change
+     - Suggest alternative (optional)
+     - Submit request
+
+4. **Track Progress**
+   - View progress bar on dashboard
+   - See pending approvals count
+   - Check due dates
+
+#### Phase 6: Handle Change Requests (Builder)
+1. **View Change Requests**
+   - Go to project selections
+   - See items with "Change Requested" status
+
+2. **Respond to Request**
+   - Review client's reason
+   - Update selection item
+   - Mark as resolved
+   - Notify client
+
+#### Phase 7: Upload Photos (Any Role)
+1. **Access Photos Page**
+   - Go to `/projects/[id]/photos`
+
+2. **Upload Photo**
+   - Click "Upload Photo"
+   - Select image file
+   - Choose category (Progress, Before, After, Detail)
+   - Add caption (optional)
+   - Click "Upload"
+
+3. **View Gallery**
+   - Photos displayed in grid
+   - Click to view full size
+   - Filter by category
+
+#### Phase 8: Messaging (Any Role)
+1. **Access Messages**
+   - Go to `/projects/[id]/messages`
+
+2. **Send Message**
+   - Type message in input box
+   - Click "Send"
+   - Message appears in chat
+
+3. **Real-time Updates**
+   - Messages refresh every 5 seconds
+   - Unread messages marked automatically
+
+#### Phase 9: Project Completion (Builder)
+1. **Review Progress**
+   - Check all selections approved
+   - Verify all items installed
+   - Review photos
+
+2. **Mark as Completed**
+   - Update project status to "completed"
+   - Export materials list (CSV)
+   - Archive if needed
+
+#### Phase 10: Admin Management (Admin Only)
+1. **Access Admin Dashboard**
+   - Login as admin
+   - Go to `/admin`
+
+2. **Manage Users**
+   - Go to `/admin/users`
+   - Search/filter users
+   - Edit user details
+   - Change user roles
+   - Delete users (with confirmation)
+
+3. **Manage Projects**
+   - Go to `/admin/projects`
+   - View all projects
+   - Search/filter projects
+   - Delete projects (with confirmation)
+
+4. **View Statistics**
+   - Total users by role
+   - Total projects
+   - Active projects
+   - System-wide metrics
+
+### Testing Checklist
+
+**Project Creation:**
+- [ ] Can create project with all required fields
+- [ ] Client search works correctly
+- [ ] Room configuration saves properly
+- [ ] Categories are created as subcollections
+- [ ] Allowances are saved correctly
+- [ ] Project status is "active" after creation
+- [ ] Can save configuration as template
+
+**Edit Configuration (Builder/Designer/Admin Only):**
+- [ ] Can access edit page from project detail
+- [ ] Clients are redirected away from edit page
+- [ ] Can modify rooms
+- [ ] Can update categories
+- [ ] Can change allowances
+- [ ] Can save as template
+- [ ] Can load from template
+- [ ] Changes save correctly
+
+**Team Management:**
+- [ ] Can add team members
+- [ ] Email search finds users
+- [ ] Team members appear in list
+- [ ] Can remove team members
+- [ ] Cannot add admin as team member
+
+**Selections:**
+- [ ] Can create selections
+- [ ] Can upload images
+- [ ] Can assign to rooms
+- [ ] Can set due dates
+- [ ] Client can approve
+- [ ] Client can request changes
+
+**Photos:**
+- [ ] Can upload photos
+- [ ] Photos appear in gallery
+- [ ] Can filter by category
+- [ ] Storage rules allow upload
+
+**Messages:**
+- [ ] Can send messages
+- [ ] Messages appear in chat
+- [ ] Real-time updates work
+- [ ] Read status tracked
+
+**Admin:**
+- [ ] Can view all users
+- [ ] Can edit users
+- [ ] Can delete users
+- [ ] Can view all projects
+- [ ] Can delete projects
+- [ ] Statistics display correctly
+
+### Common Issues & Solutions
+
+**Issue**: User search returns no results
+**Solution**: Ensure email is normalized (lowercase) in database
+
+**Issue**: Photo upload fails with permission error
+**Solution**: Deploy updated storage rules with `firebase deploy --only storage`
+
+**Issue**: Team member can't access project
+**Solution**: Ensure user is added to project's teamMembers subcollection
+
+**Issue**: Client can't see project
+**Solution**: Verify clientId matches user's UID in project document
+
+**Issue**: Admin can't access admin dashboard
+**Solution**: Manually set user's role to 'admin' in Firestore
+
 ## Important Conventions
 
 ### Admin Role
