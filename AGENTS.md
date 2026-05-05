@@ -513,6 +513,7 @@ Before marking a feature complete:
 - **User Management** (view, edit, delete users)
 - **Project Management** (view, delete projects)
 - Email normalization for consistent user search
+- **Auto-create client accounts during project creation** with credential email
 
 ### ❌ Not Implemented
 - AI Mood Board generation (marked as "coming soon")
