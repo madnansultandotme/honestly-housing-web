@@ -53,7 +53,18 @@ The system uses 3 main project statuses:
    - **Step 1: Basic Info**
      - Enter project name (e.g., "Smith Residence")
      - Enter address
-     - Search and select client by email
+     - **Search and select client by email:**
+       - **Option A: Select Existing Client**
+         - Type client email in search box
+         - Select from search results
+       - **Option B: Create New Client** (if no results found)
+         - Type new client's email
+         - System shows "No client found" message
+         - Enter client's full name
+         - Click "Create Client"
+         - System generates random password
+         - Welcome email sent to client with credentials
+         - Client automatically selected
      - Enter budget (optional)
    - **Step 2: Room Configuration**
      - Set bedroom count (e.g., 4)
@@ -227,6 +238,10 @@ The system uses 3 main project statuses:
 **Project Creation:**
 - [ ] Can create project with all required fields
 - [ ] Client search works correctly
+- [ ] Can select existing client from search results
+- [ ] Can create new client when no results found
+- [ ] New client receives welcome email with credentials
+- [ ] Newly created client is automatically selected
 - [ ] Room configuration saves properly
 - [ ] Categories are created as subcollections
 - [ ] Allowances are saved correctly

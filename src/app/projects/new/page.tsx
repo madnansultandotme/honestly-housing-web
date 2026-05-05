@@ -72,6 +72,9 @@ export default function NewProjectPage() {
   const [clientSearchResults, setClientSearchResults] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [searchingClient, setSearchingClient] = useState(false);
+  const [creatingClient, setCreatingClient] = useState(false);
+  const [showCreateClient, setShowCreateClient] = useState(false);
+  const [newClientName, setNewClientName] = useState('');
 
   // Step 2: Rooms
   const [rooms, setRooms] = useState<RoomConfig[]>(DEFAULT_ROOMS);
@@ -107,6 +110,7 @@ export default function NewProjectPage() {
   const searchClients = async (email: string) => {
     if (!email.trim()) {
       setClientSearchResults([]);
+      setShowCreateClient(false);
       return;
     }
 
@@ -114,10 +118,19 @@ export default function NewProjectPage() {
       setSearchingClient(true);
       const response = await fetch(`/api/users/search?email=${encodeURIComponent(email)}`);
       const data = await response.json();
-      setClientSearchResults(data.users || []);
+      
+      if (data.users && data.users.length > 0) {
+        setClientSearchResults(data.users);
+        setShowCreateClient(false);
+      } else {
+        // No users found - show create option
+        setClientSearchResults([]);
+        setShowCreateClient(true);
+      }
     } catch (err) {
       console.error('Failed to search clients:', err);
       setClientSearchResults([]);
+      setShowCreateClient(false);
     } finally {
       setSearchingClient(false);
     }
@@ -127,6 +140,71 @@ export default function NewProjectPage() {
     setSelectedClient(client);
     setClientEmail(client.email);
     setClientSearchResults([]);
+    setShowCreateClient(false);
+  };
+
+  const handleCreateNewClient = async () => {
+    if (!clientEmail.trim() || !newClientName.trim()) {
+      setError('Email and name are required to create a new client');
+      return;
+    }
+
+    try {
+      setCreatingClient(true);
+      setError('');
+
+      // Create the client account
+      const response = await fetch('/api/users/create-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: clientEmail,
+          displayName: newClientName,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create client');
+      }
+
+      // Send welcome email with credentials
+      const loginUrl = `${window.location.origin}/login`;
+      
+      try {
+        await fetch('/api/email/welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: data.credentials.email,
+            displayName: newClientName,
+            projectName: projectName || 'Your New Project',
+            builderName: profile?.displayName || 'Your Builder',
+            email: data.credentials.email,
+            password: data.credentials.password,
+            loginUrl,
+          }),
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't fail the whole operation if email fails
+      }
+
+      // Select the newly created client
+      setSelectedClient(data.user);
+      setClientEmail(data.user.email);
+      setShowCreateClient(false);
+      setNewClientName('');
+      
+      // Show success message
+      alert(`Client account created successfully! Login credentials have been sent to ${data.credentials.email}`);
+    } catch (err) {
+      console.error('Failed to create client:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create client');
+    } finally {
+      setCreatingClient(false);
+    }
   };
 
   const handleNext = () => {
@@ -480,13 +558,16 @@ export default function NewProjectPage() {
                     value={clientEmail}
                     onChange={(e) => {
                       setClientEmail(e.target.value);
+                      setSelectedClient(null); // Clear selection when typing
                       searchClients(e.target.value);
                     }}
                     placeholder="Search client by email"
                     required
                   />
+                  
+                  {/* Search Results Dropdown */}
                   {clientSearchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-300 rounded-button shadow-lg z-10">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-300 rounded-button shadow-lg z-10 max-h-60 overflow-y-auto">
                       {clientSearchResults.map((client) => (
                         <button
                           key={client.uid}
@@ -499,12 +580,56 @@ export default function NewProjectPage() {
                       ))}
                     </div>
                   )}
+                  
+                  {/* Searching Indicator */}
                   {searchingClient && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-300 rounded-button shadow-lg z-10 p-3">
                       <div className="text-sm text-neutral-600">Searching...</div>
                     </div>
                   )}
+                  
+                  {/* Create New Client Option */}
+                  {showCreateClient && !searchingClient && clientEmail.trim() && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-300 rounded-button shadow-lg z-10 p-4">
+                      <div className="mb-3">
+                        <div className="text-sm font-medium text-neutral-900 mb-1">No client found with this email</div>
+                        <div className="text-xs text-neutral-600">Create a new client account?</div>
+                      </div>
+                      
+                      <Input
+                        value={newClientName}
+                        onChange={(e) => setNewClientName(e.target.value)}
+                        placeholder="Enter client's full name"
+                        className="mb-3"
+                      />
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleCreateNewClient}
+                          disabled={creatingClient || !newClientName.trim()}
+                          className="flex-1"
+                        >
+                          {creatingClient ? 'Creating...' : 'Create Client'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setShowCreateClient(false);
+                            setNewClientName('');
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                      
+                      <div className="mt-3 p-2 bg-brass-50 border border-brass-200 rounded text-xs text-neutral-600">
+                        <strong>Note:</strong> A random password will be generated and sent to the client's email.
+                      </div>
+                    </div>
+                  )}
                 </div>
+                
+                {/* Selected Client Display */}
                 {selectedClient && (
                   <div className="mt-2 p-3 bg-brass-50 border border-brass-200 rounded-button">
                     <div className="text-sm font-medium text-neutral-900">Selected: {selectedClient.displayName || selectedClient.email}</div>

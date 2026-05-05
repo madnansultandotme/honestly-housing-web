@@ -101,6 +101,38 @@ export async function POST(request: NextRequest) {
       createdBy: projectData.createdBy,
     });
 
+    // Add project to client's projectIds array
+    const clientRef = adminDb.collection('users').doc(projectData.clientId);
+    const clientDoc = await clientRef.get();
+    
+    if (clientDoc.exists) {
+      const clientData = clientDoc.data();
+      const projectIds = clientData?.projectIds || [];
+      
+      if (!projectIds.includes(projectRef.id)) {
+        await clientRef.update({
+          projectIds: [...projectIds, projectRef.id],
+        });
+      }
+    }
+
+    // Add project to creator's projectIds array (if different from client)
+    if (projectData.createdBy && projectData.createdBy !== projectData.clientId) {
+      const creatorRef = adminDb.collection('users').doc(projectData.createdBy);
+      const creatorDoc = await creatorRef.get();
+      
+      if (creatorDoc.exists) {
+        const creatorData = creatorDoc.data();
+        const projectIds = creatorData?.projectIds || [];
+        
+        if (!projectIds.includes(projectRef.id)) {
+          await creatorRef.update({
+            projectIds: [...projectIds, projectRef.id],
+          });
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       id: projectRef.id,
