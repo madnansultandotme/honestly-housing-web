@@ -9,6 +9,7 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import CategoryChecklist, { CategoryItem } from '@/components/ui/CategoryChecklist';
 import AllowancePrompt, { AllowanceType } from '@/components/ui/AllowancePrompt';
+import CredentialsModal from '@/components/ui/CredentialsModal';
 import { apiClient } from '@/lib/api/client';
 
 interface RoomConfig {
@@ -77,6 +78,12 @@ export default function NewProjectPage() {
   const [creatingClient, setCreatingClient] = useState(false);
   const [showCreateClient, setShowCreateClient] = useState(false);
   const [newClientName, setNewClientName] = useState('');
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [newClientCredentials, setNewClientCredentials] = useState<{
+    email: string;
+    password: string;
+    displayName: string;
+  } | null>(null);
 
   // Step 2: Rooms
   const [rooms, setRooms] = useState<RoomConfig[]>(DEFAULT_ROOMS);
@@ -199,8 +206,13 @@ export default function NewProjectPage() {
       setShowCreateClient(false);
       setNewClientName('');
       
-      // Show success message
-      showSuccess(`Client account created successfully! Login credentials have been sent to ${data.credentials.email}`, 'Client Created');
+      // Store credentials and show modal
+      setNewClientCredentials({
+        email: data.credentials.email,
+        password: data.credentials.password,
+        displayName: newClientName,
+      });
+      setShowCredentialsModal(true);
     } catch (err) {
       console.error('Failed to create client:', err);
       setError(err instanceof Error ? err.message : 'Failed to create client');
@@ -929,6 +941,16 @@ export default function NewProjectPage() {
           )}
         </div>
       </main>
+
+      {/* Credentials Modal */}
+      {showCredentialsModal && newClientCredentials && (
+        <CredentialsModal
+          isOpen={showCredentialsModal}
+          onClose={() => setShowCredentialsModal(false)}
+          credentials={newClientCredentials}
+          projectName={projectName}
+        />
+      )}
     </div>
   );
 }
