@@ -80,7 +80,7 @@ export default function ProjectPhotosPage({ params }: { params: Promise<{ id: st
       const imageUrl = await uploadProjectPhoto(selectedFile, id, user.uid);
 
       // Save photo metadata to Firestore
-      const response = await apiClient.post('/api/photos', {
+      await apiClient.post('/api/photos', {
         projectId: id,
         imageUrl,
         caption: caption || null,
@@ -89,11 +89,6 @@ export default function ProjectPhotosPage({ params }: { params: Promise<{ id: st
         uploaderName: profile?.displayName || user.email || 'Unknown',
         uploaderRole: profile?.role || 'builder',
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to save photo metadata');
-      }
 
       // Reset form
       setSelectedFile(null);
@@ -112,10 +107,7 @@ export default function ProjectPhotosPage({ params }: { params: Promise<{ id: st
     if (!confirm('Delete this photo?')) return;
 
     try {
-      const response = await apiClient.delete(`/api/photos/${photoId}?projectId=${id}`);
-      if (!response.ok) {
-        throw new Error('Failed to delete photo');
-      }
+      await apiClient.delete(`/api/photos/${photoId}?projectId=${id}`);
       await loadData();
     } catch (err: any) {
       setError(err.message || 'Failed to delete photo');

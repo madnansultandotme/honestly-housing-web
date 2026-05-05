@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
@@ -58,6 +59,7 @@ type Step = 'basic' | 'rooms' | 'counts' | 'categories' | 'budgets' | 'template'
 
 export default function NewProjectPage() {
   const { user, profile } = useAuth();
+  const { showSuccess, showError } = useNotification();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('basic');
   const [saving, setSaving] = useState(false);
@@ -198,7 +200,7 @@ export default function NewProjectPage() {
       setNewClientName('');
       
       // Show success message
-      alert(`Client account created successfully! Login credentials have been sent to ${data.credentials.email}`);
+      showSuccess(`Client account created successfully! Login credentials have been sent to ${data.credentials.email}`, 'Client Created');
     } catch (err) {
       console.error('Failed to create client:', err);
       setError(err instanceof Error ? err.message : 'Failed to create client');

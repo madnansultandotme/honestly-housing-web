@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -20,6 +21,7 @@ export default function ClientHeader({
   actions,
 }: ClientHeaderProps) {
   const { user, profile, signOut } = useAuth();
+  const { showInfo } = useNotification();
   const router = useRouter();
   const pathname = usePathname();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -55,7 +57,10 @@ export default function ClientHeader({
   const handleSelectionsClick = (e: React.MouseEvent) => {
     if (!firstProjectId && !loadingProjects) {
       e.preventDefault();
-      alert('No projects available yet. Your builder will invite you to a project soon, and then you can view and approve selections.');
+      showInfo(
+        'Your builder will invite you to a project soon, and then you can view and approve selections.',
+        'No Projects Available'
+      );
     }
   };
 

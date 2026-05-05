@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useNotification } from '@/contexts/NotificationContext';
 import { apiClient } from '@/lib/api/client';
 import { Users, Trash2 } from 'lucide-react';
 
@@ -27,6 +28,7 @@ export default function TeamMembersList({
   currentUserRole,
   onUpdate,
 }: TeamMembersListProps) {
+  const { confirm, showError } = useNotification();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
@@ -48,7 +50,12 @@ export default function TeamMembersList({
   };
 
   const handleRemove = async (memberId: string) => {
-    if (!confirm('Are you sure you want to remove this team member?')) {
+    const confirmed = await confirm(
+      'Are you sure you want to remove this team member? They will lose access to this project.',
+      'Remove Team Member'
+    );
+    
+    if (!confirmed) {
       return;
     }
 
@@ -59,7 +66,7 @@ export default function TeamMembersList({
       onUpdate?.();
     } catch (error) {
       console.error('Failed to remove team member:', error);
-      alert('Failed to remove team member. Please try again.');
+      showError('Failed to remove team member. Please try again.');
     } finally {
       setRemoving(null);
     }
