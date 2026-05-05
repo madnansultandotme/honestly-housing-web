@@ -1,0 +1,215 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isBuilder() {
+      return isSignedIn() && getUserData().role == 'builder';
+    }
+    
+    function isClient() {
+      return isSignedIn() && getUserData().role == 'client';
+    }
+    
+    function hasAccessToProject(projectId) {
+      return projectId in getUserData().projectIds;
+    }
+    
+    function belongsToBuilderOrg(orgId) {
+      return isSignedIn() && getUserData().builderOrgId == orgId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own profile
+      // Builders can read any user document (needed for querying by email)
+      // Clients can read their own profile
+      allow read: if isOwner(userId) || isBuilder() ||
+                     (isSignedIn() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'client');
+      
+      // Anyone authenticated can create their profile (including builders and clients)
+      // No role restriction on creation
+      allow create: if isSignedIn() && isOwner(userId);
+      
+      // Users can update their own profile
+      // Builders can update client profiles (to add projects)
+      allow update: if isOwner(userId) ||
+                       (isBuilder() && get(/databases/$(database)/documents/users/$(userId)).data.role == 'client');
+      
+      // Only admins can delete (implement admin check as needed)
+      allow delete: if false;
+      
+      // Notifications subcollection
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId);
+        allow create: if isSignedIn(); // System can create notifications
+        allow update: if isOwner(userId); // User can mark as read
+        allow delete: if isOwner(userId);
+      }
+    }
+    
+    // Builder Organizations
+    match /builderOrgs/{orgId} {
+      // Members can read their organization
+      allow read: if isSignedIn() && belongsToBuilderOrg(orgId);
+      
+      // Authenticated users can create organizations (during signup)
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      
+      // Only builders in the org can update
+      allow update: if isBuilder() && belongsToBuilderOrg(orgId);
+      
+      // Deletion restricted (admin only)
+      allow delete: if false;
+      
+      // Options subcollection (Good/Better/Best products)
+      match /options/{optionId} {
+        // Anyone authenticated can read options
+        allow read: if isSignedIn();
+        
+        // Only builders in the org can manage options
+        allow write: if isBuilder() && belongsToBuilderOrg(orgId);
+      }
+      
+      // Templates subcollection
+      match /templates/{templateId} {
+        // Only builders in the org can read/write templates
+        allow read, write: if isBuilder() && belongsToBuilderOrg(orgId);
+      }
+    }
+    
+    // Projects
+    match /projects/{projectId} {
+      // Users can read projects they have access to
+      // For new projects being created, allow the creator to read
+      allow read: if isSignedIn() && (
+        hasAccessToProject(projectId) || 
+        resource.data.builderOrgId == getUserData().builderOrgId
+      );
+      
+      // Only builders/designers can create projects
+      allow create: if isSignedIn() && (
+        getUserData().role == 'builder' || 
+        getUserData().role == 'designer'
+      );
+      
+      // Builders/designers can update their org's projects
+      // Newly created clients can update projects to add themselves (for invitation flow)
+      // Allow if only updating clientIds and updatedAt, and the auth user is being added to clientIds
+      allow update: if isSignedIn() && (
+        ((getUserData().role == 'builder' || getUserData().role == 'designer') &&
+         resource.data.builderOrgId == getUserData().builderOrgId) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientIds', 'updatedAt']) &&
+         request.auth.uid in request.resource.data.clientIds &&
+         !(request.auth.uid in resource.data.clientIds))
+      );
+      
+      // Only builders/designers can delete their org's projects
+      allow delete: if isSignedIn() && (
+        (getUserData().role == 'builder' || getUserData().role == 'designer') &&
+        resource.data.builderOrgId == getUserData().builderOrgId
+      );
+      
+      // Rooms subcollection
+      match /rooms/{roomId} {
+        allow read: if isSignedIn() && hasAccessToProject(projectId);
+        allow write: if isBuilder() && (
+          hasAccessToProject(projectId) ||
+          get(/databases/$(database)/documents/projects/$(projectId)).data.builderOrgId == getUserData().builderOrgId
+        );
+      }
+      
+      // Categories subcollection
+      match /categories/{categoryId} {
+        allow read: if isSignedIn() && hasAccessToProject(projectId);
+        allow write: if isBuilder() && (
+          hasAccessToProject(projectId) ||
+          get(/databases/$(database)/documents/projects/$(projectId)).data.builderOrgId == getUserData().builderOrgId
+        );
+      }
+      
+      // Items subcollection (selection items/products)
+      match /items/{itemId} {
+        allow read: if isSignedIn() && hasAccessToProject(projectId);
+        
+        // Builders can create items
+        allow create: if isBuilder() && hasAccessToProject(projectId);
+        
+        // Builders can update any field
+        // Clients can only update specific fields (approval-related)
+        allow update: if (isBuilder() && hasAccessToProject(projectId)) ||
+                         (isClient() && hasAccessToProject(projectId) && 
+                          request.resource.data.diff(resource.data).affectedKeys()
+                            .hasOnly(['status', 'approvedAt', 'approvedBy', 'locked', 'notes']));
+        
+        // Only builders can delete items
+        allow delete: if isBuilder() && hasAccessToProject(projectId);
+      }
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && hasAccessToProject(projectId);
+        
+        // Both builders and clients can send messages
+        allow create: if isSignedIn() && hasAccessToProject(projectId) &&
+                         request.resource.data.senderId == request.auth.uid;
+        
+        // Can update to mark as read
+        allow update: if isSignedIn() && hasAccessToProject(projectId);
+        
+        // No deletion of messages
+        allow delete: if false;
+      }
+      
+      // Photos subcollection
+      match /photos/{photoId} {
+        allow read: if isSignedIn() && hasAccessToProject(projectId);
+        
+        // Both builders and clients can upload photos
+        allow create: if isSignedIn() && hasAccessToProject(projectId) &&
+                         (
+                           request.resource.data.uploadedBy == request.auth.uid ||
+                           request.resource.data.createdBy == request.auth.uid
+                         );
+        
+        // Can update caption
+        allow update: if isSignedIn() && hasAccessToProject(projectId);
+        
+        // Only uploader or builder can delete
+        allow delete: if (isSignedIn() && hasAccessToProject(projectId) && 
+                          (
+                            resource.data.uploadedBy == request.auth.uid ||
+                            resource.data.createdBy == request.auth.uid
+                          )) ||
+                         (isBuilder() && hasAccessToProject(projectId));
+      }
+      
+      // Change Requests subcollection
+      match /changeRequests/{requestId} {
+        allow read: if isSignedIn() && hasAccessToProject(projectId);
+        
+        // Only clients can create change requests
+        allow create: if isClient() && hasAccessToProject(projectId) &&
+                         request.resource.data.requestedBy == request.auth.uid;
+        
+        // Only builders can update (respond to) change requests
+        allow update: if isBuilder() && hasAccessToProject(projectId);
+        
+        // No deletion
+        allow delete: if false;
+      }
+    }
+  }
+}

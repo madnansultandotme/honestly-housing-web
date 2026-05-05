@@ -1,0 +1,307 @@
+{
+  "collection": "builderOrgs",
+  "description": "Builder organization information and branding",
+  "documentId": "{orgId}",
+  "fields": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "description": "Organization name"
+    },
+    "email": {
+      "type": "string",
+      "required": true,
+      "description": "Organization contact email"
+    },
+    "phone": {
+      "type": "string",
+      "required": true,
+      "description": "Organization phone number"
+    },
+    "address": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "description": "Organization physical address"
+    },
+    "branding": {
+      "type": "map",
+      "required": true,
+      "fields": {
+        "logoUrl": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "URL to organization logo"
+        },
+        "primaryColor": {
+          "type": "string",
+          "required": true,
+          "description": "Primary brand color (hex)"
+        },
+        "accentColor": {
+          "type": "string",
+          "required": true,
+          "description": "Accent brand color (hex)"
+        }
+      }
+    },
+    "settings": {
+      "type": "map",
+      "required": true,
+      "fields": {
+        "defaultAllowanceType": {
+          "type": "string",
+          "required": true,
+          "enum": ["fixed", "perSqFt"],
+          "description": "Default budget type"
+        },
+        "defaultCategories": {
+          "type": "array",
+          "items": "string",
+          "required": true,
+          "description": "Default selection categories"
+        }
+      }
+    },
+    "createdAt": {
+      "type": "timestamp",
+      "required": true,
+      "description": "Organization creation timestamp"
+    },
+    "updatedAt": {
+      "type": "timestamp",
+      "required": true,
+      "description": "Last update timestamp"
+    }
+  },
+  "indexes": [],
+  "subcollections": {
+    "options": {
+      "path": "builderOrgs/{orgId}/options/{optionId}",
+      "description": "Curated product options (Good/Better/Best)",
+      "fields": {
+        "categoryId": {
+          "type": "string",
+          "required": true,
+          "description": "Category this option belongs to"
+        },
+        "categoryName": {
+          "type": "string",
+          "required": true,
+          "description": "Category name (denormalized)"
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Product name"
+        },
+        "brand": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Product brand"
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Product description"
+        },
+        "imageUrl": {
+          "type": "string",
+          "required": true,
+          "description": "Product image URL"
+        },
+        "linkUrl": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Product purchase link"
+        },
+        "price": {
+          "type": "number",
+          "required": true,
+          "description": "Product price"
+        },
+        "tier": {
+          "type": "string",
+          "required": true,
+          "enum": ["good", "better", "best"],
+          "description": "Option tier level"
+        },
+        "isActive": {
+          "type": "boolean",
+          "required": true,
+          "default": true,
+          "description": "Whether option is active"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Option creation timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Last update timestamp"
+        },
+        "createdBy": {
+          "type": "string",
+          "required": true,
+          "description": "User ID who created option"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["categoryId"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["tier"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["isActive"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["categoryId", "tier"],
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    "templates": {
+      "path": "builderOrgs/{orgId}/templates/{templateId}",
+      "description": "Saved project configuration templates",
+      "fields": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Template name"
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Template description"
+        },
+        "rooms": {
+          "type": "map",
+          "required": true,
+          "fields": {
+            "bedrooms": {
+              "type": "number",
+              "required": true
+            },
+            "bathrooms": {
+              "type": "number",
+              "required": true
+            },
+            "offices": {
+              "type": "number",
+              "required": true
+            },
+            "kitchens": {
+              "type": "number",
+              "required": true
+            },
+            "livingRooms": {
+              "type": "number",
+              "required": true
+            },
+            "diningRooms": {
+              "type": "number",
+              "required": true
+            },
+            "laundryRooms": {
+              "type": "number",
+              "required": true
+            },
+            "garages": {
+              "type": "number",
+              "required": true
+            },
+            "other": {
+              "type": "number",
+              "required": true
+            }
+          }
+        },
+        "fixtureCounts": {
+          "type": "map",
+          "required": true,
+          "fields": {
+            "plumbingFixtures": {
+              "type": "number",
+              "required": true
+            },
+            "lightingFixtures": {
+              "type": "number",
+              "required": true
+            }
+          }
+        },
+        "categories": {
+          "type": "array",
+          "required": true,
+          "items": {
+            "type": "map",
+            "fields": {
+              "name": {
+                "type": "string",
+                "required": true
+              },
+              "allowanceType": {
+                "type": "string",
+                "required": true,
+                "enum": ["fixed", "perSqFt"]
+              },
+              "allowanceAmount": {
+                "type": "number",
+                "required": true
+              },
+              "required": {
+                "type": "boolean",
+                "required": true
+              }
+            }
+          }
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Template creation timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Last update timestamp"
+        },
+        "createdBy": {
+          "type": "string",
+          "required": true,
+          "description": "User ID who created template"
+        },
+        "usageCount": {
+          "type": "number",
+          "required": true,
+          "default": 0,
+          "description": "Number of times template has been used"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["createdAt"],
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["usageCount"],
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    }
+  }
+}

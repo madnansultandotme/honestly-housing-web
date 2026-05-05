@@ -1,0 +1,183 @@
+{
+  "collection": "users",
+  "description": "User profiles for authentication and role management",
+  "documentId": "{userId}",
+  "fields": {
+    "uid": {
+      "type": "string",
+      "required": true,
+      "description": "Firebase Auth UID"
+    },
+    "email": {
+      "type": "string",
+      "required": true,
+      "description": "User email address"
+    },
+    "displayName": {
+      "type": "string",
+      "required": true,
+      "description": "User's full name"
+    },
+    "role": {
+      "type": "string",
+      "required": true,
+      "enum": ["builder", "client"],
+      "description": "User role type"
+    },
+    "builderOrgId": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "description": "Reference to builderOrgs collection (null for clients)"
+    },
+    "projectIds": {
+      "type": "array",
+      "items": "string",
+      "required": true,
+      "description": "Array of project IDs user has access to"
+    },
+    "phone": {
+      "type": "string",
+      "required": false,
+      "nullable": true,
+      "description": "User phone number"
+    },
+    "createdAt": {
+      "type": "timestamp",
+      "required": true,
+      "description": "Account creation timestamp"
+    },
+    "updatedAt": {
+      "type": "timestamp",
+      "required": true,
+      "description": "Last profile update timestamp"
+    },
+    "lastLoginAt": {
+      "type": "timestamp",
+      "required": true,
+      "description": "Last login timestamp"
+    },
+    "notificationPreferences": {
+      "type": "map",
+      "required": true,
+      "fields": {
+        "email": {
+          "type": "boolean",
+          "required": true,
+          "description": "Enable email notifications"
+        },
+        "push": {
+          "type": "boolean",
+          "required": true,
+          "description": "Enable push notifications"
+        }
+      }
+    }
+  },
+  "indexes": [
+    {
+      "fields": ["role"],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "fields": ["builderOrgId"],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "fields": ["projectIds"],
+      "arrayConfig": "CONTAINS",
+      "queryScope": "COLLECTION"
+    }
+  ],
+  "subcollections": {
+    "notifications": {
+      "path": "users/{userId}/notifications/{notificationId}",
+      "description": "User notifications",
+      "fields": {
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum": ["approval", "changeRequest", "message", "dueDate", "statusUpdate"],
+          "description": "Notification type"
+        },
+        "title": {
+          "type": "string",
+          "required": true,
+          "description": "Notification title"
+        },
+        "body": {
+          "type": "string",
+          "required": true,
+          "description": "Notification body text"
+        },
+        "projectId": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Related project ID"
+        },
+        "projectName": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Related project name (denormalized)"
+        },
+        "itemId": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Related item ID"
+        },
+        "itemName": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Related item name (denormalized)"
+        },
+        "actionUrl": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Deep link URL for action"
+        },
+        "read": {
+          "type": "boolean",
+          "required": true,
+          "default": false,
+          "description": "Whether notification has been read"
+        },
+        "readAt": {
+          "type": "timestamp",
+          "required": false,
+          "nullable": true,
+          "description": "When notification was read"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Notification creation timestamp"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["read"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["createdAt"],
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["type"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["read", "createdAt"],
+          "order": ["ASCENDING", "DESCENDING"],
+          "queryScope": "COLLECTION"
+        }
+      ]
+    }
+  }
+}

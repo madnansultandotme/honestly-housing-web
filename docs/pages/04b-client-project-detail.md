@@ -1,0 +1,3 @@
+# Client Project Detail
+
+Build project overview for Client role focused on selection progress. Show project info, builder contact, room summary. Use **progress_bar** for overall completion, **due_this_week_list** for decisions needed, **status_badge** for status breakdown. Add quick links to Selections Home, Photos, Messages. Show decisions pending count prominently. Query projects, rooms, items, dueDates. Design on white (#FFFFFF) with brass accent (#B8956A) for progress and action buttons, soft taupe (#D4C4B0) for info cards, warm neutral gray (#8B8680) for secondary text. Apply professional spacing with clear call-to-action hierarchy.

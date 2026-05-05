@@ -1,0 +1,3 @@
+# Builder Project Detail
+
+Build project overview for Builder role with management capabilities. Show project info, client details, room counts (bedrooms, bathrooms, fixtures). Use **progress_bar** for selection completion, **due_this_week_list** for upcoming deadlines, **status_badge** for status counts. Add "Edit Setup" button to navigate to Builder Project Setup. Add "Add Options" button for uploading curated options. Show client approval status and pending decisions. Query projects, rooms, items, dueDates. Design on white (#FFFFFF) with brass accent (#B8956A) for action buttons and progress, soft taupe (#D4C4B0) status chips, warm neutral gray (#8B8680) for dates. Apply professional spacing.

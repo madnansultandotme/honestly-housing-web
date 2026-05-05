@@ -1,0 +1,3 @@
+# Client Selection Item Detail
+
+Build selection review for Client role using **visual_approval_card** as main element with **budget_impact_row** for allowance/cost/difference and **status_badge** for current status. Add "Approve" button (writes approvedAt, sets status "Approved", locks item) and "Request Change" button (creates change request, notifies builder). Query item, category, allowance. Write to item status, approvedAt, change requests. Design on white (#FFFFFF) with brass accent (#B8956A) for positive differences and Approve button, warm neutral gray (#8B8680) for negative differences, soft taupe (#D4C4B0) for Request Change. Apply rounded corners and premium spacing.

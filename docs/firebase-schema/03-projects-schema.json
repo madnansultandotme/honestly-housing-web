@@ -1,0 +1,684 @@
+{
+  "collection": "projects",
+  "description": "Project information and configuration",
+  "documentId": "{projectId}",
+  "fields": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "description": "Project name"
+    },
+    "builderOrgId": {
+      "type": "string",
+      "required": true,
+      "description": "Reference to builderOrgs collection"
+    },
+    "clientId": {
+      "type": "string",
+      "required": true,
+      "description": "Reference to users collection (client)"
+    },
+    "status": {
+      "type": "string",
+      "required": true,
+      "enum": ["setup", "active", "completed", "archived"],
+      "description": "Project status"
+    },
+    "address": {
+      "type": "string",
+      "required": true,
+      "description": "Project address"
+    },
+    "startDate": {
+      "type": "timestamp",
+      "required": true,
+      "description": "Project start date"
+    },
+    "targetCompletionDate": {
+      "type": "timestamp",
+      "required": false,
+      "nullable": true,
+      "description": "Target completion date"
+    },
+    "rooms": {
+      "type": "map",
+      "required": true,
+      "fields": {
+        "bedrooms": {"type": "number", "required": true},
+        "bathrooms": {"type": "number", "required": true},
+        "offices": {"type": "number", "required": true},
+        "kitchens": {"type": "number", "required": true},
+        "livingRooms": {"type": "number", "required": true},
+        "diningRooms": {"type": "number", "required": true},
+        "laundryRooms": {"type": "number", "required": true},
+        "garages": {"type": "number", "required": true},
+        "other": {"type": "number", "required": true}
+      }
+    },
+    "fixtureCounts": {
+      "type": "map",
+      "required": true,
+      "fields": {
+        "plumbingFixtures": {"type": "number", "required": true},
+        "lightingFixtures": {"type": "number", "required": true}
+      }
+    },
+    "squareFootage": {
+      "type": "number",
+      "required": false,
+      "nullable": true,
+      "description": "Total square footage"
+    },
+    "progress": {
+      "type": "map",
+      "required": true,
+      "fields": {
+        "totalItems": {"type": "number", "required": true},
+        "completedItems": {"type": "number", "required": true},
+        "approvedItems": {"type": "number", "required": true},
+        "pendingItems": {"type": "number", "required": true},
+        "installedItems": {"type": "number", "required": true}
+      }
+    },
+    "createdAt": {
+      "type": "timestamp",
+      "required": true,
+      "description": "Project creation timestamp"
+    },
+    "updatedAt": {
+      "type": "timestamp",
+      "required": true,
+      "description": "Last update timestamp"
+    },
+    "createdBy": {
+      "type": "string",
+      "required": true,
+      "description": "User ID who created project"
+    }
+  },
+  "indexes": [
+    {
+      "fields": ["builderOrgId"],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "fields": ["clientId"],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "fields": ["status"],
+      "queryScope": "COLLECTION"
+    },
+    {
+      "fields": ["builderOrgId", "status"],
+      "queryScope": "COLLECTION"
+    }
+  ],
+  "subcollections": {
+    "rooms": {
+      "path": "projects/{projectId}/rooms/{roomId}",
+      "description": "Individual rooms within project",
+      "fields": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Room name"
+        },
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum": ["bedroom", "bathroom", "kitchen", "living", "dining", "office", "laundry", "garage", "other"],
+          "description": "Room type"
+        },
+        "floor": {
+          "type": "number",
+          "required": false,
+          "nullable": true,
+          "description": "Floor number"
+        },
+        "fixtureCounts": {
+          "type": "map",
+          "required": true,
+          "fields": {
+            "total": {
+              "type": "number",
+              "required": true,
+              "description": "Total fixtures required"
+            },
+            "assigned": {
+              "type": "number",
+              "required": true,
+              "description": "Fixtures currently assigned"
+            }
+          }
+        },
+        "notes": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Room notes"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Room creation timestamp"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["type"],
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    "categories": {
+      "path": "projects/{projectId}/categories/{categoryId}",
+      "description": "Selection categories with budget settings",
+      "fields": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Category name"
+        },
+        "displayOrder": {
+          "type": "number",
+          "required": true,
+          "description": "Display order"
+        },
+        "required": {
+          "type": "boolean",
+          "required": true,
+          "description": "Whether category is required"
+        },
+        "allowanceType": {
+          "type": "string",
+          "required": true,
+          "enum": ["fixed", "perSqFt"],
+          "description": "Budget type"
+        },
+        "allowanceAmount": {
+          "type": "number",
+          "required": true,
+          "description": "Budget amount"
+        },
+        "progress": {
+          "type": "map",
+          "required": true,
+          "fields": {
+            "totalItems": {"type": "number", "required": true},
+            "completedItems": {"type": "number", "required": true}
+          }
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Category creation timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Last update timestamp"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["displayOrder"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["required"],
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    "items": {
+      "path": "projects/{projectId}/items/{itemId}",
+      "description": "Individual selection items (products)",
+      "fields": {
+        "categoryId": {
+          "type": "string",
+          "required": true,
+          "description": "Reference to categories"
+        },
+        "categoryName": {
+          "type": "string",
+          "required": true,
+          "description": "Category name (denormalized)"
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Product name"
+        },
+        "brand": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Product brand"
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Product description"
+        },
+        "imageUrl": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Product image URL"
+        },
+        "linkUrl": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Product link URL"
+        },
+        "allowance": {
+          "type": "number",
+          "required": true,
+          "description": "Budget allowance"
+        },
+        "actualCost": {
+          "type": "number",
+          "required": true,
+          "description": "Actual product cost"
+        },
+        "difference": {
+          "type": "number",
+          "required": true,
+          "description": "Cost difference (actualCost - allowance)"
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["notStarted", "needsBuilderInput", "awaitingClientApproval", "approved", "ordered", "installed"],
+          "description": "Item status"
+        },
+        "dueDate": {
+          "type": "timestamp",
+          "required": false,
+          "nullable": true,
+          "description": "Decision due date"
+        },
+        "roomId": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Assigned room ID (for lighting)"
+        },
+        "roomName": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Assigned room name (denormalized)"
+        },
+        "notes": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Item notes"
+        },
+        "locked": {
+          "type": "boolean",
+          "required": true,
+          "default": false,
+          "description": "Whether item is locked after approval"
+        },
+        "approvedAt": {
+          "type": "timestamp",
+          "required": false,
+          "nullable": true,
+          "description": "Approval timestamp"
+        },
+        "approvedBy": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "User ID who approved"
+        },
+        "orderedAt": {
+          "type": "timestamp",
+          "required": false,
+          "nullable": true,
+          "description": "Order timestamp"
+        },
+        "installedAt": {
+          "type": "timestamp",
+          "required": false,
+          "nullable": true,
+          "description": "Installation timestamp"
+        },
+        "tier": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "enum": ["good", "better", "best"],
+          "description": "Option tier selected"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Item creation timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Last update timestamp"
+        },
+        "createdBy": {
+          "type": "string",
+          "required": true,
+          "description": "User ID who created item"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["categoryId"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["status"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["dueDate"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["locked"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["categoryId", "status"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["status", "dueDate"],
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    "messages": {
+      "path": "projects/{projectId}/messages/{messageId}",
+      "description": "Project-scoped chat messages",
+      "fields": {
+        "senderId": {
+          "type": "string",
+          "required": true,
+          "description": "User ID of sender"
+        },
+        "senderName": {
+          "type": "string",
+          "required": true,
+          "description": "Sender name (denormalized)"
+        },
+        "senderRole": {
+          "type": "string",
+          "required": true,
+          "enum": ["builder", "client"],
+          "description": "Sender role"
+        },
+        "text": {
+          "type": "string",
+          "required": true,
+          "description": "Message text"
+        },
+        "attachments": {
+          "type": "array",
+          "required": false,
+          "nullable": true,
+          "items": {
+            "type": "map",
+            "fields": {
+              "type": {
+                "type": "string",
+                "required": true,
+                "enum": ["image", "document"]
+              },
+              "url": {
+                "type": "string",
+                "required": true
+              },
+              "name": {
+                "type": "string",
+                "required": true
+              }
+            }
+          }
+        },
+        "readBy": {
+          "type": "array",
+          "items": "string",
+          "required": true,
+          "description": "Array of user IDs who have read"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Message creation timestamp"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["createdAt"],
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["senderId"],
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    "photos": {
+      "path": "projects/{projectId}/photos/{photoId}",
+      "description": "Project photo gallery",
+      "fields": {
+        "imageUrl": {
+          "type": "string",
+          "required": true,
+          "description": "Full image URL"
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Thumbnail image URL"
+        },
+        "caption": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Photo caption"
+        },
+        "uploadedBy": {
+          "type": "string",
+          "required": true,
+          "description": "User ID who uploaded"
+        },
+        "uploaderName": {
+          "type": "string",
+          "required": true,
+          "description": "Uploader name (denormalized)"
+        },
+        "uploaderRole": {
+          "type": "string",
+          "required": true,
+          "enum": ["builder", "client"],
+          "description": "Uploader role"
+        },
+        "category": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "enum": ["progress", "before", "after", "detail"],
+          "description": "Photo category"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Upload timestamp"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["createdAt"],
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["category"],
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    "changeRequests": {
+      "path": "projects/{projectId}/changeRequests/{requestId}",
+      "description": "Client requests to change selections",
+      "fields": {
+        "itemId": {
+          "type": "string",
+          "required": true,
+          "description": "Reference to items"
+        },
+        "itemName": {
+          "type": "string",
+          "required": true,
+          "description": "Item name (denormalized)"
+        },
+        "requestedBy": {
+          "type": "string",
+          "required": true,
+          "description": "User ID (always client)"
+        },
+        "requestedByName": {
+          "type": "string",
+          "required": true,
+          "description": "Requester name (denormalized)"
+        },
+        "reason": {
+          "type": "string",
+          "required": true,
+          "description": "Reason for change request"
+        },
+        "preferredAlternative": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Preferred alternative product"
+        },
+        "budgetConcern": {
+          "type": "boolean",
+          "required": true,
+          "description": "Whether request is due to budget"
+        },
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["pending", "approved", "rejected", "completed"],
+          "description": "Request status"
+        },
+        "builderResponse": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Builder's response"
+        },
+        "respondedAt": {
+          "type": "timestamp",
+          "required": false,
+          "nullable": true,
+          "description": "Response timestamp"
+        },
+        "respondedBy": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "User ID who responded"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Request creation timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Last update timestamp"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["itemId"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["status"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["requestedBy"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["createdAt"],
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    "teamMembers": {
+      "path": "projects/{projectId}/teamMembers/{memberId}",
+      "description": "Project team members (builders, designers, clients)",
+      "fields": {
+        "userId": {
+          "type": "string",
+          "required": true,
+          "description": "Reference to users collection"
+        },
+        "email": {
+          "type": "string",
+          "required": true,
+          "description": "User email (denormalized)"
+        },
+        "displayName": {
+          "type": "string",
+          "required": true,
+          "description": "User display name (denormalized)"
+        },
+        "role": {
+          "type": "string",
+          "required": true,
+          "enum": ["builder", "designer", "client"],
+          "description": "Team member role (admin cannot be added)"
+        },
+        "addedAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "When member was added"
+        },
+        "addedBy": {
+          "type": "string",
+          "required": true,
+          "description": "User ID who added this member"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["userId"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["role"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["addedAt"],
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    }
+  }
+}

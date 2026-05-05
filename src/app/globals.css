@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brass-inspired accent colors */
+  --color-brass-50: #fdfbf7;
+  --color-brass-100: #faf6ed;
+  --color-brass-200: #f3ead2;
+  --color-brass-300: #ebddb7;
+  --color-brass-400: #dcc481;
+  --color-brass-500: #cdab4b;
+  --color-brass-600: #b99a44;
+  --color-brass-700: #9a8039;
+  --color-brass-800: #7b662e;
+  --color-brass-900: #655326;
+  
+  /* Warm neutral colors */
+  --color-neutral-50: #fafaf9;
+  --color-neutral-100: #f5f5f4;
+  --color-neutral-200: #e7e5e4;
+  --color-neutral-300: #d6d3d1;
+  --color-neutral-400: #a8a29e;
+  --color-neutral-500: #78716c;
+  --color-neutral-600: #57534e;
+  --color-neutral-700: #44403c;
+  --color-neutral-800: #292524;
+  --color-neutral-900: #1c1917;
+  
+  /* Soft taupe accents */
+  --color-taupe-50: #faf9f7;
+  --color-taupe-100: #f5f3f0;
+  --color-taupe-200: #e8e4df;
+  --color-taupe-300: #dbd5cd;
+  --color-taupe-400: #c1b7aa;
+  --color-taupe-500: #a79987;
+  --color-taupe-600: #968a7a;
+  --color-taupe-700: #7d7366;
+  --color-taupe-800: #645c52;
+  --color-taupe-900: #524b43;
+  
+  /* Border radius */
+  --radius-card: 12px;
+  --radius-button: 8px;
+  
+  /* Shadows */
+  --shadow-card: 0 2px 8px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.06);
+  --shadow-card-hover: 0 4px 16px rgb(0 0 0 / 0.08), 0 2px 4px rgb(0 0 0 / 0.06);
+}
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #292524;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: Georgia, serif;
+    color: var(--color-neutral-900);
+  }
+}
+
+@layer utilities {
+  .rounded-card {
+    border-radius: var(--radius-card);
+  }
+  
+  .rounded-button {
+    border-radius: var(--radius-button);
+  }
+  
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+}

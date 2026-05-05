@@ -1,0 +1,3 @@
+# Builder Projects
+
+Build project list page for Builder role showing all projects in their organization. Display all projects filtered by builderOrgId. Each project card shows project name, client name, and due count. Use **status_badge** to display project status. Tap opens Builder Project Detail. Add "New Project" button for creating projects. Query projects by builderOrgId. Design with card list on white (#FFFFFF), soft taupe (#D4C4B0) borders, brass accent (#B8956A) for New Project button and interactive elements, warm neutral gray (#8B8680) for secondary text. Apply rounded cards with professional spacing for clear visual hierarchy.

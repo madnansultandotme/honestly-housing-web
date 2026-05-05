@@ -1,0 +1,3 @@
+# Client Dashboard
+
+Build dashboard for Client role showing project progress. Display decisions needed this week prominently. Use **progress_bar** for overall completion and **due_this_week_list** for upcoming decisions. Show recent messages preview (3-5 latest). Add quick links to Selections Home, Photos, Messages. Query projects by user.projectIds, items by status, messages. Design on white (#FFFFFF) with cards using soft taupe (#D4C4B0) borders. Use brass accent (#B8956A) for buttons and progress fill, warm neutral gray (#8B8680) for secondary text. Apply premium spacing and rounded corners.

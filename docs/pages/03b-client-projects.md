@@ -1,0 +1,3 @@
+# Client Projects
+
+Build project list page for Client role showing only their assigned projects. Display projects filtered by user.projectIds (typically 1 project). Each project card shows project name, builder name, and progress summary. Use **status_badge** to display overall project status. Use **progress_bar** to show selection completion. Tap opens Client Project Detail. Query projects by user.projectIds. Design with card list on white (#FFFFFF), soft taupe (#D4C4B0) borders, brass accent (#B8956A) for interactive elements, warm neutral gray (#8B8680) for secondary text. Apply rounded cards with professional spacing.
