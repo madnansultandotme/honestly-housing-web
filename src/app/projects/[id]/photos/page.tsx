@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import { useRouter } from 'next/navigation';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -14,6 +15,7 @@ import Link from 'next/link';
 export default function ProjectPhotosPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user, profile } = useAuth();
+  const { confirm } = useNotification();
   const router = useRouter();
 
   const [project, setProject] = useState<any>(null);
@@ -104,7 +106,12 @@ export default function ProjectPhotosPage({ params }: { params: Promise<{ id: st
   };
 
   const handleDeletePhoto = async (photoId: string) => {
-    if (!confirm('Delete this photo?')) return;
+    const confirmed = await confirm(
+      'Are you sure you want to delete this photo? This action cannot be undone.',
+      'Delete Photo'
+    );
+    
+    if (!confirmed) return;
 
     try {
       await apiClient.delete(`/api/photos/${photoId}?projectId=${id}`);

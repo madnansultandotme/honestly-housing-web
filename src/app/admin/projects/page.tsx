@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import Card from '@/components/ui/Card';
 import { LoadingOverlay, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -22,6 +23,7 @@ interface Project {
 
 export default function AdminProjectsPage() {
   const { user, profile } = useAuth();
+  const { confirm, showError } = useNotification();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -83,7 +85,12 @@ export default function AdminProjectsPage() {
   };
 
   const handleDeleteProject = async (projectId: string, projectName: string) => {
-    if (!confirm(`Are you sure you want to delete project "${projectName}"? This will delete all associated data and cannot be undone.`)) {
+    const confirmed = await confirm(
+      `Are you sure you want to delete project "${projectName}"? This will delete all associated data and cannot be undone.`,
+      'Delete Project'
+    );
+    
+    if (!confirmed) {
       return;
     }
 
@@ -93,7 +100,7 @@ export default function AdminProjectsPage() {
       await loadProjects();
     } catch (error: any) {
       console.error('Failed to delete project:', error);
-      alert(error.message || 'Failed to delete project');
+      showError(error.message || 'Failed to delete project');
     } finally {
       setDeleting(null);
     }

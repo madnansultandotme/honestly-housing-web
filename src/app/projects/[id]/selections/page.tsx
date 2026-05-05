@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -16,6 +17,7 @@ import { apiClient } from '@/lib/api/client';
 export default function SelectionsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user, profile } = useAuth();
+  const { showError } = useNotification();
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -78,7 +80,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
       document.body.removeChild(a);
     } catch (err) {
       console.error('Export failed:', err);
-      alert('Failed to export materials list');
+      showError('Failed to export materials list');
     } finally {
       setExporting(false);
     }

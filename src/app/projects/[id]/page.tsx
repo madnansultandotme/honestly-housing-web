@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
@@ -20,6 +21,7 @@ import { apiClient } from '@/lib/api/client';
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user, profile } = useAuth();
+  const { showError } = useNotification();
   const router = useRouter();
   
   const [project, setProject] = useState<any>(null);
@@ -75,7 +77,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       document.body.removeChild(a);
     } catch (err) {
       console.error('Export failed:', err);
-      alert('Failed to export materials list');
+      showError('Failed to export materials list');
     } finally {
       setExporting(false);
     }

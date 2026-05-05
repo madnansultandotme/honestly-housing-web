@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import ClientHeader from '@/components/navigation/ClientHeader';
 import { LoadingOverlay, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -36,6 +37,7 @@ export default function MessagesPage() {
   const params = useParams();
   const router = useRouter();
   const { user, profile } = useAuth();
+  const { showError } = useNotification();
   const projectId = params.id as string;
 
   const [project, setProject] = useState<Project | null>(null);
@@ -129,7 +131,7 @@ export default function MessagesPage() {
       setNewMessage('');
     } catch (error) {
       console.error('Failed to send message:', error);
-      alert('Failed to send message. Please try again.');
+      showError('Failed to send message. Please try again.');
     } finally {
       setSending(false);
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import ProgressBar from '@/components/ui/ProgressBar';
@@ -11,6 +12,7 @@ import { apiClient } from '@/lib/api/client';
 
 export default function SelectionCategoriesPage() {
   const { user } = useAuth();
+  const { showError } = useNotification();
   const router = useRouter();
   const params = useParams();
   const projectId = params.id as string;
@@ -96,7 +98,7 @@ export default function SelectionCategoriesPage() {
       document.body.removeChild(a);
     } catch (err) {
       console.error('Export failed:', err);
-      alert('Failed to export materials list');
+      showError('Failed to export materials list');
     } finally {
       setExporting(false);
     }

@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import { useRouter } from 'next/navigation';
 import VisualApprovalCard from '@/components/selections/VisualApprovalCard';
 import CuratedOptionCard from '@/components/selections/CuratedOptionCard';
@@ -18,6 +19,7 @@ export default function SelectionDetailPage({
 }) {
   const { id, selectionId } = use(params);
   const { user, profile } = useAuth();
+  const { showError, showSuccess, showWarning } = useNotification();
   const router = useRouter();
   const [selection, setSelection] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -144,11 +146,11 @@ export default function SelectionDetailPage({
         setSelection({ ...selection, roomId, roomName: room.name });
         await fetchRooms();
       } else {
-        alert('Failed to assign room');
+        showError('Failed to assign room');
       }
     } catch (error) {
       console.error('Error assigning room:', error);
-      alert('Failed to assign room');
+      showError('Failed to assign room');
     } finally {
       setActionLoading(false);
     }
@@ -227,11 +229,11 @@ export default function SelectionDetailPage({
           status: selection.status === 'approved' ? selection.status : 'awaiting_approval',
         });
       } else {
-        alert('Failed to select option');
+        showError('Failed to select option');
       }
     } catch (error) {
       console.error('Error selecting option:', error);
-      alert('Failed to select option');
+      showError('Failed to select option');
     } finally {
       setActionLoading(false);
     }
@@ -249,7 +251,7 @@ export default function SelectionDetailPage({
 
   const handleCreateChangeOrder = async () => {
     if (!changeOrderReason.trim()) {
-      alert('Please provide a reason for the change order');
+      showWarning('Please provide a reason for the change order');
       return;
     }
 
@@ -276,7 +278,7 @@ export default function SelectionDetailPage({
       setChangeOrderAmount('');
       await fetchChangeOrders(selectionId);
     } catch (error: any) {
-      alert(error.message || 'Failed to create change order');
+      showError(error.message || 'Failed to create change order');
     } finally {
       setActionLoading(false);
     }
@@ -299,7 +301,7 @@ export default function SelectionDetailPage({
       await fetchChangeOrders(selectionId);
       await fetchSelection();
     } catch (error: any) {
-      alert(error.message || 'Failed to update change order');
+      showError(error.message || 'Failed to update change order');
     } finally {
       setActionLoading(false);
     }
@@ -307,7 +309,7 @@ export default function SelectionDetailPage({
 
   const handleCustomOption = async () => {
     if (!customOption.name || !customOption.price) {
-      alert('Please provide at least a name and price');
+      showWarning('Please provide at least a name and price');
       return;
     }
 
@@ -327,14 +329,14 @@ export default function SelectionDetailPage({
       });
 
       if (response.ok) {
-        alert('Custom option submitted for approval!');
+        showSuccess('Custom option submitted for approval!');
         router.push(`/projects/${id}/selections`);
       } else {
-        alert('Failed to submit custom option');
+        showError('Failed to submit custom option');
       }
     } catch (error) {
       console.error('Error submitting custom option:', error);
-      alert('Failed to submit custom option');
+      showError('Failed to submit custom option');
     }
   };
 
@@ -350,14 +352,14 @@ export default function SelectionDetailPage({
       });
 
       if (response.ok) {
-        alert('Selection approved successfully!');
+        showSuccess('Selection approved successfully!');
         router.push(`/projects/${id}/selections`);
       } else {
         const data = await response.json();
-        alert(data.error || 'Failed to approve selection');
+        showError(data.error || 'Failed to approve selection');
       }
     } catch (error) {
-      alert('Failed to approve selection');
+      showError('Failed to approve selection');
     } finally {
       setActionLoading(false);
     }
@@ -365,7 +367,7 @@ export default function SelectionDetailPage({
 
   const handleRequestChange = async () => {
     if (!user || !changeRequest.trim()) {
-      alert('Please provide a reason for the change request');
+      showWarning('Please provide a reason for the change request');
       return;
     }
     
@@ -383,13 +385,13 @@ export default function SelectionDetailPage({
       });
 
       if (response.ok) {
-        alert('Change request submitted successfully!');
+        showSuccess('Change request submitted successfully!');
         router.push(`/projects/${id}/selections`);
       } else {
-        alert('Failed to submit change request');
+        showError('Failed to submit change request');
       }
     } catch (error) {
-      alert('Failed to submit change request');
+      showError('Failed to submit change request');
     } finally {
       setActionLoading(false);
     }

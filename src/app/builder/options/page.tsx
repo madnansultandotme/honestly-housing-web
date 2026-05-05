@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import OptionUploadForm, { OptionFormData } from '@/components/builder/OptionUploadForm';
@@ -27,6 +28,7 @@ interface Category {
 
 export default function BuilderOptionsPage() {
   const { user, profile } = useAuth();
+  const { confirm, showError } = useNotification();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,12 @@ export default function BuilderOptionsPage() {
   };
 
   const handleDeleteOption = async (optionId: string) => {
-    if (!confirm('Are you sure you want to delete this option?')) return;
+    const confirmed = await confirm(
+      'Are you sure you want to delete this option? This action cannot be undone.',
+      'Delete Option'
+    );
+    
+    if (!confirmed) return;
 
     try {
       const builderOrgId = profile?.builderOrgId || user?.uid;
@@ -101,7 +108,7 @@ export default function BuilderOptionsPage() {
       setOptions((prev) => prev.filter((opt) => opt.id !== optionId));
     } catch (err) {
       console.error('Failed to delete option:', err);
-      setError('Failed to delete option');
+      showError('Failed to delete option');
     }
   };
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -21,6 +22,7 @@ interface User {
 
 export default function UserManagementPage() {
   const { user, profile } = useAuth();
+  const { confirm, showError } = useNotification();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
@@ -84,7 +86,12 @@ export default function UserManagementPage() {
   };
 
   const handleDeleteUser = async (userId: string, userEmail: string) => {
-    if (!confirm(`Are you sure you want to delete user ${userEmail}? This action cannot be undone.`)) {
+    const confirmed = await confirm(
+      `Are you sure you want to delete user ${userEmail}? This action cannot be undone.`,
+      'Delete User'
+    );
+    
+    if (!confirmed) {
       return;
     }
 
@@ -94,7 +101,7 @@ export default function UserManagementPage() {
       await loadUsers();
     } catch (error: any) {
       console.error('Failed to delete user:', error);
-      alert(error.message || 'Failed to delete user');
+      showError(error.message || 'Failed to delete user');
     } finally {
       setDeleting(null);
     }
