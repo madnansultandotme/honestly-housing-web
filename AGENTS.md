@@ -214,10 +214,16 @@ Before marking a feature complete:
 - Role-based routing
 - Client invitation system with email notifications
 - Team member management (add/remove builders, designers, clients)
+- **Admin Dashboard** with full system management
+- **User Management** (view, edit, delete users)
+- **Project Management** (view, delete projects)
+- Email normalization for consistent user search
 
 ### ❌ Not Implemented
 - AI Mood Board generation (marked as "coming soon")
 - Full affiliate links support
+- Admin Analytics (placeholder created)
+- Admin Settings (placeholder created)
 
 ## Getting Help
 

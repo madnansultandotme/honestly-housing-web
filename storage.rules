@@ -12,11 +12,32 @@ service firebase.storage {
     }
     
     function hasAccessToProject(projectId) {
-      return projectId in getUserData().projectIds;
+      let userData = getUserData();
+      let project = firestore.get(/databases/(default)/documents/projects/$(projectId)).data;
+      
+      // Admin has access to all projects
+      return userData.role == 'admin' ||
+             // Check if project is in user's projectIds
+             projectId in userData.projectIds ||
+             // Check if user is the project client
+             project.clientId == request.auth.uid ||
+             // Check if user is the project creator
+             project.createdBy == request.auth.uid ||
+             // Check if user's builderOrgId matches project's builderOrgId
+             (userData.builderOrgId != null && userData.builderOrgId == project.builderOrgId);
     }
     
     function isBuilder() {
       return isSignedIn() && getUserData().role == 'builder';
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && getUserData().role == 'admin';
+    }
+    
+    function isBuilderOrDesignerOrAdmin() {
+      let role = getUserData().role;
+      return isSignedIn() && (role == 'builder' || role == 'designer' || role == 'admin');
     }
     
     function belongsToBuilderOrg(orgId) {
@@ -65,8 +86,8 @@ service firebase.storage {
     match /options/{builderOrgId}/{optionId} {
       allow read: if isSignedIn();
       
-      allow write: if isBuilder() && 
-                      belongsToBuilderOrg(builderOrgId) && 
+      allow write: if isBuilderOrDesignerOrAdmin() && 
+                      (belongsToBuilderOrg(builderOrgId) || isAdmin()) && 
                       isImage() && 
                       isValidImageSize();
     }
@@ -75,8 +96,8 @@ service firebase.storage {
     match /builderOrgs/{orgId}/logo.png {
       allow read: if isSignedIn();
       
-      allow write: if isBuilder() && 
-                      belongsToBuilderOrg(orgId) && 
+      allow write: if isBuilderOrDesignerOrAdmin() && 
+                      (belongsToBuilderOrg(orgId) || isAdmin()) && 
                       isImage() && 
                       isValidImageSize();
     }

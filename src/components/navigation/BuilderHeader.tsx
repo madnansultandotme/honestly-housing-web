@@ -88,6 +88,18 @@ export default function BuilderHeader({
               >
                 Organization
               </Link>
+              {profile?.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className={`px-3 py-2 rounded-button text-sm font-medium transition-colors ${
+                    isActive('/admin')
+                      ? 'bg-red-50 text-red-700'
+                      : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+                  }`}
+                >
+                  Admin
+                </Link>
+              )}
             </nav>
           </div>
 
