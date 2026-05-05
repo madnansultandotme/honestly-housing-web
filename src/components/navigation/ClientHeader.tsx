@@ -3,7 +3,8 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiClient } from '@/lib/api/client';
 
 interface ClientHeaderProps {
   title?: string;
@@ -22,13 +23,46 @@ export default function ClientHeader({
   const router = useRouter();
   const pathname = usePathname();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [firstProjectId, setFirstProjectId] = useState<string | null>(null);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  useEffect(() => {
+    // Load user's first project to use for Selections link
+    const loadFirstProject = async () => {
+      if (!user) return;
+      
+      try {
+        setLoadingProjects(true);
+        const projects = await apiClient.get(`/api/projects?clientId=${user.uid}`);
+        if (projects && projects.length > 0) {
+          setFirstProjectId(projects[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load projects:', err);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    loadFirstProject();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
     router.push('/login');
   };
 
+  const handleSelectionsClick = (e: React.MouseEvent) => {
+    if (!firstProjectId && !loadingProjects) {
+      e.preventDefault();
+      alert('No projects available yet. Your builder will invite you to a project soon, and then you can view and approve selections.');
+    }
+  };
+
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
+
+  // Determine selections link
+  const selectionsHref = firstProjectId ? `/projects/${firstProjectId}/selections` : '#';
 
   return (
     <header className="bg-white border-b border-neutral-200 sticky top-0 z-40">
@@ -69,11 +103,14 @@ export default function ClientHeader({
                 Projects
               </Link>
               <Link
-                href="/projects"
+                href={selectionsHref}
+                onClick={handleSelectionsClick}
                 className={`px-3 py-2 rounded-button text-sm font-medium transition-colors ${
                   pathname.includes('/selections')
                     ? 'bg-brass-50 text-brass-700'
-                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+                    : firstProjectId
+                    ? 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+                    : 'text-neutral-400 cursor-not-allowed'
                 }`}
               >
                 Selections
