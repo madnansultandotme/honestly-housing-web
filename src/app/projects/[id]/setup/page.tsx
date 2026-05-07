@@ -89,6 +89,7 @@ export default function BuilderProjectSetup() {
   const [templates, setTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -288,6 +289,21 @@ export default function BuilderProjectSetup() {
     setCategories((prev) =>
       prev.map((cat) => (cat.id === categoryId ? { ...cat, required } : cat))
     );
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) return;
+
+    const newCategory: CategoryItem = {
+      id: `custom-${Date.now()}`,
+      name: newCategoryName.trim(),
+      required: true,
+      completedCount: 0,
+      totalCount: 0,
+    };
+
+    setCategories(prev => [...prev, newCategory]);
+    setNewCategoryName('');
   };
 
   const handleAllowanceChange = (categoryId: string, amount: number, type: AllowanceType) => {
@@ -644,6 +660,32 @@ export default function BuilderProjectSetup() {
                 builderMode={true}
                 showProgress={false}
               />
+              
+              {/* Add Custom Category */}
+              <div className="mt-4 p-4 bg-brass-50 border border-brass-200 rounded-button">
+                <h3 className="text-sm font-semibold text-neutral-900 mb-3">
+                  Add Custom Category
+                </h3>
+                <div className="flex gap-3">
+                  <Input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="e.g., Window Treatments, Landscaping"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleAddCategory}
+                    disabled={!newCategoryName.trim()}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add
+                  </Button>
+                </div>
+              </div>
             </Card>
 
             {/* Category Allowances */}

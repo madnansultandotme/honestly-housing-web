@@ -29,6 +29,9 @@ export default function EditSelectionModal({
   const [categories, setCategories] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>(selection.imageUrl || '');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -41,6 +44,7 @@ export default function EditSelectionModal({
     description: selection.description || '',
     dueDate: selection.dueDate ? new Date(selection.dueDate).toISOString().split('T')[0] : '',
     subType: selection.subType || '',
+    imageUrl: selection.imageUrl || '',
   });
 
   useEffect(() => {
@@ -70,6 +74,52 @@ export default function EditSelectionModal({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+    handleChange('imageUrl', '');
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return null;
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('file', imageFile);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      showError('Failed to upload image');
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -80,6 +130,15 @@ export default function EditSelectionModal({
 
     try {
       setSaving(true);
+
+      // Upload new image if present
+      let imageUrl = formData.imageUrl;
+      if (imageFile) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
 
       const category = categories.find(c => c.id === formData.categoryId);
       const room = rooms.find(r => r.id === formData.roomId);
@@ -93,6 +152,7 @@ export default function EditSelectionModal({
         quantity: formData.quantity || 1,
         brand: formData.brand.trim() || null,
         description: formData.description.trim() || null,
+        imageUrl: imageUrl || null,
         actualCost: parseFloat(formData.price as any) || 0,
         difference: (parseFloat(formData.price as any) || 0) - (selection.allowance || 0),
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
@@ -257,14 +317,61 @@ export default function EditSelectionModal({
                 onChange={(e) => handleChange('dueDate', e.target.value)}
               />
 
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Product Image (Optional)
+                </label>
+                
+                {imagePreview ? (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded-button border border-neutral-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-button hover:bg-red-700"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-neutral-300 rounded-button p-6 text-center hover:border-brass-400 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="image-upload-edit"
+                    />
+                    <label htmlFor="image-upload-edit" className="cursor-pointer">
+                      <svg className="w-12 h-12 mx-auto text-neutral-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <div className="text-sm text-neutral-600">
+                        Click to upload product image
+                      </div>
+                      <div className="text-xs text-neutral-500 mt-1">
+                        PNG, JPG, GIF up to 10MB
+                      </div>
+                    </label>
+                  </div>
+                )}
+              </div>
+
               {/* Actions */}
               <div className="flex gap-3 pt-4">
                 <Button
                   type="submit"
-                  disabled={saving || !formData.categoryId || !formData.name.trim()}
+                  disabled={saving || uploading || !formData.categoryId || !formData.name.trim()}
                   className="flex-1"
                 >
-                  {saving ? 'Updating...' : 'Update Selection'}
+                  {uploading ? 'Uploading Image...' : saving ? 'Updating...' : 'Update Selection'}
                 </Button>
                 <Button
                   type="button"

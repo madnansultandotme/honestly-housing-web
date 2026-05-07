@@ -520,6 +520,8 @@ Before marking a feature complete:
 - **Room-category mapping** workflow
 - **CSV bulk upload for selections** with template download
 - **Manual one-by-one selection creation** with full form
+- **Image upload for selections** (add and edit)
+- **Image preview and removal** in forms
 - **Full CRUD operations on selections** (Create, Read, Update, Delete)
 - **Edit selection modal** with all fields editable
 - **Delete selection** with confirmation dialog
