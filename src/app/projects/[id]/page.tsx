@@ -133,6 +133,11 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   Edit Configuration
                 </Button>
               </Link>
+              <Link href={`/projects/${id}/configure-rooms`}>
+                <Button variant="outline" size="sm">
+                  Configure Rooms
+                </Button>
+              </Link>
             </>
           )
         }
@@ -232,6 +237,22 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {isBuilder && (
+            <Link href={`/projects/${id}/configure-rooms`}>
+              <Card hover className="h-full">
+                <div className="flex flex-col items-center text-center p-4">
+                  <div className="w-12 h-12 bg-brass-100 rounded-button flex items-center justify-center mb-3">
+                    <svg className="w-6 h-6 text-brass-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                  </div>
+                  <h3 className="font-semibold text-neutral-900 mb-1">Configure Rooms</h3>
+                  <p className="text-sm text-neutral-600">Assign categories & items</p>
+                </div>
+              </Card>
+            </Link>
+          )}
+
           <Link href={`/projects/${id}/selections`}>
             <Card hover className="h-full">
               <div className="flex flex-col items-center text-center p-4">

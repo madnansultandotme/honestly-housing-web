@@ -305,13 +305,33 @@
           "type": "string",
           "required": false,
           "nullable": true,
-          "description": "Assigned room ID (for lighting)"
+          "description": "Assigned room ID"
         },
         "roomName": {
           "type": "string",
           "required": false,
           "nullable": true,
           "description": "Assigned room name (denormalized)"
+        },
+        "quantity": {
+          "type": "number",
+          "required": false,
+          "nullable": true,
+          "default": 1,
+          "description": "Quantity of items needed"
+        },
+        "parentItemId": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Parent item ID for sub-selections"
+        },
+        "subType": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "enum": ["trim", "ceiling", "walls", "cabinets"],
+          "description": "Sub-type for paint categories"
         },
         "notes": {
           "type": "string",
@@ -676,6 +696,56 @@
         {
           "fields": ["addedAt"],
           "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    "roomCategories": {
+      "path": "projects/{projectId}/roomCategories/{roomCategoryId}",
+      "description": "Mapping of categories to specific rooms",
+      "fields": {
+        "roomId": {
+          "type": "string",
+          "required": true,
+          "description": "Reference to rooms subcollection"
+        },
+        "roomName": {
+          "type": "string",
+          "required": true,
+          "description": "Room name (denormalized)"
+        },
+        "categoryId": {
+          "type": "string",
+          "required": true,
+          "description": "Reference to categories subcollection"
+        },
+        "categoryName": {
+          "type": "string",
+          "required": true,
+          "description": "Category name (denormalized)"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Creation timestamp"
+        },
+        "createdBy": {
+          "type": "string",
+          "required": true,
+          "description": "User ID who created this mapping"
+        }
+      },
+      "indexes": [
+        {
+          "fields": ["roomId"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["categoryId"],
+          "queryScope": "COLLECTION"
+        },
+        {
+          "fields": ["roomId", "categoryId"],
           "queryScope": "COLLECTION"
         }
       ]

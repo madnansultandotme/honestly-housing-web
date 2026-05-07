@@ -514,6 +514,13 @@ Before marking a feature complete:
 - **Project Management** (view, delete projects)
 - Email normalization for consistent user search
 - **Auto-create client accounts during project creation** with credential email
+- **Room-based selection configuration** with category assignment
+- **Sub-selections/fixtures** with quantity support
+- **Paint sub-types** (Trim, Ceiling, Walls, Cabinets)
+- **Room-category mapping** workflow
+- **CSV bulk upload for selections** with template download
+- **Builder-to-Client workflow** - selections automatically appear in client portal
+- **Awaiting Approval status** display in client portal
 
 ### ❌ Not Implemented
 - AI Mood Board generation (marked as "coming soon")

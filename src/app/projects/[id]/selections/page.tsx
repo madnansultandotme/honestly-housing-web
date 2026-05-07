@@ -10,6 +10,7 @@ import ProgressBar from '@/components/ui/ProgressBar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import ClientHeader from '@/components/navigation/ClientHeader';
+import BulkUploadModal from '@/components/selections/BulkUploadModal';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api/client';
@@ -27,6 +28,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -144,6 +146,20 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
         title="Selections"
         subtitle={project?.name || 'Project Selections'}
         showBackButton
+        actions={
+          isBuilder && (
+            <Button
+              onClick={() => setShowBulkUpload(true)}
+              variant="outline"
+              size="sm"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              Bulk Upload CSV
+            </Button>
+          )
+        }
       />
 
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -325,6 +341,16 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
       </main>
+
+      {/* Bulk Upload Modal */}
+      {showBulkUpload && (
+        <BulkUploadModal
+          projectId={id}
+          userId={user?.uid || ''}
+          onClose={() => setShowBulkUpload(false)}
+          onSuccess={fetchData}
+        />
+      )}
     </div>
   );
 }
