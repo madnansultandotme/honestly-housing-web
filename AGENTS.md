@@ -520,6 +520,9 @@ Before marking a feature complete:
 - **Room-category mapping** workflow
 - **CSV bulk upload for selections** with template download
 - **Manual one-by-one selection creation** with full form
+- **Full CRUD operations on selections** (Create, Read, Update, Delete)
+- **Edit selection modal** with all fields editable
+- **Delete selection** with confirmation dialog
 - **Builder-to-Client workflow** - selections automatically appear in client portal
 - **Awaiting Approval status** display in client portal
 - **Dual input methods** - builders can add selections via CSV bulk upload OR manual form

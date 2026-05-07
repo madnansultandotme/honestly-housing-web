@@ -78,3 +78,31 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// DELETE selection
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const selectionId = searchParams.get('selectionId');
+
+    if (!selectionId) {
+      return NextResponse.json(
+        { error: 'selectionId is required' },
+        { status: 400 }
+      );
+    }
+
+    await adminDb.collection('selections').doc(selectionId).delete();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Selection deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Delete selection error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete selection' },
+      { status: 500 }
+    );
+  }
+}
