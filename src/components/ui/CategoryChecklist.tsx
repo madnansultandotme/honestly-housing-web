@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
 export interface CategoryItem {
   id: string;
   name: string;
@@ -23,23 +21,13 @@ export default function CategoryChecklist({
   builderMode = false,
   showProgress = true,
 }: CategoryChecklistProps) {
-  const [localCategories, setLocalCategories] = useState(categories);
-
-  // Update local state when categories prop changes
-  useEffect(() => {
-    setLocalCategories(categories);
-  }, [categories]);
-
   const handleToggle = (categoryId: string) => {
     if (!builderMode || !onToggleRequired) return;
 
-    const category = localCategories.find((c) => c.id === categoryId);
+    const category = categories.find((c) => c.id === categoryId);
     if (!category) return;
 
     const newRequired = !category.required;
-    setLocalCategories((prev) =>
-      prev.map((c) => (c.id === categoryId ? { ...c, required: newRequired } : c))
-    );
     onToggleRequired(categoryId, newRequired);
   };
 
@@ -50,7 +38,7 @@ export default function CategoryChecklist({
 
   return (
     <div className="space-y-2">
-      {localCategories.map((category) => {
+      {categories.map((category) => {
         const percent = getCompletionPercent(category.completedCount, category.totalCount);
         const isComplete = category.completedCount === category.totalCount && category.totalCount > 0;
 

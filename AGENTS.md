@@ -75,6 +75,11 @@ The system uses 3 main project statuses:
    - **Step 3: Categories**
      - Mark required categories (Flooring, Lighting, Plumbing, etc.)
      - Mark optional categories (Appliances, Cabinetry)
+     - **Add custom categories** using "Add Custom Category" section
+       - Enter category name (e.g., "Window Treatments", "Landscaping")
+       - Click "Add Category" button
+       - Custom category appears immediately in list
+       - Can toggle custom categories between required/optional
    - **Step 4: Allowances**
      - Set budget for each category
      - Choose "Fixed Amount" or "Per Sq Ft"
@@ -94,7 +99,7 @@ The system uses 3 main project statuses:
 
 2. **Modify Configuration**
    - Adjust rooms if needed
-   - Modify categories
+   - Modify categories (including adding custom categories)
    - Update allowances
    - Load from template (optional)
    - Save as new template (optional)
@@ -253,6 +258,9 @@ The system uses 3 main project statuses:
 - [ ] Clients are redirected away from edit page
 - [ ] Can modify rooms
 - [ ] Can update categories
+- [ ] Can add custom categories
+- [ ] Custom categories appear immediately in list
+- [ ] Can toggle custom categories required/optional
 - [ ] Can change allowances
 - [ ] Can save as template
 - [ ] Can load from template
@@ -270,6 +278,8 @@ The system uses 3 main project statuses:
 - [ ] Can upload images
 - [ ] Can assign to rooms
 - [ ] Can set due dates
+- [ ] Custom categories appear in category dropdown
+- [ ] Can create selections with custom categories
 - [ ] Client can approve
 - [ ] Client can request changes
 
@@ -309,6 +319,12 @@ The system uses 3 main project statuses:
 
 **Issue**: Admin can't access admin dashboard
 **Solution**: Manually set user's role to 'admin' in Firestore
+
+**Issue**: Custom category doesn't appear in list after adding
+**Solution**: This was fixed by making CategoryChecklist a fully controlled component. Categories now appear immediately when added.
+
+**Issue**: Custom category doesn't appear in selections dropdown
+**Solution**: Ensure project was saved after adding custom category. Selection modals fetch categories from database via `/api/categories`.
 
 ## Important Conventions
 
@@ -488,6 +504,22 @@ Before marking a feature complete:
 
 **Solution:** Check import path uses `@/` prefix and component is exported correctly
 
+### Custom Categories
+
+**Implementation Details:**
+- Custom categories can be added during project creation (Step 4) or in project edit/setup page
+- Custom category IDs use format: `custom-{timestamp}` (e.g., `custom-1736345678901`)
+- Custom categories are saved to Firestore subcollection: `projects/{projectId}/categories/{categoryId}`
+- CategoryChecklist component is fully controlled - updates appear immediately when categories prop changes
+- Custom categories automatically appear in Add/Edit selection dropdowns (fetched from `/api/categories`)
+- Custom categories support all same features as default categories (required/optional, allowances, etc.)
+
+**Key Files:**
+- `src/components/ui/CategoryChecklist.tsx` - Fully controlled component, no local state
+- `src/app/projects/new/page.tsx` - Project creation with custom category support
+- `src/app/projects/[id]/setup/page.tsx` - Project edit with custom category support
+- `src/app/api/categories/route.ts` - Backend API for category CRUD operations
+
 ## Documentation
 
 - **Schema:** `docs/firebase-schema/`
@@ -518,6 +550,8 @@ Before marking a feature complete:
 - **Custom category creation** during project setup
 - **Add custom categories** in project creation wizard
 - **Dynamic category management** - not limited to defaults
+- **Custom categories appear immediately** in UI (fully controlled component)
+- **Custom categories in selections** - automatically available in Add/Edit selection dropdowns
 - **Sub-selections/fixtures** with quantity support
 - **Paint sub-types** (Trim, Ceiling, Walls, Cabinets)
 - **Room-category mapping** workflow
@@ -563,4 +597,4 @@ Before marking a feature complete:
 
 ---
 
-**Last Updated:** May 5, 2026
+**Last Updated:** May 8, 2026
