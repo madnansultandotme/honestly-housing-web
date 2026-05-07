@@ -11,6 +11,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import ClientHeader from '@/components/navigation/ClientHeader';
 import BulkUploadModal from '@/components/selections/BulkUploadModal';
+import AddSelectionModal from '@/components/selections/AddSelectionModal';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api/client';
@@ -29,6 +30,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showAddSelection, setShowAddSelection] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -148,16 +150,27 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
         showBackButton
         actions={
           isBuilder && (
-            <Button
-              onClick={() => setShowBulkUpload(true)}
-              variant="outline"
-              size="sm"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              Bulk Upload CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowAddSelection(true)}
+                size="sm"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Selection
+              </Button>
+              <Button
+                onClick={() => setShowBulkUpload(true)}
+                variant="outline"
+                size="sm"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Bulk Upload CSV
+              </Button>
+            </div>
           )
         }
       />
@@ -341,6 +354,16 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
       </main>
+
+      {/* Add Selection Modal */}
+      {showAddSelection && (
+        <AddSelectionModal
+          projectId={id}
+          userId={user?.uid || ''}
+          onClose={() => setShowAddSelection(false)}
+          onSuccess={fetchData}
+        />
+      )}
 
       {/* Bulk Upload Modal */}
       {showBulkUpload && (

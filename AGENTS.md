@@ -519,8 +519,10 @@ Before marking a feature complete:
 - **Paint sub-types** (Trim, Ceiling, Walls, Cabinets)
 - **Room-category mapping** workflow
 - **CSV bulk upload for selections** with template download
+- **Manual one-by-one selection creation** with full form
 - **Builder-to-Client workflow** - selections automatically appear in client portal
 - **Awaiting Approval status** display in client portal
+- **Dual input methods** - builders can add selections via CSV bulk upload OR manual form
 
 ### ❌ Not Implemented
 - AI Mood Board generation (marked as "coming soon")
