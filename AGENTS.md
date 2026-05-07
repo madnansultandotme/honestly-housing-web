@@ -515,6 +515,9 @@ Before marking a feature complete:
 - Email normalization for consistent user search
 - **Auto-create client accounts during project creation** with credential email
 - **Room-based selection configuration** with category assignment
+- **Custom category creation** during project setup
+- **Add custom categories** in project creation wizard
+- **Dynamic category management** - not limited to defaults
 - **Sub-selections/fixtures** with quantity support
 - **Paint sub-types** (Trim, Ceiling, Walls, Cabinets)
 - **Room-category mapping** workflow
