@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export interface CategoryItem {
   id: string;
@@ -24,6 +24,11 @@ export default function CategoryChecklist({
   showProgress = true,
 }: CategoryChecklistProps) {
   const [localCategories, setLocalCategories] = useState(categories);
+
+  // Update local state when categories prop changes
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
 
   const handleToggle = (categoryId: string) => {
     if (!builderMode || !onToggleRequired) return;
