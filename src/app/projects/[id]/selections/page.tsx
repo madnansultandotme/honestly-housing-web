@@ -57,9 +57,9 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
       const catData = await apiClient.get(`/api/categories?projectId=${id}`);
       setCategories(Array.isArray(catData) ? catData : []);
 
-      // Fetch selections
-      const selData = await apiClient.get(`/api/selections?projectId=${id}`);
-      setSelections(Array.isArray(selData) ? selData : []);
+      // Fetch selections (items)
+      const selData = await apiClient.get(`/api/items?projectId=${id}`);
+      setSelections(Array.isArray(selData.items) ? selData.items : []);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load selections. Please try again.');
@@ -107,7 +107,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
     try {
       setDeletingId(selectionId);
       
-      const response = await fetch(`/api/selections?selectionId=${selectionId}`, {
+      const response = await fetch(`/api/items?projectId=${id}&itemId=${selectionId}`, {
         method: 'DELETE',
       });
 
@@ -385,7 +385,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
             <h4 className="font-semibold text-neutral-900 mb-4">Awaiting Approval</h4>
             <div className="space-y-2">
               {selections
-                .filter(s => s.status === 'awaiting_approval')
+                .filter(s => s.status === 'awaitingClientApproval')
                 .map(selection => (
                   <Link
                     key={selection.id}
@@ -396,7 +396,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                     <div className="text-sm text-neutral-600">{selection.categoryName}</div>
                   </Link>
                 ))}
-              {selections.filter(s => s.status === 'awaiting_approval').length === 0 && (
+              {selections.filter(s => s.status === 'awaitingClientApproval').length === 0 && (
                 <p className="text-neutral-500 text-sm">No items awaiting approval</p>
               )}
             </div>

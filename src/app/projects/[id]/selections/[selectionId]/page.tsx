@@ -84,15 +84,15 @@ export default function SelectionDetailPage({
 
   const fetchSelection = async () => {
     try {
-      const response = await fetch(`/api/selections/${selectionId}`);
+      const response = await fetch(`/api/items/${selectionId}?projectId=${id}`);
       const data = await response.json();
-      setSelection(data.selection);
-      if (isLightingSelection(data.selection)) {
+      setSelection(data.item);
+      if (isLightingSelection(data.item)) {
         await fetchRooms();
       }
-      if (data.selection) {
-        await fetchOptions(data.selection);
-        await fetchChangeOrders(data.selection.id);
+      if (data.item) {
+        await fetchOptions(data.item);
+        await fetchChangeOrders(data.item.id);
       }
     } catch (error) {
       console.error('Error fetching selection:', error);
@@ -133,10 +133,11 @@ export default function SelectionDetailPage({
 
     try {
       setActionLoading(true);
-      const response = await fetch(`/api/selections/${selectionId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/items/${selectionId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          projectId: id,
           roomId,
           roomName: room.name,
         }),
@@ -201,10 +202,11 @@ export default function SelectionDetailPage({
 
     try {
       setActionLoading(true);
-      const response = await fetch(`/api/selections/${selectionId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/items/${selectionId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          projectId: id,
           name: option.title || option.name || selection.name,
           imageUrl: option.imageUrl || selection.imageUrl,
           linkUrl: option.linkUrl || selection.linkUrl,
@@ -212,7 +214,7 @@ export default function SelectionDetailPage({
           selectedOptionId: option.id,
           selectedOptionTier: option.tier || null,
           customOption: false,
-          status: selection.status === 'approved' ? selection.status : 'awaiting_approval',
+          status: selection.status === 'approved' ? selection.status : 'awaitingClientApproval',
         }),
       });
 
@@ -314,16 +316,17 @@ export default function SelectionDetailPage({
     }
 
     try {
-      const response = await fetch(`/api/selections/${selectionId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/items/${selectionId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          projectId: id,
           name: customOption.name,
           brand: customOption.brand,
           linkUrl: customOption.linkUrl,
           actualCost: customOption.price,
           notes: customOption.notes,
-          status: 'awaiting_approval',
+          status: 'awaitingClientApproval',
           customOption: true,
         }),
       });
@@ -345,10 +348,10 @@ export default function SelectionDetailPage({
     
     setActionLoading(true);
     try {
-      const response = await fetch(`/api/selections/${selectionId}/approve`, {
+      const response = await fetch(`/api/items/${selectionId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.uid }),
+        body: JSON.stringify({ projectId: id, userId: user.uid }),
       });
 
       if (response.ok) {
@@ -440,7 +443,7 @@ export default function SelectionDetailPage({
           status={selection.status}
           onApprove={handleApprove}
           onRequestChange={() => setShowChangeForm(true)}
-          showActions={selection.status === 'awaiting_approval' && !selection.locked}
+          showActions={selection.status === 'awaitingClientApproval' && !selection.locked}
         />
 
         {/* Curated Options */}

@@ -66,12 +66,22 @@ The system uses 3 main project statuses:
          - Welcome email sent to client with credentials
          - Client automatically selected
      - Enter budget (optional)
-   - **Step 2: Room Configuration**
-     - Set bedroom count (e.g., 4)
-     - Set bathroom count (e.g., 3)
-     - Set office count (e.g., 1)
-     - Select specific rooms (Primary Bedroom, Kitchen, etc.)
-     - Set fixture counts per room
+   - **Step 2: Room & Fixture Configuration**
+     - **Add rooms dynamically** with custom names
+       - Enter room name (e.g., "Primary Bedroom", "Half Bath", "Pantry")
+       - Select room type (Bedroom, Bathroom, Kitchen, Living Room, etc.)
+       - Click "Add Room"
+     - **Add fixtures to each room**
+       - Expand room to see details
+       - Click "Add Fixture"
+       - Select category (Electrical, Plumbing, Flooring, Paint Colors, etc.)
+       - Enter fixture name (e.g., "Fan", "Down Rod", "Vanity Light")
+       - Set quantity
+       - Use quick-add buttons for common fixtures
+     - **Example configurations:**
+       - Living Room: Electrical (Fan, Down Rod), Flooring, Paint Colors (Trim, Ceiling, Walls, Cabinets)
+       - Half Bath: Electrical (Vanity Light), Plumbing (Bathroom Faucet, Drain), Mirror, Paint Colors
+       - Kitchen: Electrical (multiple lights), Plumbing (Faucet), Countertops, Cabinetry, Appliances
    - **Step 3: Categories**
      - Mark required categories (Flooring, Lighting, Plumbing, etc.)
      - Mark optional categories (Appliances, Cabinetry)
@@ -125,14 +135,24 @@ The system uses 3 main project statuses:
 #### Phase 4: Create Selections (Builder/Designer)
 1. **Add Selection Items**
    - Go to `/projects/[id]/selections`
-   - Click "Add Selection"
-   - Choose category
-   - Enter item details (name, brand, description)
-   - Upload image
-   - Set price
-   - Assign to room (if applicable)
-   - Set due date
-   - Click "Create Selection"
+   - **Option A: Bulk Upload CSV**
+     - Click "Bulk Upload CSV"
+     - Download template
+     - Fill in selections
+     - Upload CSV file
+   - **Option B: Manual Entry**
+     - Click "Add Selection"
+     - Choose category
+     - Enter item details (name, brand, description)
+     - Upload image
+     - Set price
+     - Assign to room (if applicable)
+     - Set due date
+     - Click "Create Selection"
+   - **Option C: Dynamic Room Builder** (during project creation)
+     - Items automatically created from room fixtures
+     - Status: "notStarted"
+     - Visible to client immediately
 
 2. **Curate Options**
    - Add Good/Better/Best options
@@ -149,30 +169,44 @@ The system uses 3 main project statuses:
    - See project on dashboard
    - Click project to view details
    - Go to Selections tab
+   - **See all items including those from room builder**
    - Review each selection item
 
 3. **Approve or Request Changes**
-   - **To Approve**: Click "Approve" button
-   - **To Request Change**: Click "Request Change"
-     - Enter reason for change
+   - Click on individual selection to view details
+   - **To Approve**: 
+     - Click "Approve" button
+     - Item status changes to "approved"
+     - Item becomes locked
+   - **To Request Change**: 
+     - Click "Request Change"
+     - Enter reason for change (required)
      - Suggest alternative (optional)
      - Submit request
+     - Change request sent to builder
 
 4. **Track Progress**
    - View progress bar on dashboard
-   - See pending approvals count
+   - See pending approvals count ("Awaiting Approval" section)
    - Check due dates
 
 #### Phase 6: Handle Change Requests (Builder)
 1. **View Change Requests**
    - Go to project selections
-   - See items with "Change Requested" status
+   - Check "Change Requests" subcollection in Firestore
+   - See items with change requests
 
 2. **Respond to Request**
    - Review client's reason
-   - Update selection item
-   - Mark as resolved
-   - Notify client
+   - **Option A: Update existing item**
+     - Edit the selection item
+     - Update details based on client feedback
+     - Notify client
+   - **Option B: Create new item**
+     - Add new selection with requested changes
+     - Link to original item (optional)
+     - Set status to "awaitingClientApproval"
+   - Mark change request as resolved
 
 #### Phase 7: Upload Photos (Any Role)
 1. **Access Photos Page**
@@ -247,7 +281,11 @@ The system uses 3 main project statuses:
 - [ ] Can create new client when no results found
 - [ ] New client receives welcome email with credentials
 - [ ] Newly created client is automatically selected
-- [ ] Room configuration saves properly
+- [ ] Can add rooms dynamically with custom names
+- [ ] Can add fixtures to each room by category
+- [ ] Fixtures support quantity specification
+- [ ] Quick-add buttons work for common fixtures
+- [ ] Room and fixture summary displays correctly
 - [ ] Categories are created as subcollections
 - [ ] Allowances are saved correctly
 - [ ] Project status is "active" after creation
@@ -274,14 +312,19 @@ The system uses 3 main project statuses:
 - [ ] Cannot add admin as team member
 
 **Selections:**
-- [ ] Can create selections
+- [ ] Can create selections via bulk upload
+- [ ] Can create selections manually
+- [ ] Items from room builder appear in selections list
 - [ ] Can upload images
 - [ ] Can assign to rooms
 - [ ] Can set due dates
 - [ ] Custom categories appear in category dropdown
 - [ ] Can create selections with custom categories
-- [ ] Client can approve
-- [ ] Client can request changes
+- [ ] Client can view all selections (including room builder items)
+- [ ] Client can approve selections
+- [ ] Client can request changes with reason
+- [ ] Approved items become locked
+- [ ] Change requests are saved to Firestore
 
 **Photos:**
 - [ ] Can upload photos
@@ -504,7 +547,37 @@ Before marking a feature complete:
 
 **Solution:** Check import path uses `@/` prefix and component is exported correctly
 
-### Custom Categories
+### Dynamic Room & Fixture Builder
+
+**Implementation Details:**
+- Builders can add unlimited rooms with custom names during project creation
+- Each room can have multiple fixtures across different categories
+- Fixtures are automatically created as items (subcollection) when project is saved
+- Categories are auto-created if they don't exist (e.g., "Mirrors" category created on-the-fly)
+- Room types: Bedroom, Bathroom, Kitchen, Living Room, Dining Room, Office, Laundry, Foyer, Mudroom, Pantry, Garage, Bonus Room, Other
+- Fixture categories: Electrical, Plumbing, Flooring, Paint Colors, Tile, Countertops, Hardware, Cabinetry, Appliances, Mirrors, Other
+- Common fixtures are pre-populated for quick selection (e.g., Fan, Down Rod, Vanity Light for Electrical)
+- Each fixture supports quantity specification (e.g., 2 Vanity Lights, 1 Ceiling Fan)
+
+**Backend Integration:**
+- Rooms saved to: `projects/{projectId}/rooms/{roomId}` via `/api/rooms`
+- Items saved to: `projects/{projectId}/items/{itemId}` via `/api/items`
+- Categories saved to: `projects/{projectId}/categories/{categoryId}` via `/api/categories`
+- All data follows the schema in `docs/firebase-schema/03-projects-schema.json`
+- Items include: categoryId, categoryName, roomId, roomName, quantity, status, subType, etc.
+
+**Example Use Cases:**
+- **Living Room**: Electrical (Fan, Down Rod), Flooring, Paint Colors (Trim, Ceiling, Walls, Cabinets)
+- **Half Bath**: Electrical (Vanity Light), Plumbing (Bathroom Faucet, Drain), Mirror, Paint Colors (Trim, Ceiling, Walls)
+- **Kitchen**: Electrical (Recessed Lights x6, Pendant Lights x3), Plumbing (Kitchen Faucet), Countertops, Cabinetry, Appliances
+
+**Key Files:**
+- `src/components/ui/DynamicRoomBuilder.tsx` - Main room and fixture builder component
+- `src/app/projects/new/page.tsx` - Project creation wizard with dynamic room builder integration
+- `src/app/api/items/route.ts` - Items API (GET, POST, DELETE)
+- `src/app/api/items/[id]/route.ts` - Individual item API (GET, PUT, DELETE)
+- `src/app/api/rooms/route.ts` - Rooms API
+- `src/app/api/categories/route.ts` - Categories API
 
 **Implementation Details:**
 - Custom categories can be added during project creation (Step 4) or in project edit/setup page
@@ -547,6 +620,11 @@ Before marking a feature complete:
 - Email normalization for consistent user search
 - **Auto-create client accounts during project creation** with credential email
 - **Room-based selection configuration** with category assignment
+- **Dynamic room builder** - add any room with custom name and type
+- **Per-room fixture specification** - define exact fixtures needed per room
+- **Fixture categories** - Electrical, Plumbing, Flooring, Paint Colors, Tile, Hardware, etc.
+- **Fixture quantity support** - specify how many of each fixture needed
+- **Quick-add common fixtures** - pre-populated suggestions for each category
 - **Custom category creation** during project setup
 - **Add custom categories** in project creation wizard
 - **Dynamic category management** - not limited to defaults
