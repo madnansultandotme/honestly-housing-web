@@ -50,13 +50,12 @@ export async function PATCH(
       updatedAt: new Date().toISOString(),
     });
 
-    // Update Firebase Auth if email or displayName changed
-    if (updates.email || updates.displayName) {
-      const authUpdates: any = {};
-      if (updates.email) authUpdates.email = updates.email;
-      if (updates.displayName) authUpdates.displayName = updates.displayName;
-      
-      await adminAuth.updateUser(userId, authUpdates);
+    // Only update Firebase Auth email if it changed (not displayName)
+    // displayName is managed in Firestore only
+    if (updates.email) {
+      await adminAuth.updateUser(userId, {
+        email: updates.email,
+      });
     }
 
     return NextResponse.json({

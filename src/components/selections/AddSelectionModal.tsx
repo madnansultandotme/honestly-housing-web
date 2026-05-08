@@ -45,6 +45,7 @@ export default function AddSelectionModal({
     dueDate: '',
     subType: '',
     imageUrl: '',
+    productLink: '',
   });
 
   useEffect(() => {
@@ -154,6 +155,7 @@ export default function AddSelectionModal({
         brand: formData.brand.trim() || null,
         description: formData.description.trim() || null,
         imageUrl: imageUrl || null,
+        productLink: formData.productLink.trim() || null,
         actualCost: parseFloat(formData.price) || 0,
         allowance: 0,
         difference: parseFloat(formData.price) || 0,
@@ -313,6 +315,15 @@ export default function AddSelectionModal({
                   placeholder="Additional details about this selection..."
                 />
               </div>
+
+              {/* Product Link */}
+              <Input
+                label="Product Link (Optional)"
+                type="url"
+                value={formData.productLink}
+                onChange={(e) => handleChange('productLink', e.target.value)}
+                placeholder="https://example.com/product"
+              />
 
               {/* Due Date */}
               <Input

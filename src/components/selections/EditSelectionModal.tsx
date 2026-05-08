@@ -45,6 +45,7 @@ export default function EditSelectionModal({
     dueDate: selection.dueDate ? new Date(selection.dueDate).toISOString().split('T')[0] : '',
     subType: selection.subType || '',
     imageUrl: selection.imageUrl || '',
+    productLink: selection.productLink || '',
   });
 
   useEffect(() => {
@@ -154,6 +155,7 @@ export default function EditSelectionModal({
         brand: formData.brand.trim() || null,
         description: formData.description.trim() || null,
         imageUrl: imageUrl || null,
+        productLink: formData.productLink.trim() || null,
         actualCost: parseFloat(formData.price as any) || 0,
         difference: (parseFloat(formData.price as any) || 0) - (selection.allowance || 0),
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
@@ -309,6 +311,15 @@ export default function EditSelectionModal({
                   placeholder="Additional details about this selection..."
                 />
               </div>
+
+              {/* Product Link */}
+              <Input
+                label="Product Link (Optional)"
+                type="url"
+                value={formData.productLink}
+                onChange={(e) => handleChange('productLink', e.target.value)}
+                placeholder="https://example.com/product"
+              />
 
               {/* Due Date */}
               <Input

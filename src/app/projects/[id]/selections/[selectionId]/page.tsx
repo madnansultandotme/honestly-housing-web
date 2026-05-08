@@ -456,6 +456,7 @@ export default function SelectionDetailPage({
           allowance={selection.allowance || 0}
           actualCost={selection.actualCost || selection.allowance || 0}
           notes={selection.notes}
+          productLink={selection.productLink}
           dueDate={selection.dueDate}
           status={selection.status}
           onApprove={handleApprove}
