@@ -377,6 +377,7 @@ export default function NewProjectPage() {
             roomName: room.name,
             name: fixture.name,
             quantity: fixture.quantity,
+            imageUrl: fixture.imageUrl || null,
             status: 'notStarted',
             allowance: 0,
             actualCost: 0,

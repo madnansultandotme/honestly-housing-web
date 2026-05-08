@@ -18,6 +18,8 @@ interface UserProfile {
   builderOrgId?: string;
   displayName?: string;
   email?: string;
+  phone?: string;
+  avatarUrl?: string;
 }
 
 interface AuthContextType {
@@ -29,6 +31,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<any>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -94,6 +97,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   };
 
+  const refreshProfile = async () => {
+    if (!user) return;
+    
+    try {
+      setProfileLoading(true);
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      setProfile(userDoc.exists() ? (userDoc.data() as UserProfile) : null);
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -103,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signInWithGoogle,
     signOut,
+    refreshProfile,
   };
 
   if (!mounted) {

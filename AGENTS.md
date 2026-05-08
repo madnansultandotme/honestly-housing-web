@@ -77,6 +77,7 @@ The system uses 3 main project statuses:
        - Select category (Electrical, Plumbing, Flooring, Paint Colors, etc.)
        - Enter fixture name (e.g., "Fan", "Down Rod", "Vanity Light")
        - Set quantity
+       - **Upload sample image (optional)** - Builder can upload reference images
        - Use quick-add buttons for common fixtures
      - **Example configurations:**
        - Living Room: Electrical (Fan, Down Rod), Flooring, Paint Colors (Trim, Ceiling, Walls, Cabinets)
@@ -184,6 +185,12 @@ The system uses 3 main project statuses:
      - Suggest alternative (optional)
      - Submit request
      - Change request sent to builder
+   - **To Add Custom Option**:
+     - Click "Don't like these options? Add your own"
+     - Enter product name, brand, price
+     - **Upload sample image (optional)** - Client can upload their preferred option image
+     - Add product link and notes
+     - Submit for builder approval
 
 4. **Track Progress**
    - View progress bar on dashboard
@@ -248,7 +255,45 @@ The system uses 3 main project statuses:
    - Export materials list (CSV)
    - Archive if needed
 
-#### Phase 10: Admin Management (Admin Only)
+#### Phase 10: User Profile Management (All Roles)
+1. **Access Settings Page**
+   - Click on user avatar/initials in header
+   - Click "Profile Settings" from dropdown menu
+   - Or go to `/settings`
+
+2. **Update Profile Information**
+   - **Upload Avatar:**
+     - Click "Upload Photo" button
+     - Select image file
+     - Preview displays immediately
+     - Click "Cancel" to remove selection
+     - Avatar must be uploaded before saving
+   - **Edit Display Name:**
+     - Update full name in text field
+     - Required field (cannot be empty)
+   - **Edit Phone Number:**
+     - Update phone number (optional)
+     - Format: (555) 123-4567
+   - **View Email (Read-Only):**
+     - Email address cannot be changed
+   - **View Role (Read-Only):**
+     - Role badge displays current role
+   - Click "Save Changes" to update profile
+
+3. **Change Password**
+   - Enter current password
+   - Enter new password (minimum 6 characters)
+   - Confirm new password (must match)
+   - Click "Change Password"
+   - System re-authenticates with current password
+   - Password updated in Firebase Auth
+
+4. **Verify Changes**
+   - Avatar displays in header (both builder and client)
+   - Profile information updated in database
+   - Password change requires re-login on other devices
+
+#### Phase 11: Admin Management (Admin Only)
 1. **Access Admin Dashboard**
    - Login as admin
    - Go to `/admin`
@@ -345,6 +390,25 @@ The system uses 3 main project statuses:
 - [ ] Can view all projects
 - [ ] Can delete projects
 - [ ] Statistics display correctly
+
+**Profile/Settings:**
+- [ ] Can access settings page from user menu
+- [ ] Can upload profile avatar
+- [ ] Avatar preview displays correctly
+- [ ] Can remove/cancel avatar upload
+- [ ] Can update display name
+- [ ] Can update phone number
+- [ ] Email is read-only
+- [ ] Role is read-only
+- [ ] Profile changes save correctly
+- [ ] Avatar displays in header after upload
+- [ ] Avatar displays for both builder and client roles
+- [ ] Can change password with current password
+- [ ] Password change requires matching new passwords
+- [ ] Password change validates minimum length (6 chars)
+- [ ] Incorrect current password shows error
+- [ ] Profile refreshes after save
+- [ ] Settings page accessible to all roles
 
 ### Common Issues & Solutions
 
@@ -625,6 +689,8 @@ Before marking a feature complete:
 - **Fixture categories** - Electrical, Plumbing, Flooring, Paint Colors, Tile, Hardware, etc.
 - **Fixture quantity support** - specify how many of each fixture needed
 - **Quick-add common fixtures** - pre-populated suggestions for each category
+- **Image upload for fixtures** - builders can upload sample images during room configuration
+- **Client image upload** - clients can upload their own sample images when adding custom options
 - **Custom category creation** during project setup
 - **Add custom categories** in project creation wizard
 - **Dynamic category management** - not limited to defaults
@@ -643,6 +709,12 @@ Before marking a feature complete:
 - **Builder-to-Client workflow** - selections automatically appear in client portal
 - **Awaiting Approval status** display in client portal
 - **Dual input methods** - builders can add selections via CSV bulk upload OR manual form
+- **User Profile/Settings Page** - comprehensive profile management
+- **Avatar upload** - users can upload profile pictures with preview
+- **Profile editing** - update display name, phone number
+- **Password change** - secure password update with re-authentication
+- **Avatar display in headers** - profile pictures shown in both Builder and Client headers
+- **Profile settings link** - accessible from user menu dropdown
 
 ### ❌ Not Implemented
 - AI Mood Board generation (marked as "coming soon")

@@ -10,6 +10,7 @@ export interface RoomFixture {
   category: string;
   name: string;
   quantity: number;
+  imageUrl?: string;
 }
 
 export interface RoomDetail {
@@ -75,6 +76,9 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
   const [newFixtureCategory, setNewFixtureCategory] = useState('Electrical');
   const [newFixtureName, setNewFixtureName] = useState('');
   const [newFixtureQuantity, setNewFixtureQuantity] = useState(1);
+  const [newFixtureImage, setNewFixtureImage] = useState<File | null>(null);
+  const [newFixtureImagePreview, setNewFixtureImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const handleAddRoom = () => {
     if (!newRoomName.trim()) return;
@@ -96,14 +100,36 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
     onChange(rooms.filter(r => r.id !== roomId));
   };
 
-  const handleAddFixture = (roomId: string) => {
+  const handleAddFixture = async (roomId: string) => {
     if (!newFixtureName.trim()) return;
+
+    let imageUrl = '';
+    
+    // Upload image if provided
+    if (newFixtureImage) {
+      try {
+        setUploadingImage(true);
+        const timestamp = Date.now();
+        const fileName = `${timestamp}_${newFixtureImage.name}`;
+        const path = `fixtures/${fileName}`;
+        
+        // Use Firebase Storage
+        const { uploadFile } = await import('@/lib/api/upload');
+        imageUrl = await uploadFile(newFixtureImage, path);
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+        // Continue without image
+      } finally {
+        setUploadingImage(false);
+      }
+    }
 
     const newFixture: RoomFixture = {
       id: `fixture-${Date.now()}`,
       category: newFixtureCategory,
       name: newFixtureName.trim(),
       quantity: newFixtureQuantity,
+      imageUrl: imageUrl || undefined,
     };
 
     const updatedRooms = rooms.map(room => {
@@ -119,6 +145,8 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
     onChange(updatedRooms);
     setNewFixtureName('');
     setNewFixtureQuantity(1);
+    setNewFixtureImage(null);
+    setNewFixtureImagePreview(null);
     setAddingFixtureToRoom(null);
   };
 
@@ -155,6 +183,23 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
     });
 
     onChange(updatedRooms);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewFixtureImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewFixtureImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setNewFixtureImage(null);
+    setNewFixtureImagePreview(null);
   };
 
   const groupFixturesByCategory = (fixtures: RoomFixture[]) => {
@@ -227,12 +272,21 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
                               className="flex items-center justify-between bg-neutral-50 p-2 rounded"
                             >
                               <div className="flex items-center gap-2">
-                                <span className="text-sm text-neutral-900">{fixture.name}</span>
-                                {fixture.quantity > 1 && (
-                                  <span className="text-xs bg-brass-100 text-brass-800 px-2 py-0.5 rounded-full">
-                                    x{fixture.quantity}
-                                  </span>
+                                {fixture.imageUrl && (
+                                  <img
+                                    src={fixture.imageUrl}
+                                    alt={fixture.name}
+                                    className="w-10 h-10 object-cover rounded"
+                                  />
                                 )}
+                                <div>
+                                  <span className="text-sm text-neutral-900">{fixture.name}</span>
+                                  {fixture.quantity > 1 && (
+                                    <span className="text-xs bg-brass-100 text-brass-800 px-2 py-0.5 rounded-full ml-2">
+                                      x{fixture.quantity}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <button
                                 onClick={() => handleRemoveFixture(room.id, fixture.id)}
@@ -295,6 +349,40 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
                       </div>
                     </div>
 
+                    {/* Image Upload */}
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Sample Image (Optional)
+                      </label>
+                      {newFixtureImagePreview ? (
+                        <div className="relative inline-block">
+                          <img
+                            src={newFixtureImagePreview}
+                            alt="Preview"
+                            className="w-32 h-32 object-cover rounded-button border border-neutral-300"
+                          />
+                          <button
+                            onClick={handleRemoveImage}
+                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                            type="button"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                            className="text-sm text-neutral-600 file:mr-4 file:py-2 file:px-4 file:rounded-button file:border-0 file:text-sm file:font-medium file:bg-brass-50 file:text-brass-700 hover:file:bg-brass-100"
+                          />
+                        </div>
+                      )}
+                    </div>
+
                     {/* Quick Add Suggestions */}
                     {COMMON_FIXTURES[newFixtureCategory] && (
                       <div>
@@ -314,10 +402,17 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
                     )}
 
                     <div className="flex gap-2">
-                      <Button onClick={() => handleAddFixture(room.id)} disabled={!newFixtureName.trim()}>
-                        Add Fixture
+                      <Button 
+                        onClick={() => handleAddFixture(room.id)} 
+                        disabled={!newFixtureName.trim() || uploadingImage}
+                      >
+                        {uploadingImage ? 'Uploading...' : 'Add Fixture'}
                       </Button>
-                      <Button variant="outline" onClick={() => setAddingFixtureToRoom(null)}>
+                      <Button variant="outline" onClick={() => {
+                        setAddingFixtureToRoom(null);
+                        setNewFixtureImage(null);
+                        setNewFixtureImagePreview(null);
+                      }}>
                         Cancel
                       </Button>
                     </div>

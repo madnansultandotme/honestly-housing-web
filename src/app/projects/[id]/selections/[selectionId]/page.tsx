@@ -42,6 +42,8 @@ export default function SelectionDetailPage({
     linkUrl: '',
     price: 0,
     notes: '',
+    imageFile: null as File | null,
+    imagePreview: null as string | null,
   });
 
   // Computed values for options
@@ -316,6 +318,18 @@ export default function SelectionDetailPage({
     }
 
     try {
+      setActionLoading(true);
+      let imageUrl = '';
+
+      // Upload image if provided
+      if (customOption.imageFile) {
+        const { uploadFile } = await import('@/lib/api/upload');
+        const timestamp = Date.now();
+        const fileName = `${timestamp}_${customOption.imageFile.name}`;
+        const path = `selections/${fileName}`;
+        imageUrl = await uploadFile(customOption.imageFile, path);
+      }
+
       const response = await fetch(`/api/items/${selectionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -326,6 +340,7 @@ export default function SelectionDetailPage({
           linkUrl: customOption.linkUrl,
           actualCost: customOption.price,
           notes: customOption.notes,
+          imageUrl: imageUrl || selection.imageUrl,
           status: 'awaitingClientApproval',
           customOption: true,
         }),
@@ -340,6 +355,8 @@ export default function SelectionDetailPage({
     } catch (error) {
       console.error('Error submitting custom option:', error);
       showError('Failed to submit custom option');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -645,6 +662,50 @@ export default function SelectionDetailPage({
 
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Sample Image (Optional)
+                </label>
+                {customOption.imagePreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={customOption.imagePreview}
+                      alt="Preview"
+                      className="w-32 h-32 object-cover rounded-button border border-neutral-300"
+                    />
+                    <button
+                      onClick={() => setCustomOption({ ...customOption, imageFile: null, imagePreview: null })}
+                      className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                      type="button"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setCustomOption({ 
+                            ...customOption, 
+                            imageFile: file, 
+                            imagePreview: reader.result as string 
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="text-sm text-neutral-600 file:mr-4 file:py-2 file:px-4 file:rounded-button file:border-0 file:text-sm file:font-medium file:bg-brass-50 file:text-brass-700 hover:file:bg-brass-100"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Notes
                 </label>
                 <textarea
@@ -657,8 +718,8 @@ export default function SelectionDetailPage({
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={handleCustomOption} className="flex-1">
-                  Submit for Approval
+                <Button onClick={handleCustomOption} disabled={actionLoading} className="flex-1">
+                  {actionLoading ? 'Uploading...' : 'Submit for Approval'}
                 </Button>
                 <Button
                   onClick={() => setShowCustomOption(false)}

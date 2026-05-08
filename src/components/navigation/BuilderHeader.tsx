@@ -113,11 +113,19 @@ export default function BuilderHeader({
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 px-3 py-2 rounded-button hover:bg-neutral-50 transition-colors"
               >
-                <div className="w-8 h-8 bg-brass-100 rounded-full flex items-center justify-center">
-                  <span className="text-brass-700 font-semibold text-sm">
-                    {profile?.displayName?.charAt(0).toUpperCase() || 'B'}
-                  </span>
-                </div>
+                {profile?.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.displayName || 'User'}
+                    className="w-8 h-8 rounded-full object-cover border-2 border-brass-200"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-brass-100 rounded-full flex items-center justify-center border-2 border-brass-200">
+                    <span className="text-brass-700 font-semibold text-sm">
+                      {profile?.displayName?.charAt(0).toUpperCase() || 'B'}
+                    </span>
+                  </div>
+                )}
                 <svg
                   className={`w-4 h-4 text-neutral-600 transition-transform ${
                     showUserMenu ? 'rotate-180' : ''
@@ -139,6 +147,13 @@ export default function BuilderHeader({
                     </div>
                     <div className="text-xs text-neutral-500">{user?.email}</div>
                   </div>
+                  <Link
+                    href="/settings"
+                    className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    Profile Settings
+                  </Link>
                   <Link
                     href="/builder/org"
                     className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
