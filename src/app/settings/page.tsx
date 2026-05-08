@@ -6,6 +6,8 @@ import { useNotification } from '@/contexts/NotificationContext';
 import { useRouter } from 'next/navigation';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import ClientHeader from '@/components/navigation/ClientHeader';
+import AdminHeader from '@/components/navigation/AdminHeader';
+import DesignerHeader from '@/components/navigation/DesignerHeader';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -33,7 +35,18 @@ export default function SettingsPage() {
   const [changingPassword, setChangingPassword] = useState(false);
 
   const isBuilder = profile?.role === 'builder' || profile?.role === 'designer' || profile?.role === 'admin';
-  const Header = isBuilder ? BuilderHeader : ClientHeader;
+  
+  // Determine which header to use based on role
+  let Header;
+  if (profile?.role === 'admin') {
+    Header = AdminHeader;
+  } else if (profile?.role === 'designer') {
+    Header = DesignerHeader;
+  } else if (profile?.role === 'builder') {
+    Header = BuilderHeader;
+  } else {
+    Header = ClientHeader;
+  }
 
   useEffect(() => {
     if (!user) {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
-import BuilderHeader from '@/components/navigation/BuilderHeader';
+import AdminHeader from '@/components/navigation/AdminHeader';
 import Card from '@/components/ui/Card';
 import { LoadingOverlay, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { apiClient } from '@/lib/api/client';
@@ -131,7 +131,7 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="min-h-screen bg-taupe-50">
-      <BuilderHeader
+      <AdminHeader
         title="Project Management"
         subtitle="Manage all system projects"
         showBackButton

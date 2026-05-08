@@ -7,20 +7,38 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import ClientHeader from '@/components/navigation/ClientHeader';
+import AdminHeader from '@/components/navigation/AdminHeader';
+import DesignerHeader from '@/components/navigation/DesignerHeader';
 import { LoadingCard } from '@/components/ui/LoadingSpinner';
 
 export default function ProjectsPage() {
   const { user, profile } = useAuth();
   const router = useRouter();
-  const isBuilder = profile?.role === 'builder' || profile?.role === 'designer' || profile?.role === 'admin';
+  
+  // Redirect admins to admin projects page
+  if (profile?.role === 'admin') {
+    router.push('/admin/projects');
+    return null;
+  }
+  
+  const isBuilder = profile?.role === 'builder' || profile?.role === 'designer';
   const { projects, loading } = useProjects(
     isBuilder
       ? { builderOrgId: profile?.builderOrgId || user?.uid }
       : { clientId: user?.uid }
   );
 
+  // Determine which header to use
+  let Header;
+  if (profile?.role === 'designer') {
+    Header = DesignerHeader;
+  } else if (profile?.role === 'builder') {
+    Header = BuilderHeader;
+  } else {
+    Header = ClientHeader;
+  }
+
   if (loading) {
-    const Header = isBuilder ? BuilderHeader : ClientHeader;
     return (
       <div className="min-h-screen bg-taupe-50">
         <Header
@@ -35,8 +53,6 @@ export default function ProjectsPage() {
       </div>
     );
   }
-
-  const Header = isBuilder ? BuilderHeader : ClientHeader;
 
   return (
     <div className="min-h-screen bg-taupe-50">

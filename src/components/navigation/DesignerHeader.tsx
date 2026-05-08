@@ -5,19 +5,19 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
 
-interface BuilderHeaderProps {
+interface DesignerHeaderProps {
   title?: string;
   subtitle?: string;
   showBackButton?: boolean;
   actions?: React.ReactNode;
 }
 
-export default function BuilderHeader({
+export default function DesignerHeader({
   title,
   subtitle,
   showBackButton = false,
   actions,
-}: BuilderHeaderProps) {
+}: DesignerHeaderProps) {
   const { user, profile, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -31,18 +31,21 @@ export default function BuilderHeader({
   const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
 
   return (
-    <header className="bg-white border-b border-neutral-200 sticky top-0 z-40">
+    <header className="bg-white border-b border-purple-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Navigation Bar */}
         <div className="flex items-center justify-between h-16">
           {/* Left: Logo/Brand */}
           <div className="flex items-center gap-8">
             <Link href="/builder" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-brass-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">HH</span>
               </div>
               <span className="font-display font-bold text-neutral-900 hidden sm:inline">
                 Honestly Housing
+              </span>
+              <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                DESIGNER
               </span>
             </Link>
 
@@ -52,7 +55,7 @@ export default function BuilderHeader({
                 href="/builder"
                 className={`px-3 py-2 rounded-button text-sm font-medium transition-colors ${
                   isActive('/builder') && !isActive('/builder/options') && !isActive('/builder/org')
-                    ? 'bg-brass-50 text-brass-700'
+                    ? 'bg-purple-50 text-purple-700'
                     : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
                 }`}
               >
@@ -62,7 +65,7 @@ export default function BuilderHeader({
                 href="/projects"
                 className={`px-3 py-2 rounded-button text-sm font-medium transition-colors ${
                   isActive('/projects')
-                    ? 'bg-brass-50 text-brass-700'
+                    ? 'bg-purple-50 text-purple-700'
                     : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
                 }`}
               >
@@ -72,21 +75,11 @@ export default function BuilderHeader({
                 href="/builder/options"
                 className={`px-3 py-2 rounded-button text-sm font-medium transition-colors ${
                   isActive('/builder/options')
-                    ? 'bg-brass-50 text-brass-700'
+                    ? 'bg-purple-50 text-purple-700'
                     : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
                 }`}
               >
-                Options
-              </Link>
-              <Link
-                href="/builder/org"
-                className={`px-3 py-2 rounded-button text-sm font-medium transition-colors ${
-                  isActive('/builder/org')
-                    ? 'bg-brass-50 text-brass-700'
-                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
-                }`}
-              >
-                Organization
+                Options Library
               </Link>
             </nav>
           </div>
@@ -105,12 +98,12 @@ export default function BuilderHeader({
                   <img
                     src={profile.avatarUrl}
                     alt={profile.displayName || 'User'}
-                    className="w-8 h-8 rounded-full object-cover border-2 border-brass-200"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-purple-200"
                   />
                 ) : (
-                  <div className="w-8 h-8 bg-brass-100 rounded-full flex items-center justify-center border-2 border-brass-200">
-                    <span className="text-brass-700 font-semibold text-sm">
-                      {profile?.displayName?.charAt(0).toUpperCase() || 'B'}
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center border-2 border-purple-200">
+                    <span className="text-purple-700 font-semibold text-sm">
+                      {profile?.displayName?.charAt(0).toUpperCase() || 'D'}
                     </span>
                   </div>
                 )}
@@ -131,9 +124,10 @@ export default function BuilderHeader({
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-button shadow-lg border border-neutral-200 py-1 z-50">
                   <div className="px-4 py-2 border-b border-neutral-200">
                     <div className="text-sm font-medium text-neutral-900">
-                      {profile?.displayName || 'Builder'}
+                      {profile?.displayName || 'Designer'}
                     </div>
                     <div className="text-xs text-neutral-500">{user?.email}</div>
+                    <div className="text-xs font-semibold text-purple-600 mt-1">Designer</div>
                   </div>
                   <Link
                     href="/settings"
@@ -141,13 +135,6 @@ export default function BuilderHeader({
                     onClick={() => setShowUserMenu(false)}
                   >
                     Profile Settings
-                  </Link>
-                  <Link
-                    href="/builder/org"
-                    className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-                    onClick={() => setShowUserMenu(false)}
-                  >
-                    Organization Settings
                   </Link>
                   <button
                     onClick={() => {

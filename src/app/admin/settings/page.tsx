@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import BuilderHeader from '@/components/navigation/BuilderHeader';
+import AdminHeader from '@/components/navigation/AdminHeader';
 import Card from '@/components/ui/Card';
 import { LoadingOverlay } from '@/components/ui/LoadingSpinner';
 import { Settings } from 'lucide-react';
@@ -34,7 +34,7 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="min-h-screen bg-taupe-50">
-      <BuilderHeader
+      <AdminHeader
         title="System Settings"
         subtitle="Configure system-wide settings"
         showBackButton

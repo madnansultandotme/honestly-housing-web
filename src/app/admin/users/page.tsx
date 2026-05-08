@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
-import BuilderHeader from '@/components/navigation/BuilderHeader';
+import AdminHeader from '@/components/navigation/AdminHeader';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { LoadingOverlay, LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -132,7 +132,7 @@ export default function UserManagementPage() {
 
   return (
     <div className="min-h-screen bg-taupe-50">
-      <BuilderHeader
+      <AdminHeader
         title="User Management"
         subtitle="Manage all system users"
         showBackButton

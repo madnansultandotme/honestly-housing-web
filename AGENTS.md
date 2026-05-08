@@ -435,6 +435,61 @@ The system uses 3 main project statuses:
 
 ## Important Conventions
 
+### Navigation Headers by Role
+
+**IMPORTANT:** Each role has its own dedicated navigation header component:
+
+- **AdminHeader** (`src/components/navigation/AdminHeader.tsx`)
+  - Used exclusively for admin role
+  - Red accent color scheme (red-600, red-50, red-200)
+  - Navigation: Dashboard, Users, Projects, Analytics, Settings
+  - Shows "ADMIN" badge next to logo
+  - Links to: /admin, /admin/users, /admin/projects, /admin/analytics, /admin/settings
+  - Dropdown includes: Profile Settings, Builder Dashboard, All Projects, Sign Out
+
+- **BuilderHeader** (`src/components/navigation/BuilderHeader.tsx`)
+  - Used exclusively for builder role
+  - Brass accent color scheme (brass-600, brass-50, brass-200)
+  - Navigation: Dashboard, Projects, Options, Organization
+  - Links to: /builder, /projects, /builder/options, /builder/org
+  - Dropdown includes: Profile Settings, Organization Settings, Sign Out
+
+- **DesignerHeader** (`src/components/navigation/DesignerHeader.tsx`)
+  - Used exclusively for designer role
+  - Purple accent color scheme (purple-600, purple-50, purple-200)
+  - Navigation: Dashboard, Projects, Options Library
+  - Shows "DESIGNER" badge next to logo
+  - Links to: /builder, /projects, /builder/options
+  - Dropdown includes: Profile Settings, Sign Out
+
+- **ClientHeader** (`src/components/navigation/ClientHeader.tsx`)
+  - Used exclusively for client/homeowner role
+  - Brass accent color scheme (brass-600, brass-50, brass-200)
+  - Navigation: Dashboard, Projects, Selections
+  - Links to: /client, /projects, /projects/{firstProjectId}/selections
+  - Dropdown includes: Profile Settings, Sign Out
+
+**Usage Pattern:**
+```typescript
+// In settings page or other multi-role pages
+let Header;
+if (profile?.role === 'admin') {
+  Header = AdminHeader;
+} else if (profile?.role === 'designer') {
+  Header = DesignerHeader;
+} else if (profile?.role === 'builder') {
+  Header = BuilderHeader;
+} else {
+  Header = ClientHeader;
+}
+```
+
+**DO NOT:**
+- Mix admin navigation with builder/designer/client navigation
+- Show admin links in non-admin headers
+- Use BuilderHeader for admin pages
+- Add role-specific links to other role headers
+
 ### Admin Role
 
 **IMPORTANT:** Admin role is not available in the signup UI but is fully supported in the backend.

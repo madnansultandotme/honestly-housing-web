@@ -75,7 +75,9 @@ export default function SignupPage() {
       }
 
       // Redirect based on role
-      if (roleForProfile === 'builder' || roleForProfile === 'designer' || roleForProfile === 'admin') {
+      if (roleForProfile === 'admin') {
+        router.push('/admin');
+      } else if (roleForProfile === 'builder' || roleForProfile === 'designer') {
         router.push('/builder');
       } else {
         router.push('/client');

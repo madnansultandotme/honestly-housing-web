@@ -31,7 +31,9 @@ export default function LoginPage() {
 
       const role = userDoc?.exists() ? userDoc.data().role : null;
 
-      if (role === 'builder' || role === 'designer' || role === 'admin') {
+      if (role === 'admin') {
+        router.push('/admin');
+      } else if (role === 'builder' || role === 'designer') {
         router.push('/builder');
       } else {
         router.push('/client');
@@ -57,7 +59,9 @@ export default function LoginPage() {
       const userDoc = uid ? await getDoc(docRef(db, 'users', uid)) : null;
 
       const role = userDoc?.exists() ? userDoc.data().role : null;
-      if (role === 'builder' || role === 'designer' || role === 'admin') {
+      if (role === 'admin') {
+        router.push('/admin');
+      } else if (role === 'builder' || role === 'designer') {
         router.push('/builder');
       } else {
         router.push('/client');

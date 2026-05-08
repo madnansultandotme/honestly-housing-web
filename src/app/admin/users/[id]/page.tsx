@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import BuilderHeader from '@/components/navigation/BuilderHeader';
+import AdminHeader from '@/components/navigation/AdminHeader';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -94,7 +94,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="min-h-screen bg-taupe-50">
-      <BuilderHeader
+      <AdminHeader
         title="Edit User"
         subtitle={userData.email}
         showBackButton

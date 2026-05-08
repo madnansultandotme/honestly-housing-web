@@ -22,7 +22,9 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     }
 
     const role = profile.role;
-    if (role === 'builder' || role === 'designer' || role === 'admin') {
+    if (role === 'admin') {
+      router.push('/admin');
+    } else if (role === 'builder' || role === 'designer') {
       router.push('/builder');
     }
   }, [loading, profileLoading, user, profile, router]);

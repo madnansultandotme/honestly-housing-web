@@ -22,7 +22,9 @@ export default function BuilderLayout({ children }: { children: ReactNode }) {
     }
 
     const role = profile.role;
-    if (role !== 'builder' && role !== 'designer' && role !== 'admin') {
+    if (role === 'admin') {
+      router.push('/admin');
+    } else if (role !== 'builder' && role !== 'designer') {
       router.push('/client');
     }
   }, [loading, profileLoading, user, profile, router]);
@@ -40,7 +42,10 @@ export default function BuilderLayout({ children }: { children: ReactNode }) {
   }
 
   const role = profile.role;
-  if (role !== 'builder' && role !== 'designer' && role !== 'admin') {
+  if (role === 'admin') {
+    return null;
+  }
+  if (role !== 'builder' && role !== 'designer') {
     return null;
   }
 

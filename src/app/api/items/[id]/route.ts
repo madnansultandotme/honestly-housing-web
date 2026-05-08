@@ -48,7 +48,7 @@ export async function GET(
   }
 }
 
-// UPDATE item
+// UPDATE item (PUT or PATCH)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -90,6 +90,14 @@ export async function PUT(
       { status: 500 }
     );
   }
+}
+
+// PATCH is an alias for PUT
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return PUT(request, { params });
 }
 
 // DELETE item

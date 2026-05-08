@@ -144,6 +144,7 @@ export default function EditSelectionModal({
       const room = rooms.find(r => r.id === formData.roomId);
 
       const updateData = {
+        projectId: projectId, // Required for items subcollection
         categoryId: formData.categoryId,
         categoryName: category?.name || '',
         name: formData.name.trim(),
@@ -159,7 +160,7 @@ export default function EditSelectionModal({
         subType: formData.subType || null,
       };
 
-      await apiClient.patch(`/api/selections/${selection.id}`, updateData);
+      await apiClient.patch(`/api/items/${selection.id}`, updateData);
 
       showSuccess('Selection updated successfully!');
       onSuccess();
