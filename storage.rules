@@ -124,6 +124,18 @@ service firebase.storage {
                       isValidImageSize();
     }
     
+    // User avatars in user-specific folders
+    match /users/{userId}/avatar/{fileName} {
+      // Allow anyone to read avatars (public)
+      allow read: if true;
+      
+      // Allow users to upload their own avatar
+      allow write: if isSignedIn() && 
+                      request.auth.uid == userId && 
+                      isImage() && 
+                      isValidImageSize();
+    }
+    
     // User profile photos (optional feature - legacy)
     match /users/{userId}/profile.jpg {
       allow read: if isSignedIn();

@@ -47,8 +47,13 @@ export default function ClientPortal() {
       // Load selections across all projects
       let allSelections: any[] = [];
       for (const project of projectsData) {
-        const selections = await apiClient.get(`/api/selections?projectId=${project.id}`);
-        allSelections = [...allSelections, ...selections];
+        const items = await apiClient.get(`/api/items?projectId=${project.id}`);
+        allSelections = [...allSelections, ...items.map((item: any) => ({
+          ...item,
+          projectId: project.id,
+          category: item.categoryName,
+          itemName: item.name,
+        }))];
       }
 
       // Calculate stats

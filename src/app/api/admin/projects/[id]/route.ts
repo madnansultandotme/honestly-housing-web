@@ -11,6 +11,7 @@ export async function DELETE(
     // Delete all subcollections
     const subcollections = [
       'selections',
+      'items',
       'categories',
       'rooms',
       'photos',
@@ -18,6 +19,7 @@ export async function DELETE(
       'teamMembers',
       'invitations',
       'changeRequests',
+      'changeOrders',
     ];
 
     for (const subcollection of subcollections) {
@@ -36,6 +38,18 @@ export async function DELETE(
 
     // Delete the project document
     await adminDb.collection('projects').doc(id).delete();
+
+    // Delete all notifications related to this project
+    const notificationsSnapshot = await adminDb
+      .collection('notifications')
+      .where('projectId', '==', id)
+      .get();
+
+    const notificationsBatch = adminDb.batch();
+    notificationsSnapshot.docs.forEach((doc) => {
+      notificationsBatch.delete(doc.ref);
+    });
+    await notificationsBatch.commit();
 
     // Remove project from all users' projectIds
     const usersSnapshot = await adminDb
