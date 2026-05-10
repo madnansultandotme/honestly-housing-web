@@ -3,6 +3,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useNotification } from '@/contexts/NotificationContext';
 import { apiClient } from '@/lib/api/client';
+import { uploadImage as uploadImageToStorage } from '@/lib/api/upload';
 
 interface EditSelectionModalProps {
   selection: any;
@@ -57,11 +58,11 @@ export default function EditSelectionModal({
       setLoadingData(true);
 
       // Load categories
-      const categoriesData = await apiClient.get(`/api/categories?projectId=${projectId}`);
+      const categoriesData = await apiClient.get(`/categories?projectId=${projectId}`);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
 
       // Load rooms
-      const roomsData = await apiClient.get(`/api/rooms?projectId=${projectId}`);
+      const roomsData = await apiClient.get(`/rooms?projectId=${projectId}`);
       setRooms(Array.isArray(roomsData) ? roomsData : []);
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -98,20 +99,9 @@ export default function EditSelectionModal({
 
     try {
       setUploading(true);
-      const formData = new FormData();
-      formData.append('file', imageFile);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const data = await response.json();
-      return data.url;
+      // Upload to Firebase Storage using the upload utility
+      const url = await uploadImageToStorage(imageFile, 'selections');
+      return url;
     } catch (error) {
       console.error('Image upload error:', error);
       showError('Failed to upload image');

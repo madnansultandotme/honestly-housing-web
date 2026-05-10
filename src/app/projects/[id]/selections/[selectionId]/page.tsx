@@ -461,7 +461,13 @@ export default function SelectionDetailPage({
           status={selection.status}
           onApprove={handleApprove}
           onRequestChange={() => setShowChangeForm(true)}
-          showActions={selection.status === 'awaitingClientApproval' && !selection.locked}
+          showActions={
+            !selection.locked && 
+            (selection.status === 'awaitingClientApproval' || 
+             selection.status === 'awaiting_approval' ||
+             selection.status === 'notStarted' ||
+             selection.status === 'NotStarted')
+          }
         />
 
         {/* Curated Options */}

@@ -146,6 +146,28 @@ service firebase.storage {
                       isValidImageSize();
     }
     
+    // Selection/Item images
+    match /selections/{fileName} {
+      // Allow anyone authenticated to read selection images
+      allow read: if isSignedIn();
+      
+      // Allow builders, designers, and admins to upload selection images
+      allow write: if isBuilderOrDesignerOrAdmin() && 
+                      isImage() && 
+                      isValidImageSize();
+    }
+    
+    // Fixture images (for room builder)
+    match /fixtures/{fileName} {
+      // Allow anyone authenticated to read fixture images
+      allow read: if isSignedIn();
+      
+      // Allow builders, designers, and admins to upload fixture images
+      allow write: if isBuilderOrDesignerOrAdmin() && 
+                      isImage() && 
+                      isValidImageSize();
+    }
+    
     // Deny all other paths
     match /{allPaths=**} {
       allow read, write: if false;

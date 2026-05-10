@@ -439,6 +439,17 @@ The system uses 3 main project statuses:
 **Issue**: Edit configuration page not updating room counts when adding more rooms
 **Solution**: Replaced static room checkboxes with DynamicRoomBuilder component. Edit configuration now loads actual rooms and fixtures created during project creation. Room counts are automatically calculated from roomDetails. When saving, existing rooms/items are deleted and recreated with new configuration.
 
+**Issue**: Image upload failing when adding selections
+**Solution**: 
+1. Added storage rules for `/selections/{fileName}` and `/fixtures/{fileName}` paths
+2. Deployed rules with `firebase deploy --only storage`
+3. Fixed AddSelectionModal and EditSelectionModal to use client-side Firebase Storage upload (`uploadImage` from `@/lib/api/upload`) instead of calling non-existent `/api/upload` endpoint
+4. Fixed API client calls to use correct format (without `/api` prefix)
+5. Builders, designers, and admins can now upload images for selections and fixtures
+
+**Issue**: Approval/Reject buttons not visible on client side for selections
+**Solution**: Updated selection detail page to check for multiple status values: `'awaitingClientApproval'`, `'awaiting_approval'`, `'notStarted'`, and `'NotStarted'`. The `showActions` prop now displays buttons for any of these statuses (as long as the item is not locked).
+
 ## Important Conventions
 
 ### Navigation Headers by Role
