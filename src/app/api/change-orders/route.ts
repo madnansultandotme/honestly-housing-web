@@ -68,12 +68,18 @@ export async function POST(request: NextRequest) {
 
     const docRef = await adminDb.collection('changeOrders').add(changeOrder);
 
-    await adminDb.collection('selections').doc(selectionId).update({
-      changeOrderId: docRef.id,
-      changeOrderStatus: 'pending',
-      status: 'change_order_pending',
-      updatedAt: new Date().toISOString(),
-    });
+    // Update item in subcollection
+    await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .doc(selectionId)
+      .update({
+        changeOrderId: docRef.id,
+        changeOrderStatus: 'pending',
+        status: 'change_order_pending',
+        updatedAt: new Date().toISOString(),
+      });
 
     const projectDoc = await adminDb.collection('projects').doc(projectId).get();
     const project = projectDoc.exists ? projectDoc.data() : null;

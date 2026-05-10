@@ -8,8 +8,22 @@ export async function GET(
 ) {
   try {
     const { id: selectionId } = await params;
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
 
-    const selectionDoc = await adminDb.collection('selections').doc(selectionId).get();
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'projectId is required' },
+        { status: 400 }
+      );
+    }
+
+    const selectionDoc = await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .doc(selectionId)
+      .get();
 
     if (!selectionDoc.exists) {
       return NextResponse.json(
@@ -43,16 +57,30 @@ export async function PATCH(
     const { id: selectionId } = await params;
     const updates = await request.json();
 
-    // If approving, add timestamp and lock
-    if (updates.status === 'approved' && !updates.approvedAt) {
-      updates.approvedAt = new Date().toISOString();
-      updates.locked = true;
+    if (!updates.projectId) {
+      return NextResponse.json(
+        { error: 'projectId is required' },
+        { status: 400 }
+      );
     }
 
-    await adminDb.collection('selections').doc(selectionId).update({
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    });
+    const { projectId, ...updateData } = updates;
+
+    // If approving, add timestamp and lock
+    if (updateData.status === 'approved' && !updateData.approvedAt) {
+      updateData.approvedAt = new Date().toISOString();
+      updateData.locked = true;
+    }
+
+    await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .doc(selectionId)
+      .update({
+        ...updateData,
+        updatedAt: new Date().toISOString(),
+      });
 
     return NextResponse.json({
       success: true,
@@ -74,8 +102,22 @@ export async function DELETE(
 ) {
   try {
     const { id: selectionId } = await params;
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
 
-    await adminDb.collection('selections').doc(selectionId).delete();
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'projectId is required' },
+        { status: 400 }
+      );
+    }
+
+    await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .doc(selectionId)
+      .delete();
 
     return NextResponse.json({
       success: true,

@@ -32,7 +32,7 @@ export async function PATCH(
       updatedAt: new Date().toISOString(),
     });
 
-    if (changeOrder?.selectionId) {
+    if (changeOrder?.selectionId && changeOrder?.projectId) {
       const selectionUpdates: Record<string, any> = {
         changeOrderStatus: status,
         updatedAt: new Date().toISOString(),
@@ -47,7 +47,13 @@ export async function PATCH(
         selectionUpdates.status = 'approved';
       }
 
-      await adminDb.collection('selections').doc(changeOrder.selectionId).update(selectionUpdates);
+      // Update item in subcollection
+      await adminDb
+        .collection('projects')
+        .doc(changeOrder.projectId)
+        .collection('items')
+        .doc(changeOrder.selectionId)
+        .update(selectionUpdates);
     }
 
     if (changeOrder?.projectId) {

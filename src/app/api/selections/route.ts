@@ -16,17 +16,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let query = adminDb.collection('selections').where('projectId', '==', projectId);
+    // Use subcollection structure: projects/{projectId}/items
+    let query = adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items');
 
+    // Apply filters if provided
+    let queryRef: any = query;
     if (categoryId) {
-      query = query.where('categoryId', '==', categoryId) as any;
+      queryRef = queryRef.where('categoryId', '==', categoryId);
     }
     if (status) {
-      query = query.where('status', '==', status) as any;
+      queryRef = queryRef.where('status', '==', status);
     }
 
-    const snapshot = await query.get();
-    const selections = snapshot.docs.map(doc => ({
+    const snapshot = await queryRef.get();
+    const selections = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data(),
     }));
@@ -57,13 +63,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create selection in Firestore
-    const selectionRef = await adminDb.collection('selections').add({
-      ...selectionData,
-      status: selectionData.status || 'not_started',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    const { projectId, ...itemData } = selectionData;
+
+    // Create selection in subcollection: projects/{projectId}/items
+    const selectionRef = await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .add({
+        ...itemData,
+        status: itemData.status || 'not_started',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
     return NextResponse.json({
       success: true,
@@ -84,15 +96,22 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const selectionId = searchParams.get('selectionId');
+    const projectId = searchParams.get('projectId');
 
-    if (!selectionId) {
+    if (!selectionId || !projectId) {
       return NextResponse.json(
-        { error: 'selectionId is required' },
+        { error: 'selectionId and projectId are required' },
         { status: 400 }
       );
     }
 
-    await adminDb.collection('selections').doc(selectionId).delete();
+    // Delete from subcollection: projects/{projectId}/items/{selectionId}
+    await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .doc(selectionId)
+      .delete();
 
     return NextResponse.json({
       success: true,

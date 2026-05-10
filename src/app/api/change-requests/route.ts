@@ -67,31 +67,42 @@ export async function POST(request: NextRequest) {
 
     const docRef = await adminDb.collection('changeRequests').add(changeRequest);
 
-    await adminDb.collection('selections').doc(itemId).update({
-      status: 'needs_builder_input',
-      changeRequestReason: reason,
-      changeRequestedBy: requestedBy,
-      changeRequestedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    // Update item in subcollection
+    await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .doc(itemId)
+      .update({
+        status: 'needs_builder_input',
+        changeRequestReason: reason,
+        changeRequestedBy: requestedBy,
+        changeRequestedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
 
-    const selectionDoc = await adminDb.collection('selections').doc(itemId).get();
+    // Get selection for notification
+    const selectionDoc = await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .doc(itemId)
+      .get();
+    
     const selection = selectionDoc.exists ? selectionDoc.data() : null;
-    if (selection?.projectId) {
-      const projectDoc = await adminDb.collection('projects').doc(selection.projectId).get();
-      const project = projectDoc.exists ? projectDoc.data() : null;
-      const builderId = project?.builderId || project?.builderOrgId;
+    const projectDoc = await adminDb.collection('projects').doc(projectId).get();
+    const project = projectDoc.exists ? projectDoc.data() : null;
+    const builderId = project?.builderId || project?.builderOrgId;
 
-      if (builderId) {
-        await adminDb.collection('notifications').add({
-          userId: builderId,
-          title: 'Change request submitted',
-          body: selection?.name || 'A change request was submitted',
-          link: `/projects/${selection.projectId}/selections/${itemId}`,
-          read: false,
-          createdAt: new Date().toISOString(),
-        });
-      }
+    if (builderId) {
+      await adminDb.collection('notifications').add({
+        userId: builderId,
+        title: 'Change request submitted',
+        body: selection?.name || 'A change request was submitted',
+        link: `/projects/${projectId}/selections/${itemId}`,
+        read: false,
+        createdAt: new Date().toISOString(),
+      });
     }
 
     return NextResponse.json({

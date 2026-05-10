@@ -172,7 +172,11 @@ export async function POST(request: NextRequest) {
           createdBy,
         };
 
-        await adminDb.collection('selections').add(selectionData);
+        await adminDb
+          .collection('projects')
+          .doc(projectId)
+          .collection('items')
+          .add(selectionData);
         results.success++;
       } catch (error: any) {
         results.errors.push(`Row ${i + 1}: ${error.message}`);

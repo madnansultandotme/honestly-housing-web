@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       const selectionsSnapshot = await adminDb
         .collection('projects')
         .doc(projectDoc.id)
-        .collection('selections')
+        .collection('items')
         .get();
       totalSelections += selectionsSnapshot.size;
     }

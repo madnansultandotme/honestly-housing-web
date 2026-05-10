@@ -14,10 +14,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get all approved selections for the project
+    // Get all approved selections for the project from subcollection
     const snapshot = await adminDb
-      .collection('selections')
-      .where('projectId', '==', projectId)
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
       .where('status', '==', 'approved')
       .get();
 

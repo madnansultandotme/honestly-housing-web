@@ -8,17 +8,22 @@ export async function POST(
 ) {
   try {
     const { id: selectionId } = await params;
-    const { userId, notes } = await request.json();
+    const { userId, notes, projectId } = await request.json();
 
-    if (!userId) {
+    if (!userId || !projectId) {
       return NextResponse.json(
-        { error: 'userId is required' },
+        { error: 'userId and projectId are required' },
         { status: 400 }
       );
     }
 
-    // Get current selection
-    const selectionDoc = await adminDb.collection('selections').doc(selectionId).get();
+    // Get current selection from subcollection
+    const selectionDoc = await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .doc(selectionId)
+      .get();
     
     if (!selectionDoc.exists) {
       return NextResponse.json(
@@ -38,30 +43,34 @@ export async function POST(
     }
 
     // Update selection with approval
-    await adminDb.collection('selections').doc(selectionId).update({
-      status: 'approved',
-      approvedAt: new Date().toISOString(),
-      approvedBy: userId,
-      locked: true,
-      approvalNotes: notes || null,
-      updatedAt: new Date().toISOString(),
-    });
+    await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('items')
+      .doc(selectionId)
+      .update({
+        status: 'approved',
+        approvedAt: new Date().toISOString(),
+        approvedBy: userId,
+        locked: true,
+        approvalNotes: notes || null,
+        updatedAt: new Date().toISOString(),
+      });
 
-    if (selection?.projectId) {
-      const projectDoc = await adminDb.collection('projects').doc(selection.projectId).get();
-      const project = projectDoc.exists ? projectDoc.data() : null;
-      const builderId = project?.builderId || project?.builderOrgId;
+    // Send notification to builder
+    const projectDoc = await adminDb.collection('projects').doc(projectId).get();
+    const project = projectDoc.exists ? projectDoc.data() : null;
+    const builderId = project?.builderId || project?.builderOrgId;
 
-      if (builderId) {
-        await adminDb.collection('notifications').add({
-          userId: builderId,
-          title: 'Selection approved',
-          body: selection?.name || 'A selection was approved',
-          link: `/projects/${selection.projectId}/selections/${selectionId}`,
-          read: false,
-          createdAt: new Date().toISOString(),
-        });
-      }
+    if (builderId) {
+      await adminDb.collection('notifications').add({
+        userId: builderId,
+        title: 'Selection approved',
+        body: selection?.name || 'A selection was approved',
+        link: `/projects/${projectId}/selections/${selectionId}`,
+        read: false,
+        createdAt: new Date().toISOString(),
+      });
     }
 
     return NextResponse.json({
