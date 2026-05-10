@@ -436,6 +436,9 @@ The system uses 3 main project statuses:
 **Issue**: Edit configuration page not loading project data
 **Solution**: Fixed API response structure - APIs now return direct arrays instead of wrapped objects. Updated all API endpoints (`/api/rooms`, `/api/categories`, `/api/items`) to return arrays directly. Updated frontend to handle new response format.
 
+**Issue**: Edit configuration page not updating room counts when adding more rooms
+**Solution**: Replaced static room checkboxes with DynamicRoomBuilder component. Edit configuration now loads actual rooms and fixtures created during project creation. Room counts are automatically calculated from roomDetails. When saving, existing rooms/items are deleted and recreated with new configuration.
+
 ## Important Conventions
 
 ### Navigation Headers by Role

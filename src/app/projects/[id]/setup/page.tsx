@@ -8,14 +8,8 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import CategoryChecklist, { CategoryItem } from '@/components/ui/CategoryChecklist';
 import AllowancePrompt, { AllowanceType } from '@/components/ui/AllowancePrompt';
+import DynamicRoomBuilder, { RoomDetail } from '@/components/ui/DynamicRoomBuilder';
 import { apiClient } from '@/lib/api/client';
-
-interface RoomConfig {
-  id: string;
-  name: string;
-  selected: boolean;
-  requiredFixtures: number;
-}
 
 interface CategoryAllowance {
   categoryId: string;
@@ -23,24 +17,6 @@ interface CategoryAllowance {
   type: AllowanceType;
 }
 
-const DEFAULT_ROOMS: RoomConfig[] = [
-  { id: 'primary-bedroom', name: 'Primary Bedroom', selected: false, requiredFixtures: 1 },
-  { id: 'bedroom-2', name: 'Bedroom 2', selected: false, requiredFixtures: 1 },
-  { id: 'bedroom-3', name: 'Bedroom 3', selected: false, requiredFixtures: 1 },
-  { id: 'bedroom-4', name: 'Bedroom 4', selected: false, requiredFixtures: 1 },
-  { id: 'kitchen', name: 'Kitchen', selected: false, requiredFixtures: 1 },
-  { id: 'dining', name: 'Dining Room', selected: false, requiredFixtures: 1 },
-  { id: 'living', name: 'Living Room', selected: false, requiredFixtures: 1 },
-  { id: 'family', name: 'Family Room', selected: false, requiredFixtures: 1 },
-  { id: 'primary-bath', name: 'Primary Bathroom', selected: false, requiredFixtures: 1 },
-  { id: 'bath-2', name: 'Bathroom 2', selected: false, requiredFixtures: 1 },
-  { id: 'bath-3', name: 'Bathroom 3', selected: false, requiredFixtures: 1 },
-  { id: 'powder', name: 'Powder Room', selected: false, requiredFixtures: 1 },
-  { id: 'laundry', name: 'Laundry Room', selected: false, requiredFixtures: 1 },
-  { id: 'office', name: 'Office', selected: false, requiredFixtures: 1 },
-  { id: 'bonus', name: 'Bonus Room', selected: false, requiredFixtures: 1 },
-  { id: 'exterior', name: 'Exterior', selected: false, requiredFixtures: 1 },
-];
 
 const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: 'flooring', name: 'Flooring', required: true, completedCount: 0, totalCount: 0 },
@@ -68,14 +44,8 @@ export default function BuilderProjectSetup() {
   const [projectName, setProjectName] = useState('');
   const [clientId, setClientId] = useState('');
   const [clientEmail, setClientEmail] = useState('');
-  const [rooms, setRooms] = useState<RoomConfig[]>(DEFAULT_ROOMS);
+  const [roomDetails, setRoomDetails] = useState<RoomDetail[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
-
-  // Fixture counts
-  const [bedroomCount, setBedroomCount] = useState(4);
-  const [bathroomCount, setBathroomCount] = useState(3);
-  const [officeCount, setOfficeCount] = useState(1);
-  const [totalFixtures, setTotalFixtures] = useState(0);
 
   // Square footage
   const [squareFootage, setSquareFootage] = useState(2500);
@@ -131,37 +101,43 @@ export default function BuilderProjectSetup() {
         }
       }
 
-      // Load rooms from subcollection
+      // Load rooms and items from subcollections
       try {
         const roomsData = await apiClient.get(`/rooms?projectId=${projectId}`);
+        const itemsData = await apiClient.get(`/items?projectId=${projectId}`);
         
         console.log('Loaded rooms:', roomsData);
+        console.log('Loaded items:', itemsData);
         
         if (Array.isArray(roomsData) && roomsData.length > 0) {
-          // Mark rooms as selected based on what exists in database
-          setRooms((prev) =>
-            prev.map((room) => {
-              const storedRoom = roomsData.find((item: any) => 
-                item.name === room.name || item.type === room.id
-              );
-              if (!storedRoom) return room;
-              return {
-                ...room,
-                selected: true,
-                requiredFixtures: storedRoom.fixtureCounts?.total ?? room.requiredFixtures,
-              };
-            })
-          );
+          // Convert rooms and items to RoomDetail format
+          const loadedRoomDetails: RoomDetail[] = roomsData.map((room: any) => {
+            // Find all items for this room
+            const roomItems = Array.isArray(itemsData) 
+              ? itemsData.filter((item: any) => item.roomId === room.id)
+              : [];
+            
+            // Convert items to fixtures
+            const fixtures = roomItems.map((item: any) => ({
+              id: item.id,
+              category: item.categoryName || 'Other',
+              name: item.name,
+              quantity: item.quantity || 1,
+              imageUrl: item.imageUrl || undefined,
+            }));
+            
+            return {
+              id: room.id,
+              name: room.name,
+              type: room.type || 'other',
+              fixtures,
+            };
+          });
+          
+          setRoomDetails(loadedRoomDetails);
         }
       } catch (err) {
-        console.error('Failed to load rooms:', err);
-      }
-
-      // Load room counts from project
-      if (project.rooms && typeof project.rooms === 'object') {
-        setBedroomCount(project.rooms.bedrooms || 0);
-        setBathroomCount(project.rooms.bathrooms || 0);
-        setOfficeCount(project.rooms.offices || 0);
+        console.error('Failed to load rooms and items:', err);
       }
 
       if (project.squareFootage) {
@@ -196,22 +172,6 @@ export default function BuilderProjectSetup() {
       } catch (err) {
         console.error('Failed to load categories:', err);
       }
-
-      // Load items to calculate total fixtures
-      try {
-        const itemsData = await apiClient.get(`/items?projectId=${projectId}`);
-        
-        console.log('Loaded items:', itemsData);
-        
-        if (Array.isArray(itemsData) && itemsData.length > 0) {
-          const totalFixturesCount = itemsData.reduce((sum: number, item: any) => 
-            sum + (item.quantity || 1), 0
-          );
-          setTotalFixtures(totalFixturesCount);
-        }
-      } catch (err) {
-        console.error('Failed to load items:', err);
-      }
     } catch (err) {
       console.error('Failed to load project:', err);
       setError('Failed to load project');
@@ -240,21 +200,8 @@ export default function BuilderProjectSetup() {
       const builderOrgId = profile?.builderOrgId || user?.uid;
       const template = await apiClient.get(`/templates/${templateId}?builderOrgId=${builderOrgId}`);
 
-      if (template.rooms?.length) {
-        setRooms((prev) =>
-          prev.map((room) => ({
-            ...room,
-            selected: template.rooms.includes(room.id),
-          }))
-        );
-      }
-
-      if (template.counts) {
-        setBedroomCount(template.counts.bedrooms || 0);
-        setBathroomCount(template.counts.bathrooms || 0);
-        setOfficeCount(template.counts.offices || 0);
-        setTotalFixtures(template.counts.fixtures || 0);
-      }
+      // Note: Templates don't store room details, only room counts
+      // User will need to manually add rooms after applying template
 
       if (template.squareFootage) {
         setSquareFootage(template.squareFootage);
@@ -286,24 +233,6 @@ export default function BuilderProjectSetup() {
       console.error('Failed to apply template:', err);
       setError('Failed to apply template');
     }
-  };
-
-  const handleRoomToggle = (roomId: string) => {
-    setRooms((prev) =>
-      prev.map((room) =>
-        room.id === roomId ? { ...room, selected: !room.selected } : room
-      )
-    );
-  };
-
-  const handleRoomFixturesChange = (roomId: string, value: number) => {
-    setRooms((prev) =>
-      prev.map((room) =>
-        room.id === roomId
-          ? { ...room, requiredFixtures: value < 1 ? 1 : value }
-          : room
-      )
-    );
   };
 
   const handleCategoryToggle = (categoryId: string, required: boolean) => {
@@ -344,17 +273,44 @@ export default function BuilderProjectSetup() {
       setSaving(true);
       setError('');
 
-      const selectedRooms = rooms.filter((r) => r.selected).map((r) => r.id);
       const requiredCategories = categories.filter((c) => c.required);
+
+      // Build rooms object matching schema from roomDetails
+      const roomsObject: Record<string, number> = {
+        bedrooms: 0,
+        bathrooms: 0,
+        offices: 0,
+        kitchens: 0,
+        livingRooms: 0,
+        diningRooms: 0,
+        laundryRooms: 0,
+        garages: 0,
+        other: 0,
+      };
+
+      // Count room types from roomDetails
+      roomDetails.forEach(room => {
+        const type = room.type.toLowerCase();
+        if (type.includes('bedroom')) roomsObject.bedrooms += 1;
+        else if (type.includes('bathroom')) roomsObject.bathrooms += 1;
+        else if (type.includes('kitchen')) roomsObject.kitchens += 1;
+        else if (type.includes('living')) roomsObject.livingRooms += 1;
+        else if (type.includes('dining')) roomsObject.diningRooms += 1;
+        else if (type.includes('laundry')) roomsObject.laundryRooms += 1;
+        else if (type.includes('garage')) roomsObject.garages += 1;
+        else if (type.includes('office')) roomsObject.offices += 1;
+        else roomsObject.other += 1;
+      });
+
+      // Calculate total fixtures
+      const totalFixturesCount = roomDetails.reduce((sum, room) => sum + room.fixtures.length, 0);
 
       // Update project
       await apiClient.patch(`/projects/${projectId}`, {
-        rooms: selectedRooms,
-        counts: {
-          bedrooms: bedroomCount,
-          bathrooms: bathroomCount,
-          offices: officeCount,
-          fixtures: totalFixtures,
+        rooms: roomsObject,
+        fixtureCounts: {
+          plumbingFixtures: totalFixturesCount,
+          lightingFixtures: 0,
         },
         squareFootage,
         allowances: allowances.reduce((acc, a) => {
@@ -362,6 +318,29 @@ export default function BuilderProjectSetup() {
           return acc;
         }, {} as Record<string, { amount: number; type: AllowanceType }>),
       });
+
+      // Delete existing rooms and items (we'll recreate them)
+      try {
+        const existingRooms = await apiClient.get(`/rooms?projectId=${projectId}`);
+        if (Array.isArray(existingRooms)) {
+          for (const room of existingRooms) {
+            await apiClient.delete(`/rooms/${room.id}?projectId=${projectId}`);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to delete existing rooms:', err);
+      }
+
+      try {
+        const existingItems = await apiClient.get(`/items?projectId=${projectId}`);
+        if (Array.isArray(existingItems)) {
+          for (const item of existingItems) {
+            await apiClient.delete(`/items/${item.id}?projectId=${projectId}`);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to delete existing items:', err);
+      }
 
       // Create/update categories
       for (const category of requiredCategories) {
@@ -372,36 +351,67 @@ export default function BuilderProjectSetup() {
         });
       }
 
-      // Create/update rooms
-      for (const room of rooms.filter((r) => r.selected)) {
-        const roomTypeMap: Record<string, string> = {
-          'primary-bedroom': 'bedroom',
-          'bedroom-2': 'bedroom',
-          'bedroom-3': 'bedroom',
-          'bedroom-4': 'bedroom',
-          'kitchen': 'kitchen',
-          'dining': 'dining',
-          'living': 'living',
-          'family': 'living',
-          'primary-bath': 'bathroom',
-          'bath-2': 'bathroom',
-          'bath-3': 'bathroom',
-          'powder': 'bathroom',
-          'laundry': 'laundry',
-          'office': 'office',
-          'bonus': 'other',
-          'exterior': 'other',
-        };
-
-        await apiClient.post('/rooms', {
+      // Create rooms and fixtures
+      for (const room of roomDetails) {
+        // Create room
+        const roomResponse = await apiClient.post('/rooms', {
           projectId,
           name: room.name,
-          type: roomTypeMap[room.id] || 'other',
+          type: room.type.toLowerCase().replace(' ', '-'),
           fixtureCounts: {
-            total: room.requiredFixtures || 1,
+            total: room.fixtures.length,
             assigned: 0,
           },
         });
+
+        const roomId = roomResponse?.id || roomResponse?.roomId;
+
+        // Create items (fixtures) for this room
+        for (const fixture of room.fixtures) {
+          // Find matching category by name
+          const matchingCategory = requiredCategories.find(
+            c => c.name.toLowerCase() === fixture.category.toLowerCase()
+          );
+
+          let categoryId = matchingCategory?.id;
+          let categoryName = fixture.category;
+
+          // If category doesn't exist, create it
+          if (!matchingCategory) {
+            const newCategoryResponse = await apiClient.post('/categories', {
+              projectId,
+              name: fixture.category,
+              displayOrder: requiredCategories.length,
+              required: false,
+              allowanceType: 'fixed',
+              allowanceAmount: 0,
+              progress: {
+                totalItems: 0,
+                completedItems: 0,
+              },
+            });
+            categoryId = newCategoryResponse?.id || newCategoryResponse?.categoryId;
+          }
+
+          // Create item (selection)
+          await apiClient.post('/items', {
+            projectId,
+            categoryId,
+            categoryName,
+            roomId,
+            roomName: room.name,
+            name: fixture.name,
+            quantity: fixture.quantity,
+            imageUrl: fixture.imageUrl || null,
+            status: 'notStarted',
+            allowance: 0,
+            actualCost: 0,
+            difference: 0,
+            locked: false,
+            subType: fixture.category.toLowerCase() === 'paint colors' ? fixture.name.toLowerCase() : undefined,
+            createdBy: user?.uid,
+          });
+        }
       }
 
       // Save as template if requested
@@ -410,12 +420,10 @@ export default function BuilderProjectSetup() {
         await apiClient.post('/templates', {
           name: templateName,
           builderOrgId,
-          rooms: selectedRooms,
-          counts: {
-            bedrooms: bedroomCount,
-            bathrooms: bathroomCount,
-            offices: officeCount,
-            fixtures: totalFixtures,
+          rooms: roomsObject,
+          fixtureCounts: {
+            plumbingFixtures: totalFixturesCount,
+            lightingFixtures: 0,
           },
           squareFootage,
           categories: requiredCategories.map(c => ({
@@ -549,122 +557,28 @@ export default function BuilderProjectSetup() {
               </div>
             </Card>
 
-            {/* Room Selection */}
+            {/* Rooms & Fixtures */}
             <Card>
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Select Rooms</h2>
-              <div className="grid grid-cols-2 gap-2">
-                {rooms.map((room) => (
-                  <div
-                    key={room.id}
-                    className={`
-                      p-3 rounded-button border-2 text-left transition-all
-                      ${
-                        room.selected
-                          ? 'border-brass-600 bg-brass-50'
-                          : 'border-neutral-200 bg-taupe-50 hover:border-neutral-300'
-                      }
-                    `}
-                  >
-                    <button
-                      onClick={() => handleRoomToggle(room.id)}
-                      className="w-full text-left"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`
-                          w-4 h-4 rounded border-2 flex items-center justify-center
-                          ${room.selected ? 'bg-brass-600 border-brass-600' : 'bg-white border-neutral-300'}
-                        `}
-                        >
-                          {room.selected && (
-                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                        <span className="text-sm font-medium text-neutral-900">{room.name}</span>
-                      </div>
-                    </button>
-                    {room.selected && (
-                      <div className="mt-2">
-                        <label className="block text-xs text-neutral-600 mb-1">
-                          Required fixtures
-                        </label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={room.requiredFixtures}
-                          onChange={(e) =>
-                            handleRoomFixturesChange(room.id, parseInt(e.target.value, 10) || 1)
-                          }
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Rooms & Fixtures</h2>
+              <p className="text-sm text-neutral-600 mb-4">
+                Add, edit, or remove rooms and their fixtures. Changes will be saved when you click "Save Configuration".
+              </p>
+              <DynamicRoomBuilder
+                rooms={roomDetails}
+                onChange={setRoomDetails}
+              />
             </Card>
 
-            {/* Counts */}
+            {/* Square Footage */}
             <Card>
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Room & Fixture Counts</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Bedrooms
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={bedroomCount}
-                    onChange={(e) => setBedroomCount(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Bathrooms
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={bathroomCount}
-                    onChange={(e) => setBathroomCount(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Offices
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={officeCount}
-                    onChange={(e) => setOfficeCount(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Total Fixtures
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={totalFixtures}
-                    onChange={(e) => setTotalFixtures(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Square Footage
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={squareFootage}
-                    onChange={(e) => setSquareFootage(parseInt(e.target.value) || 0)}
-                  />
-                </div>
-              </div>
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Square Footage</h2>
+              <Input
+                type="number"
+                min="0"
+                value={squareFootage}
+                onChange={(e) => setSquareFootage(parseInt(e.target.value) || 0)}
+                label="Total Square Footage"
+              />
             </Card>
           </div>
 
