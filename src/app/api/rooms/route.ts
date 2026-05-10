@@ -26,10 +26,7 @@ export async function GET(request: NextRequest) {
       ...doc.data(),
     }));
 
-    return NextResponse.json({
-      success: true,
-      rooms,
-    });
+    return NextResponse.json(rooms);
   } catch (error: any) {
     console.error('Get rooms error:', error);
     return NextResponse.json(

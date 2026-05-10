@@ -47,8 +47,9 @@ export default function ClientPortal() {
       // Load selections across all projects
       let allSelections: any[] = [];
       for (const project of projectsData) {
-        const items = await apiClient.get(`/api/items?projectId=${project.id}`);
-        allSelections = [...allSelections, ...items.map((item: any) => ({
+        const items = await apiClient.get(`/items?projectId=${project.id}`);
+        const itemsArray = Array.isArray(items) ? items : [];
+        allSelections = [...allSelections, ...itemsArray.map((item: any) => ({
           ...item,
           projectId: project.id,
           category: item.categoryName,

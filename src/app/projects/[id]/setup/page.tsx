@@ -114,7 +114,7 @@ export default function BuilderProjectSetup() {
   const loadProject = async () => {
     try {
       setLoading(true);
-      const project = await apiClient.get(`/api/projects/${projectId}`);
+      const project = await apiClient.get(`/projects/${projectId}`);
       setProjectName(project.name || '');
       setClientId(project.clientId || '');
       
@@ -123,7 +123,7 @@ export default function BuilderProjectSetup() {
         setClientEmail(project.clientEmail);
       } else if (project.clientId) {
         try {
-          const clientUser = await apiClient.get(`/api/users/${project.clientId}`);
+          const clientUser = await apiClient.get(`/users/${project.clientId}`);
           console.log('Client user data:', clientUser);
           setClientEmail(clientUser?.email || '');
         } catch (err) {
@@ -131,66 +131,87 @@ export default function BuilderProjectSetup() {
         }
       }
 
-      // Load existing configuration if available
-      if (project.rooms && typeof project.rooms === 'object') {
-        // project.rooms is an object like { bedrooms: 3, bathrooms: 2, ... }
-        // We need to check the rooms subcollection instead
+      // Load rooms from subcollection
+      try {
         const roomsData = await apiClient.get(`/rooms?projectId=${projectId}`);
-        if (roomsData && roomsData.length > 0) {
+        
+        console.log('Loaded rooms:', roomsData);
+        
+        if (Array.isArray(roomsData) && roomsData.length > 0) {
+          // Mark rooms as selected based on what exists in database
           setRooms((prev) =>
             prev.map((room) => {
-              const storedRoom = roomsData.find((item: any) => item.roomKey === room.id);
+              const storedRoom = roomsData.find((item: any) => 
+                item.name === room.name || item.type === room.id
+              );
               if (!storedRoom) return room;
               return {
                 ...room,
                 selected: true,
-                requiredFixtures: storedRoom.requiredFixtures ?? room.requiredFixtures,
+                requiredFixtures: storedRoom.fixtureCounts?.total ?? room.requiredFixtures,
               };
             })
           );
         }
-      } else {
-        // Fallback: load from rooms API
-        const roomsData = await apiClient.get(`/rooms?projectId=${projectId}`);
-        if (roomsData && roomsData.length > 0) {
-          setRooms((prev) =>
-            prev.map((room) => {
-              const storedRoom = roomsData.find((item: any) => item.roomKey === room.id);
-              if (!storedRoom) return room;
-              return {
-                ...room,
-                selected: true,
-                requiredFixtures: storedRoom.requiredFixtures ?? room.requiredFixtures,
-              };
-            })
-          );
-        }
+      } catch (err) {
+        console.error('Failed to load rooms:', err);
       }
 
-      if (project.counts) {
-        setBedroomCount(project.counts.bedrooms || 4);
-        setBathroomCount(project.counts.bathrooms || 3);
-        setOfficeCount(project.counts.offices || 1);
-        setTotalFixtures(project.counts.fixtures || 0);
+      // Load room counts from project
+      if (project.rooms && typeof project.rooms === 'object') {
+        setBedroomCount(project.rooms.bedrooms || 0);
+        setBathroomCount(project.rooms.bathrooms || 0);
+        setOfficeCount(project.rooms.offices || 0);
       }
 
       if (project.squareFootage) {
         setSquareFootage(project.squareFootage);
       }
 
-      // Load categories
-      const categoriesData = await apiClient.get(`/api/categories?projectId=${projectId}`);
-      if (categoriesData.length > 0) {
-        setCategories(categoriesData);
+      // Load categories from subcollection
+      try {
+        const categoriesData = await apiClient.get(`/categories?projectId=${projectId}`);
+        
+        console.log('Loaded categories:', categoriesData);
+        
+        if (Array.isArray(categoriesData) && categoriesData.length > 0) {
+          // Map categories to CategoryItem format
+          const mappedCategories = categoriesData.map((cat: any) => ({
+            id: cat.id,
+            name: cat.name,
+            required: cat.required !== false,
+            completedCount: cat.progress?.completedItems || 0,
+            totalCount: cat.progress?.totalItems || 0,
+          }));
+          setCategories(mappedCategories);
+          
+          // Initialize allowances from categories
+          const initialAllowances = categoriesData.map((cat: any) => ({
+            categoryId: cat.id,
+            amount: cat.allowanceAmount || 0,
+            type: (cat.allowanceType || 'fixed') as AllowanceType,
+          }));
+          setAllowances(initialAllowances);
+        }
+      } catch (err) {
+        console.error('Failed to load categories:', err);
       }
 
-      // Initialize allowances
-      const initialAllowances = categories.map((cat) => ({
-        categoryId: cat.id,
-        amount: 0,
-        type: 'fixed' as AllowanceType,
-      }));
-      setAllowances(initialAllowances);
+      // Load items to calculate total fixtures
+      try {
+        const itemsData = await apiClient.get(`/items?projectId=${projectId}`);
+        
+        console.log('Loaded items:', itemsData);
+        
+        if (Array.isArray(itemsData) && itemsData.length > 0) {
+          const totalFixturesCount = itemsData.reduce((sum: number, item: any) => 
+            sum + (item.quantity || 1), 0
+          );
+          setTotalFixtures(totalFixturesCount);
+        }
+      } catch (err) {
+        console.error('Failed to load items:', err);
+      }
     } catch (err) {
       console.error('Failed to load project:', err);
       setError('Failed to load project');
@@ -203,7 +224,7 @@ export default function BuilderProjectSetup() {
     try {
       setTemplatesLoading(true);
       const builderOrgId = profile?.builderOrgId || user?.uid;
-      const data = await apiClient.get(`/api/templates?builderOrgId=${builderOrgId}`);
+      const data = await apiClient.get(`/templates?builderOrgId=${builderOrgId}`);
       setTemplates(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load templates:', err);
@@ -217,7 +238,7 @@ export default function BuilderProjectSetup() {
 
     try {
       const builderOrgId = profile?.builderOrgId || user?.uid;
-      const template = await apiClient.get(`/api/templates/${templateId}?builderOrgId=${builderOrgId}`);
+      const template = await apiClient.get(`/templates/${templateId}?builderOrgId=${builderOrgId}`);
 
       if (template.rooms?.length) {
         setRooms((prev) =>
@@ -327,7 +348,7 @@ export default function BuilderProjectSetup() {
       const requiredCategories = categories.filter((c) => c.required);
 
       // Update project
-      await apiClient.patch(`/api/projects/${projectId}`, {
+      await apiClient.patch(`/projects/${projectId}`, {
         rooms: selectedRooms,
         counts: {
           bedrooms: bedroomCount,
@@ -344,7 +365,7 @@ export default function BuilderProjectSetup() {
 
       // Create/update categories
       for (const category of requiredCategories) {
-        await apiClient.post('/api/categories', {
+        await apiClient.post('/categories', {
           projectId,
           name: category.name,
           required: category.required,
@@ -372,7 +393,7 @@ export default function BuilderProjectSetup() {
           'exterior': 'other',
         };
 
-        await apiClient.post('/api/rooms', {
+        await apiClient.post('/rooms', {
           projectId,
           name: room.name,
           type: roomTypeMap[room.id] || 'other',
@@ -386,7 +407,7 @@ export default function BuilderProjectSetup() {
       // Save as template if requested
       if (saveAsTemplate && templateName.trim()) {
         const builderOrgId = profile?.builderOrgId || user?.uid;
-        await apiClient.post('/api/templates', {
+        await apiClient.post('/templates', {
           name: templateName,
           builderOrgId,
           rooms: selectedRooms,

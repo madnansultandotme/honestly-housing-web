@@ -26,10 +26,7 @@ export async function GET(request: NextRequest) {
       ...doc.data(),
     }));
 
-    return NextResponse.json({
-      success: true,
-      categories,
-    });
+    return NextResponse.json(categories);
   } catch (error: any) {
     console.error('Get categories error:', error);
     return NextResponse.json(

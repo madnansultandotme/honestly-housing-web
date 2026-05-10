@@ -54,12 +54,12 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
       setProject(projectData);
 
       // Fetch categories
-      const catData = await apiClient.get(`/api/categories?projectId=${id}`);
+      const catData = await apiClient.get(`/categories?projectId=${id}`);
       setCategories(Array.isArray(catData) ? catData : []);
 
       // Fetch selections (items)
-      const selData = await apiClient.get(`/api/items?projectId=${id}`);
-      setSelections(Array.isArray(selData.items) ? selData.items : []);
+      const selData = await apiClient.get(`/items?projectId=${id}`);
+      setSelections(Array.isArray(selData) ? selData : []);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to load selections. Please try again.');

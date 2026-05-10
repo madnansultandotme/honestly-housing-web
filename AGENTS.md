@@ -433,6 +433,9 @@ The system uses 3 main project statuses:
 **Issue**: Custom category doesn't appear in selections dropdown
 **Solution**: Ensure project was saved after adding custom category. Selection modals fetch categories from database via `/api/categories`.
 
+**Issue**: Edit configuration page not loading project data
+**Solution**: Fixed API response structure - APIs now return direct arrays instead of wrapped objects. Updated all API endpoints (`/api/rooms`, `/api/categories`, `/api/items`) to return arrays directly. Updated frontend to handle new response format.
+
 ## Important Conventions
 
 ### Navigation Headers by Role
