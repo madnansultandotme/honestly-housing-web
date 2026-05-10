@@ -34,6 +34,8 @@ export default function VisualApprovalCard({
   onRequestChange,
   showActions = true,
 }: VisualApprovalCardProps) {
+  console.log('[VisualApprovalCard] Render:', { status, showActions });
+  
   return (
     <div className="bg-white rounded-card shadow-card overflow-hidden">
       {/* Image */}
@@ -112,7 +114,7 @@ export default function VisualApprovalCard({
         </div>
 
         {/* Actions */}
-        {showActions && (status === 'awaitingClientApproval' || status === 'awaiting_approval') && (
+        {showActions && (
           <div className="flex gap-3 pt-2">
             <Button
               onClick={onApprove}

@@ -461,13 +461,20 @@ export default function SelectionDetailPage({
           status={selection.status}
           onApprove={handleApprove}
           onRequestChange={() => setShowChangeForm(true)}
-          showActions={
-            !selection.locked && 
-            (selection.status === 'awaitingClientApproval' || 
-             selection.status === 'awaiting_approval' ||
-             selection.status === 'notStarted' ||
-             selection.status === 'NotStarted')
-          }
+          showActions={(() => {
+            const shouldShow = !selection.locked && 
+              (selection.status === 'awaitingClientApproval' || 
+               selection.status === 'awaiting_approval' ||
+               selection.status === 'notStarted' ||
+               selection.status === 'NotStarted');
+            console.log('[SelectionDetail] showActions calculation:', {
+              locked: selection.locked,
+              status: selection.status,
+              shouldShow,
+              userRole: profile?.role
+            });
+            return shouldShow;
+          })()}
         />
 
         {/* Curated Options */}
