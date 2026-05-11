@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -79,10 +80,15 @@ export default function LoginPage() {
         <div className="bg-white rounded-card shadow-card p-8">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-brass-100 rounded-button flex items-center justify-center">
-              <svg className="w-10 h-10 text-brass-700" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-              </svg>
+            <div className="w-16 h-16 bg-brass-100 rounded-button flex items-center justify-center overflow-hidden">
+              <Image
+                src="/logo.jpeg"
+                alt="Honestly Housing"
+                width={64}
+                height={64}
+                className="w-16 h-16 object-cover"
+                priority
+              />
             </div>
           </div>
 

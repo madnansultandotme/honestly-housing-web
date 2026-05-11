@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface DesignerHeaderProps {
   title?: string;
@@ -38,8 +39,15 @@ export default function DesignerHeader({
           {/* Left: Logo/Brand */}
           <div className="flex items-center gap-8">
             <Link href="/builder" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">HH</span>
+              <div className="w-8 h-8 rounded-lg overflow-hidden bg-white border border-purple-200 flex items-center justify-center">
+                <Image
+                  src="/logo-icon.jpeg"
+                  alt="Honestly Housing"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                  priority
+                />
               </div>
               <span className="font-display font-bold text-neutral-900 hidden sm:inline">
                 Honestly Housing

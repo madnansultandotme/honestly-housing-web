@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api/client';
+import Image from 'next/image';
 
 interface ClientHeaderProps {
   title?: string;
@@ -77,8 +78,15 @@ export default function ClientHeader({
           {/* Left: Logo/Brand */}
           <div className="flex items-center gap-8">
             <Link href="/client" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-brass-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">HH</span>
+              <div className="w-8 h-8 rounded-lg overflow-hidden bg-white border border-neutral-200 flex items-center justify-center">
+                <Image
+                  src="/logo-icon.jpeg"
+                  alt="Honestly Housing"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                  priority
+                />
               </div>
               <span className="font-display font-bold text-neutral-900 hidden sm:inline">
                 Honestly Housing

@@ -18,6 +18,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Honestly Housing",
   description: "Home renovation and design management platform",
+  icons: {
+    icon: [
+      {
+        url: '/logo-icon.jpeg',
+        type: 'image/jpeg',
+      },
+    ],
+    apple: [
+      {
+        url: '/logo-icon.jpeg',
+        type: 'image/jpeg',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
