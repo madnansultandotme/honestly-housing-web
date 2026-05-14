@@ -9,7 +9,11 @@ import Input from '@/components/ui/Input';
 import CategoryChecklist, { CategoryItem } from '@/components/ui/CategoryChecklist';
 import AllowancePrompt, { AllowanceType } from '@/components/ui/AllowancePrompt';
 import DynamicRoomBuilder, { RoomDetail } from '@/components/ui/DynamicRoomBuilder';
+import PaintBuilder, { PaintDetail } from '@/components/ui/PaintBuilder';
+import CabinetryBuilder, { CabinetryDetail } from '@/components/ui/CabinetryBuilder';
+import TemplateViewer from '@/components/templates/TemplateViewer';
 import { apiClient } from '@/lib/api/client';
+import { countRoomsFromDetails } from '@/lib/projects/roomCounts';
 
 interface CategoryAllowance {
   categoryId: string;
@@ -45,6 +49,8 @@ export default function BuilderProjectSetup() {
   const [clientId, setClientId] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [roomDetails, setRoomDetails] = useState<RoomDetail[]>([]);
+  const [paintSelections, setPaintSelections] = useState<PaintDetail[]>([]);
+  const [cabinetrySelections, setCabinetrySelections] = useState<CabinetryDetail[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
 
   // Square footage
@@ -59,7 +65,10 @@ export default function BuilderProjectSetup() {
   const [templates, setTemplates] = useState<any[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [viewingTemplate, setViewingTemplate] = useState<any>(null);
+  const [showTemplateViewer, setShowTemplateViewer] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [scopeOfWorks, setScopeOfWorks] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) {
@@ -105,18 +114,18 @@ export default function BuilderProjectSetup() {
       try {
         const roomsData = await apiClient.get(`/rooms?projectId=${projectId}`);
         const itemsData = await apiClient.get(`/items?projectId=${projectId}`);
-        
+
         console.log('Loaded rooms:', roomsData);
         console.log('Loaded items:', itemsData);
-        
+
         if (Array.isArray(roomsData) && roomsData.length > 0) {
           // Convert rooms and items to RoomDetail format
           const loadedRoomDetails: RoomDetail[] = roomsData.map((room: any) => {
             // Find all items for this room
-            const roomItems = Array.isArray(itemsData) 
+            const roomItems = Array.isArray(itemsData)
               ? itemsData.filter((item: any) => item.roomId === room.id)
               : [];
-            
+
             // Convert items to fixtures
             const fixtures = roomItems.map((item: any) => ({
               id: item.id,
@@ -125,7 +134,7 @@ export default function BuilderProjectSetup() {
               quantity: item.quantity || 1,
               imageUrl: item.imageUrl || undefined,
             }));
-            
+
             return {
               id: room.id,
               name: room.name,
@@ -133,11 +142,75 @@ export default function BuilderProjectSetup() {
               fixtures,
             };
           });
-          
+
           setRoomDetails(loadedRoomDetails);
+        } else if (project.initialRoomDetails && Array.isArray(project.initialRoomDetails)) {
+          // If no rooms saved yet, seed from initialRoomDetails provided at project creation (template)
+          const seeded: RoomDetail[] = project.initialRoomDetails.map((r: any) => ({
+            id: r.id || `init-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+            name: r.name,
+            type: r.type || 'other',
+            fixtures: (r.fixtures || []).map((f: any) => ({
+              id: f.id || `init-fixture-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+              category: f.category || 'Other',
+              name: f.name,
+              quantity: f.quantity || 0,
+              imageUrl: f.imageUrl || undefined,
+            })),
+          }));
+          setRoomDetails(seeded);
         }
       } catch (err) {
         console.error('Failed to load rooms and items:', err);
+      }
+
+      // Load paint selections from subcollection
+      try {
+        const paintData = await apiClient.get(`/paint?projectId=${projectId}`);
+        console.log('Loaded paint selections:', paintData);
+        
+        if (Array.isArray(paintData) && paintData.length > 0) {
+          setPaintSelections(paintData.map((paint: any) => ({
+            id: paint.id,
+            colorName: paint.colorName,
+            paintCode: paint.paintCode,
+            sheen: paint.sheen,
+            notes: paint.notes,
+            image: paint.image,
+            assignmentType: paint.assignmentType,
+            areas: paint.areas || [],
+            roomIds: paint.roomIds || [],
+            roomNames: paint.roomNames || [],
+          })));
+        }
+      } catch (err) {
+        console.error('Failed to load paint selections:', err);
+      }
+
+      // Load cabinetry selections from subcollection
+      try {
+        const cabinetryData = await apiClient.get(`/cabinetry?projectId=${projectId}`);
+        console.log('Loaded cabinetry selections:', cabinetryData);
+        
+        if (Array.isArray(cabinetryData) && cabinetryData.length > 0) {
+          setCabinetrySelections(cabinetryData.map((cabinetry: any) => ({
+            id: cabinetry.id,
+            cabinetryType: cabinetry.cabinetryType,
+            material: cabinetry.material,
+            finish: cabinetry.finish,
+            doorStyle: cabinetry.doorStyle,
+            constructionType: cabinetry.constructionType,
+            hardware: cabinetry.hardware,
+            notes: cabinetry.notes,
+            image: cabinetry.image,
+            assignmentType: cabinetry.assignmentType,
+            areas: cabinetry.areas || [],
+            roomIds: cabinetry.roomIds || [],
+            roomNames: cabinetry.roomNames || [],
+          })));
+        }
+      } catch (err) {
+        console.error('Failed to load cabinetry selections:', err);
       }
 
       if (project.squareFootage) {
@@ -160,6 +233,13 @@ export default function BuilderProjectSetup() {
             totalCount: cat.progress?.totalItems || 0,
           }));
           setCategories(mappedCategories);
+
+          // Load scope of work
+          const loadedScopes: Record<string, string> = {};
+          categoriesData.forEach((cat: any) => {
+            if (cat.scopeOfWork) loadedScopes[cat.id] = cat.scopeOfWork;
+          });
+          setScopeOfWorks(loadedScopes);
           
           // Initialize allowances from categories
           const initialAllowances = categoriesData.map((cat: any) => ({
@@ -235,6 +315,33 @@ export default function BuilderProjectSetup() {
     }
   };
 
+  const handleViewTemplate = async (templateId: string) => {
+    if (!templateId) return;
+    try {
+      const builderOrgId = profile?.builderOrgId || user?.uid;
+      const template = await apiClient.get(`/templates/${templateId}?builderOrgId=${builderOrgId}`);
+      setViewingTemplate(template);
+      setShowTemplateViewer(true);
+    } catch (err) {
+      console.error('Failed to load template:', err);
+      setError('Failed to load template');
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      const builderOrgId = profile?.builderOrgId || user?.uid;
+      await apiClient.delete(`/templates/${templateId}?builderOrgId=${builderOrgId}`);
+      setTemplates(prev => prev.filter(t => t.id !== templateId));
+      setShowTemplateViewer(false);
+      setViewingTemplate(null);
+      if (selectedTemplateId === templateId) setSelectedTemplateId('');
+    } catch (err) {
+      console.error('Failed to delete template:', err);
+      setError('Failed to delete template');
+    }
+  };
+
   const handleCategoryToggle = (categoryId: string, required: boolean) => {
     setCategories((prev) =>
       prev.map((cat) => (cat.id === categoryId ? { ...cat, required } : cat))
@@ -274,33 +381,17 @@ export default function BuilderProjectSetup() {
       setError('');
 
       const requiredCategories = categories.filter((c) => c.required);
+      const missingScope = requiredCategories.filter(
+        category => !scopeOfWorks[category.id] || scopeOfWorks[category.id].trim().length === 0
+      );
 
-      // Build rooms object matching schema from roomDetails
-      const roomsObject: Record<string, number> = {
-        bedrooms: 0,
-        bathrooms: 0,
-        offices: 0,
-        kitchens: 0,
-        livingRooms: 0,
-        diningRooms: 0,
-        laundryRooms: 0,
-        garages: 0,
-        other: 0,
-      };
+      if (missingScope.length > 0) {
+        setError('Scope of work is required for all required categories.');
+        return;
+      }
 
-      // Count room types from roomDetails
-      roomDetails.forEach(room => {
-        const type = room.type.toLowerCase();
-        if (type.includes('bedroom')) roomsObject.bedrooms += 1;
-        else if (type.includes('bathroom')) roomsObject.bathrooms += 1;
-        else if (type.includes('kitchen')) roomsObject.kitchens += 1;
-        else if (type.includes('living')) roomsObject.livingRooms += 1;
-        else if (type.includes('dining')) roomsObject.diningRooms += 1;
-        else if (type.includes('laundry')) roomsObject.laundryRooms += 1;
-        else if (type.includes('garage')) roomsObject.garages += 1;
-        else if (type.includes('office')) roomsObject.offices += 1;
-        else roomsObject.other += 1;
-      });
+      // Build rooms object from the actual room details that will be saved
+      const roomsObject = countRoomsFromDetails(roomDetails);
 
       // Calculate total fixtures
       const totalFixturesCount = roomDetails.reduce((sum, room) => sum + room.fixtures.length, 0);
@@ -310,7 +401,7 @@ export default function BuilderProjectSetup() {
         rooms: roomsObject,
         fixtureCounts: {
           plumbingFixtures: totalFixturesCount,
-          lightingFixtures: 0,
+          lightingFixtures: roomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
         },
         squareFootage,
         allowances: allowances.reduce((acc, a) => {
@@ -342,12 +433,25 @@ export default function BuilderProjectSetup() {
         console.error('Failed to delete existing items:', err);
       }
 
+      // Delete existing categories before recreating
+      try {
+        const existingCategories = await apiClient.get(`/categories?projectId=${projectId}`);
+        if (Array.isArray(existingCategories)) {
+          for (const category of existingCategories) {
+            await apiClient.delete(`/categories?projectId=${projectId}&categoryId=${category.id}`);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to delete existing categories:', err);
+      }
+
       // Create/update categories
       for (const category of requiredCategories) {
         await apiClient.post('/categories', {
           projectId,
           name: category.name,
           required: category.required,
+          scopeOfWork: scopeOfWorks[category.id] || null,
         });
       }
 
@@ -408,10 +512,70 @@ export default function BuilderProjectSetup() {
             actualCost: 0,
             difference: 0,
             locked: false,
-            subType: fixture.category.toLowerCase() === 'paint colors' ? fixture.name.toLowerCase() : undefined,
             createdBy: user?.uid,
           });
         }
+      }
+
+      // Delete existing paint selections and recreate them
+      try {
+        const existingPaint = await apiClient.get(`/paint?projectId=${projectId}`);
+        if (Array.isArray(existingPaint)) {
+          for (const paint of existingPaint) {
+            await apiClient.delete(`/paint/${paint.id}?projectId=${projectId}`);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to delete existing paint selections:', err);
+      }
+
+      // Create paint selections
+      for (const paint of paintSelections) {
+        await apiClient.post('/paint', {
+          projectId,
+          colorName: paint.colorName,
+          paintCode: paint.paintCode,
+          sheen: paint.sheen,
+          notes: paint.notes,
+          image: paint.image,
+          assignmentType: paint.assignmentType,
+          areas: paint.areas || [],
+          roomIds: paint.roomIds || [],
+          roomNames: paint.roomNames || [],
+          createdBy: user?.uid,
+        });
+      }
+
+      // Delete existing cabinetry selections and recreate them
+      try {
+        const existingCabinetry = await apiClient.get(`/cabinetry?projectId=${projectId}`);
+        if (Array.isArray(existingCabinetry)) {
+          for (const cabinetry of existingCabinetry) {
+            await apiClient.delete(`/cabinetry/${cabinetry.id}?projectId=${projectId}`);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to delete existing cabinetry selections:', err);
+      }
+
+      // Create cabinetry selections
+      for (const cabinetry of cabinetrySelections) {
+        await apiClient.post('/cabinetry', {
+          projectId,
+          cabinetryType: cabinetry.cabinetryType,
+          material: cabinetry.material,
+          finish: cabinetry.finish,
+          doorStyle: cabinetry.doorStyle,
+          constructionType: cabinetry.constructionType,
+          hardware: cabinetry.hardware,
+          notes: cabinetry.notes,
+          image: cabinetry.image,
+          assignmentType: cabinetry.assignmentType,
+          areas: cabinetry.areas || [],
+          roomIds: cabinetry.roomIds || [],
+          roomNames: cabinetry.roomNames || [],
+          createdBy: user?.uid,
+        });
       }
 
       // Save as template if requested
@@ -423,7 +587,7 @@ export default function BuilderProjectSetup() {
           rooms: roomsObject,
           fixtureCounts: {
             plumbingFixtures: totalFixturesCount,
-            lightingFixtures: 0,
+            lightingFixtures: roomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
           },
           squareFootage,
           categories: requiredCategories.map(c => ({
@@ -514,6 +678,23 @@ export default function BuilderProjectSetup() {
               >
                 {templatesLoading ? 'Loading...' : 'Apply Template'}
               </Button>
+              <Button
+                onClick={() => handleViewTemplate(selectedTemplateId)}
+                disabled={!selectedTemplateId}
+                variant="outline"
+              >
+                View
+              </Button>
+              <Button
+                onClick={() => {
+                  if (selectedTemplateId && confirm('Delete this template?')) handleDeleteTemplate(selectedTemplateId);
+                }}
+                disabled={!selectedTemplateId}
+                variant="outline"
+                className="text-red-600 border-red-300 hover:bg-red-50"
+              >
+                Delete
+              </Button>
             </div>
           </div>
         </Card>
@@ -569,6 +750,32 @@ export default function BuilderProjectSetup() {
               />
             </Card>
 
+            {/* Paint Selections */}
+            <Card>
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Paint Selections</h2>
+              <p className="text-sm text-neutral-600 mb-4">
+                Configure paint colors and assign them to entire home areas or specific rooms. Paint selections are separate from room fixtures.
+              </p>
+              <PaintBuilder
+                paintSelections={paintSelections}
+                onChange={setPaintSelections}
+                availableRooms={roomDetails.map(r => ({ id: r.id, name: r.name }))}
+              />
+            </Card>
+
+            {/* Cabinetry Selections */}
+            <Card>
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Cabinetry Selections</h2>
+              <p className="text-sm text-neutral-600 mb-4">
+                Configure cabinetry selections and assign them to entire home areas or specific rooms. Cabinetry is separate from room fixtures.
+              </p>
+              <CabinetryBuilder
+                cabinetrySelections={cabinetrySelections}
+                onChange={setCabinetrySelections}
+                availableRooms={roomDetails.map(r => ({ id: r.id, name: r.name }))}
+              />
+            </Card>
+
             {/* Square Footage */}
             <Card>
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">Square Footage</h2>
@@ -594,6 +801,8 @@ export default function BuilderProjectSetup() {
                 onToggleRequired={handleCategoryToggle}
                 builderMode={true}
                 showProgress={false}
+                scopeOfWorks={scopeOfWorks}
+                onScopeChange={(id, text) => setScopeOfWorks(prev => ({ ...prev, [id]: text }))}
               />
               
               {/* Add Custom Category */}
@@ -685,6 +894,14 @@ export default function BuilderProjectSetup() {
             </Card>
           </div>
         </div>
+
+      {/* Template Viewer Modal */}
+      <TemplateViewer
+        isOpen={showTemplateViewer}
+        onClose={() => { setShowTemplateViewer(false); setViewingTemplate(null); }}
+        onDelete={handleDeleteTemplate}
+        template={viewingTemplate}
+      />
       </main>
     </div>
   );

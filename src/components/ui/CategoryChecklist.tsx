@@ -13,6 +13,8 @@ interface CategoryChecklistProps {
   onToggleRequired?: (categoryId: string, required: boolean) => void;
   builderMode?: boolean;
   showProgress?: boolean;
+  scopeOfWorks?: Record<string, string>;
+  onScopeChange?: (categoryId: string, text: string) => void;
 }
 
 export default function CategoryChecklist({
@@ -20,6 +22,8 @@ export default function CategoryChecklist({
   onToggleRequired,
   builderMode = false,
   showProgress = true,
+  scopeOfWorks = {},
+  onScopeChange,
 }: CategoryChecklistProps) {
   const handleToggle = (categoryId: string) => {
     if (!builderMode || !onToggleRequired) return;
@@ -41,71 +45,104 @@ export default function CategoryChecklist({
       {categories.map((category) => {
         const percent = getCompletionPercent(category.completedCount, category.totalCount);
         const isComplete = category.completedCount === category.totalCount && category.totalCount > 0;
+        const scopeValue = scopeOfWorks[category.id] || '';
+        const scopeRequired = category.required;
+        const isMissingScope = builderMode && scopeRequired && scopeValue.trim().length === 0;
 
         return (
-          <div
-            key={category.id}
-            className="flex items-center justify-between p-3 bg-white border border-neutral-200 rounded-button hover:border-neutral-300 transition-colors"
-          >
-            <div className="flex items-center gap-3 flex-1">
-              {/* Checkbox */}
-              <button
-                onClick={() => handleToggle(category.id)}
-                disabled={!builderMode}
-                className={`
-                  w-5 h-5 rounded border-2 flex items-center justify-center transition-all
-                  ${
-                    category.required
-                      ? 'bg-brass-600 border-brass-600'
-                      : 'bg-taupe-100 border-neutral-300'
-                  }
-                  ${builderMode ? 'cursor-pointer hover:border-brass-500' : 'cursor-default'}
-                `}
-              >
-                {category.required && (
-                  <svg
-                    className="w-3 h-3 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={3}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                )}
-              </button>
+          <div key={category.id}>
+            <div
+              className="flex items-center justify-between p-3 bg-white border border-neutral-200 rounded-button hover:border-neutral-300 transition-colors"
+            >
+              <div className="flex items-center gap-3 flex-1">
+                {/* Checkbox */}
+                <button
+                  onClick={() => handleToggle(category.id)}
+                  disabled={!builderMode}
+                  className={`
+                    w-5 h-5 rounded border-2 flex items-center justify-center transition-all
+                    ${
+                      category.required
+                        ? 'bg-brass-600 border-brass-600'
+                        : 'bg-taupe-100 border-neutral-300'
+                    }
+                    ${builderMode ? 'cursor-pointer hover:border-brass-500' : 'cursor-default'}
+                  `}
+                >
+                  {category.required && (
+                    <svg
+                      className="w-3 h-3 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </button>
 
-              {/* Category Name */}
-              <div className="flex-1">
-                <div className="font-medium text-neutral-900">{category.name}</div>
+                {/* Category Name */}
+                <div className="flex-1">
+                  <div className="font-medium text-neutral-900">{category.name}</div>
+                  {showProgress && (
+                    <div className="text-sm text-neutral-600">
+                      {category.completedCount} of {category.totalCount} completed
+                      {percent > 0 && ` (${percent}%)`}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2">
+                {/* Status Badge */}
                 {showProgress && (
-                  <div className="text-sm text-neutral-600">
-                    {category.completedCount} of {category.totalCount} completed
-                    {percent > 0 && ` (${percent}%)`}
+                  <div>
+                    {isComplete ? (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                        Complete
+                      </span>
+                    ) : category.completedCount > 0 ? (
+                      <span className="text-xs bg-brass-100 text-brass-800 px-2 py-1 rounded-full font-medium">
+                        In Progress
+                      </span>
+                    ) : (
+                      <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-1 rounded-full font-medium">
+                        Not Started
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Status Badge */}
-            {showProgress && (
-              <div className="flex items-center gap-2">
-                {isComplete ? (
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
-                    Complete
-                  </span>
-                ) : category.completedCount > 0 ? (
-                  <span className="text-xs bg-brass-100 text-brass-800 px-2 py-1 rounded-full font-medium">
-                    In Progress
-                  </span>
-                ) : (
-                  <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-1 rounded-full font-medium">
-                    Not Started
-                  </span>
+            {/* Scope of Work Textarea */}
+            {builderMode && onScopeChange && (
+              <div className="mt-2 ml-4 mr-4">
+                <label className="block text-xs font-medium text-neutral-700 mb-1">
+                  Scope of Work{scopeRequired ? ' *' : ''}
+                </label>
+                <textarea
+                  value={scopeValue}
+                  onChange={(e) => onScopeChange(category.id, e.target.value)}
+                  placeholder={`Describe the scope of work for ${category.name}...`}
+                  rows={3}
+                  className={`w-full px-3 py-2 text-sm border rounded-button focus:outline-none focus:ring-2 bg-brass-50 ${
+                    isMissingScope
+                      ? 'border-red-300 focus:ring-red-200'
+                      : 'border-brass-200 focus:ring-brass-500'
+                  }`}
+                  required={scopeRequired}
+                />
+                {isMissingScope && (
+                  <div className="mt-1 text-xs text-red-600">
+                    Scope of work is required for required categories.
+                  </div>
                 )}
               </div>
             )}

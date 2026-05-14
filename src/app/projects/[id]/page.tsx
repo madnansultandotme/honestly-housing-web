@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import ClientHeader from '@/components/navigation/ClientHeader';
+import ProjectTabs from '@/components/projects/ProjectTabs';
 import ProgressBar from '@/components/ui/ProgressBar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { LoadingOverlay } from '@/components/ui/LoadingSpinner';
@@ -99,6 +100,18 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   const completedSelections = selections.filter(s => s.status === 'approved' || s.status === 'installed').length;
   const totalSelections = selections.length;
   const pendingApprovals = selections.filter(s => s.status === 'awaiting_approval').length;
+  const roomCounts = project.roomCounts || project.rooms || {
+    bedrooms: 0,
+    bathrooms: 0,
+    offices: 0,
+    kitchens: 0,
+    livingRooms: 0,
+    diningRooms: 0,
+    laundryRooms: 0,
+    garages: 0,
+    other: 0,
+  };
+  const selectionProgress = totalSelections > 0 ? Math.round((completedSelections / totalSelections) * 100) : 0;
 
   const Header = isBuilder ? BuilderHeader : ClientHeader;
 
@@ -142,6 +155,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
           )
         }
       />
+      <ProjectTabs projectId={id} />
 
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Project Info */}
@@ -160,28 +174,39 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Project Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-neutral-200">
-            {project.rooms && (
-              <>
-                <div>
-                  <div className="text-sm text-neutral-600">Bedrooms</div>
-                  <div className="text-2xl font-bold text-neutral-900">{project.rooms.bedrooms || 0}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-neutral-600">Bathrooms</div>
-                  <div className="text-2xl font-bold text-neutral-900">{project.rooms.bathrooms || 0}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-neutral-600">Offices</div>
-                  <div className="text-2xl font-bold text-neutral-900">{project.rooms.offices || 0}</div>
-                </div>
-              </>
-            )}
+            <div>
+              <div className="text-sm text-neutral-600">Bedrooms</div>
+              <div className="text-2xl font-bold text-neutral-900">{roomCounts.bedrooms}</div>
+            </div>
+            <div>
+              <div className="text-sm text-neutral-600">Bathrooms</div>
+              <div className="text-2xl font-bold text-neutral-900">{roomCounts.bathrooms}</div>
+            </div>
+            <div>
+              <div className="text-sm text-neutral-600">Offices</div>
+              <div className="text-2xl font-bold text-neutral-900">{roomCounts.offices}</div>
+            </div>
             {project.squareFootage && (
               <div>
                 <div className="text-sm text-neutral-600">Square Feet</div>
                 <div className="text-2xl font-bold text-neutral-900">{project.squareFootage.toLocaleString()}</div>
               </div>
             )}
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-neutral-200">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-sm text-neutral-600">Selection Progress</div>
+              <div className="text-sm font-medium text-neutral-900">
+                {completedSelections} of {totalSelections} completed
+              </div>
+            </div>
+            <ProgressBar
+              completed={completedSelections}
+              total={totalSelections}
+              showLabel
+            />
+            <div className="mt-2 text-xs text-neutral-500 text-right">{selectionProgress}% complete</div>
           </div>
         </Card>
 

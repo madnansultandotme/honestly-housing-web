@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, isAdminInitialized } from '@/lib/firebase/admin';
-import { getDefaultQuestionCount } from '@/lib/questionnaire/defaultQuestionnaire';
+import { getProjectQuestionCount } from '@/lib/questionnaire/projectQuestionnaire';
+
+function isNonEmptyAnswer(value: any): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value === 'boolean') return true;
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+function isAnsweredAnswerDoc(data: any): boolean {
+  return isNonEmptyAnswer(data?.value) || isNonEmptyAnswer(data?.customText) || isNonEmptyAnswer(data?.imageUrl);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,6 +44,8 @@ export async function GET(request: NextRequest) {
       answers[doc.id] = doc.data();
     });
 
+    const totalCount = await getProjectQuestionCount(projectId);
+
     // If the submission doc doesn't exist but answers do (rare), we can return a synthesized status
     const synthesizedSubmission =
       !submission && answersSnap.size > 0
@@ -41,9 +56,9 @@ export async function GET(request: NextRequest) {
             startedAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             completedAt: null,
-            answeredCount: answersSnap.size,
-            totalCount: getDefaultQuestionCount(),
-            percentComplete: Math.round((answersSnap.size / Math.max(1, getDefaultQuestionCount())) * 100),
+            answeredCount: answersSnap.docs.filter((doc) => isAnsweredAnswerDoc(doc.data())).length,
+            totalCount,
+            percentComplete: Math.round((answersSnap.docs.filter((doc) => isAnsweredAnswerDoc(doc.data())).length / Math.max(1, totalCount)) * 100),
           }
         : null;
 

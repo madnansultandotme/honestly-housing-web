@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import Button from './Button';
@@ -48,7 +48,6 @@ const FIXTURE_CATEGORIES = [
   'Tile',
   'Countertops',
   'Hardware',
-  'Cabinetry',
   'Appliances',
   'Mirrors',
   'Other',
@@ -164,6 +163,27 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
     onChange(updatedRooms);
   };
 
+  const handleUpdateFixture = (
+    roomId: string,
+    fixtureId: string,
+    updates: Partial<RoomFixture>
+  ) => {
+    const updatedRooms = rooms.map((room) => {
+      if (room.id !== roomId) {
+        return room;
+      }
+
+      return {
+        ...room,
+        fixtures: room.fixtures.map((fixture) =>
+          fixture.id === fixtureId ? { ...fixture, ...updates } : fixture
+        ),
+      };
+    });
+
+    onChange(updatedRooms);
+  };
+
   const handleQuickAddFixture = (roomId: string, category: string, fixtureName: string) => {
     const newFixture: RoomFixture = {
       id: `fixture-${Date.now()}`,
@@ -241,7 +261,7 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
                 <div className="flex-1">
                   <h3 className="font-semibold text-neutral-900">{room.name}</h3>
                   <p className="text-sm text-neutral-600">
-                    {room.type} • {room.fixtures.length} fixture{room.fixtures.length !== 1 ? 's' : ''}
+                    {room.type} â€¢ {room.fixtures.length} fixture{room.fixtures.length !== 1 ? 's' : ''}
                   </p>
                 </div>
               </div>
@@ -269,7 +289,7 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
                           {fixtures.map((fixture) => (
                             <div
                               key={fixture.id}
-                              className="flex items-center justify-between bg-neutral-50 p-2 rounded"
+                              className="flex items-center justify-between gap-3 bg-neutral-50 p-2 rounded"
                             >
                               <div className="flex items-center gap-2">
                                 {fixture.imageUrl && (
@@ -281,12 +301,23 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
                                 )}
                                 <div>
                                   <span className="text-sm text-neutral-900">{fixture.name}</span>
-                                  {fixture.quantity > 1 && (
-                                    <span className="text-xs bg-brass-100 text-brass-800 px-2 py-0.5 rounded-full ml-2">
-                                      x{fixture.quantity}
-                                    </span>
-                                  )}
+                                  <div className="text-xs text-neutral-500">{fixture.category}</div>
                                 </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <label className="text-xs text-neutral-500">Qty</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={fixture.quantity}
+                                  onChange={(e) => {
+                                    const nextQuantity = parseInt(e.target.value, 10);
+                                    handleUpdateFixture(room.id, fixture.id, {
+                                      quantity: Number.isFinite(nextQuantity) && nextQuantity > 0 ? nextQuantity : 1,
+                                    });
+                                  }}
+                                  className="w-20 px-2 py-1 border border-neutral-300 rounded-button text-sm focus:outline-none focus:ring-2 focus:ring-brass-500"
+                                />
                               </div>
                               <button
                                 onClick={() => handleRemoveFixture(room.id, fixture.id)}

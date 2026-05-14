@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ImageViewer from '@/components/ui/ImageViewer';
 import { useParams, useRouter } from 'next/navigation';
 import ClientHeader from '@/components/navigation/ClientHeader';
 import Card from '@/components/ui/Card';
@@ -86,8 +87,12 @@ export default function QuestionnairePage() {
   const [questionnaire, setQuestionnaire] = useState<any | null>(null);
   const [answers, setAnswers] = useState<Record<string, AnswerState>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [projectCategories, setProjectCategories] = useState<string[]>([]);
 
   const debouncedSaveTimer = useRef<any>(null);
+  const [showViewer, setShowViewer] = useState(false);
+  const [viewerImages, setViewerImages] = useState<string[]>([]);
+  const pendingSaveRef = useRef<{ questionId: string; next: AnswerState } | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -111,6 +116,18 @@ export default function QuestionnairePage() {
 
         const q = await apiClient.get(`/questionnaire?projectId=${projectId}`);
         setQuestionnaire(q);
+
+        // Fetch project categories to filter relevant questions
+        const cats = await apiClient.get(`/categories?projectId=${projectId}`);
+        const catSlugs: string[] = [];
+        if (Array.isArray(cats)) {
+          cats.forEach((c: any) => {
+            const id = (c.id || '').toLowerCase();
+            const name = (c.name || '').toLowerCase();
+            catSlugs.push(id, name);
+          });
+        }
+        setProjectCategories(catSlugs);
 
         const submission = await apiClient.get(
           `/questionnaire/submission?projectId=${projectId}&clientId=${user.uid}`
@@ -141,6 +158,12 @@ export default function QuestionnairePage() {
     if (!questionnaire?.categories) return [];
     const result: any[] = [];
     questionnaire.categories.forEach((cat: any) => {
+      const slug = (cat.slug || '').toLowerCase();
+      // Only include questions from categories matching the project's categories
+      if (projectCategories.length > 0) {
+        const matches = projectCategories.some((pc) => pc === slug || slug.includes(pc) || pc.includes(slug));
+        if (!matches) return;
+      }
       (cat.questions || []).forEach((q: any) => {
         result.push({
           ...q,
@@ -247,10 +270,26 @@ export default function QuestionnairePage() {
 
     if (mode === 'debounced') {
       if (debouncedSaveTimer.current) clearTimeout(debouncedSaveTimer.current);
+      pendingSaveRef.current = { questionId, next };
       debouncedSaveTimer.current = setTimeout(run, 500);
     } else {
+      pendingSaveRef.current = null;
       await run();
     }
+  };
+
+  const flushPendingSave = async () => {
+    if (!pendingSaveRef.current) return;
+
+    const pending = pendingSaveRef.current;
+    pendingSaveRef.current = null;
+
+    if (debouncedSaveTimer.current) {
+      clearTimeout(debouncedSaveTimer.current);
+      debouncedSaveTimer.current = null;
+    }
+
+    await saveAnswer(pending.questionId, pending.next, 'immediate');
   };
 
   const setAnswer = async (
@@ -302,7 +341,9 @@ export default function QuestionnairePage() {
     if (!currentQuestion) return false;
     const a = answers[String(currentQuestion.questionId)];
 
-    // Require an answer for the current visible question
+    if (currentQuestion.required === false) return true;
+
+    // Require an answer for the current required question
     return isNonEmpty(a?.value) || isNonEmpty(a?.customText) || isNonEmpty(a?.imageUrl);
   };
 
@@ -311,7 +352,12 @@ export default function QuestionnairePage() {
       setSaving(true);
       setSaveError(null);
 
-      const requiredQuestionIds = visibleQuestions.map((q) => String(q.questionId));
+      await flushPendingSave();
+
+      // Only require questions from categories that match the project
+      const requiredQuestionIds = visibleQuestions
+        .filter((q) => q.required !== false)
+        .map((q) => String(q.questionId));
       await apiClient.post('/questionnaire/complete', {
         projectId,
         clientId: user?.uid,
@@ -533,7 +579,11 @@ export default function QuestionnairePage() {
                       <img
                         src={a.imageUrl}
                         alt="Uploaded"
-                        className="w-full max-w-sm rounded-card border border-neutral-200"
+                        className="w-full max-w-sm rounded-card border border-neutral-200 cursor-pointer"
+                        onClick={() => {
+                          setViewerImages([a.imageUrl as string]);
+                          setShowViewer(true);
+                        }}
                       />
                     </div>
                   )}
@@ -589,6 +639,9 @@ export default function QuestionnairePage() {
           Your answers are saved automatically.
         </div>
       </main>
+      {showViewer && (
+        <ImageViewer images={viewerImages} initialIndex={0} onClose={() => setShowViewer(false)} />
+      )}
     </div>
   );
 }

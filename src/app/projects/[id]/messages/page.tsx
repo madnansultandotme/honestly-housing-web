@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import ClientHeader from '@/components/navigation/ClientHeader';
+import ProjectTabs from '@/components/projects/ProjectTabs';
 import { LoadingOverlay, LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { apiClient } from '@/lib/api/client';
 import { Send, Paperclip, Image as ImageIcon } from 'lucide-react';
@@ -175,6 +176,7 @@ export default function MessagesPage() {
         title={project ? `Messages - ${project.name}` : 'Messages'}
         subtitle={project?.address}
       />
+      <ProjectTabs projectId={projectId} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-card shadow-sm border border-neutral-200 h-[calc(100vh-250px)] flex flex-col">

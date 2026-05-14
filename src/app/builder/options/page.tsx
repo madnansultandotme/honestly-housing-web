@@ -83,6 +83,7 @@ export default function BuilderOptionsPage() {
       const builderOrgId = profile?.builderOrgId || user?.uid;
       const newOption = await apiClient.post('/api/options', {
         ...data,
+        name: data.title,
         builderOrgId,
       });
 
@@ -327,7 +328,7 @@ export default function BuilderOptionsPage() {
                 </div>
 
                 <div className="text-lg font-bold text-brass-700">
-                  ${option.price.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  ${(option.price ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </div>
 
                 {option.linkUrl && (

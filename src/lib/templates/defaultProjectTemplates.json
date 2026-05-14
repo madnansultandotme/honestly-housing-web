@@ -1,0 +1,126 @@
+{
+  "templates": [
+    {
+      "id": "empty",
+      "name": "Empty Project",
+      "description": "Start with no rooms or fixtures; configure in setup.",
+      "rooms": []
+    },
+    {
+      "id": "standard-3br-2ba",
+      "name": "Standard 3BR / 2BA",
+      "description": "3 bedrooms, 2 bathrooms, kitchen, living room, laundry.",
+      "rooms": [
+        { "type": "bedroom", "displayName": "Bedroom", "quantity": 3 },
+        { "type": "bathroom", "displayName": "Bathroom", "quantity": 2 },
+        { "type": "kitchen", "displayName": "Kitchen", "quantity": 1 },
+        { "type": "living-room", "displayName": "Living Room", "quantity": 1 },
+        { "type": "laundry", "displayName": "Laundry", "quantity": 1 }
+      ]
+    },
+    {
+      "id": "luxury-5br-4ba",
+      "name": "Luxury 5BR / 4BA",
+      "description": "5 bedrooms, 4 bathrooms and additional spaces pre-selected.",
+      "rooms": [
+        { "type": "bedroom", "displayName": "Bedroom", "quantity": 5 },
+        { "type": "bathroom", "displayName": "Bathroom", "quantity": 4 },
+        { "type": "kitchen", "displayName": "Kitchen", "quantity": 1 },
+        { "type": "living-room", "displayName": "Living Room", "quantity": 1 },
+        { "type": "foyer", "displayName": "Foyer", "quantity": 1 },
+        { "type": "office", "displayName": "Office", "quantity": 1 },
+        { "type": "mudroom", "displayName": "Mudroom", "quantity": 1 }
+      ]
+    }
+    ,
+    {
+      "id": "client-checklist-full",
+      "name": "Client Full Checklist",
+      "description": "Pre-populated rooms and fixtures based on the client's detailed checklist.",
+      "rooms": [
+        {
+          "type": "bedroom",
+          "displayName": "Bedroom",
+          "quantity": 3,
+          "fixtures": [
+            { "category": "Electrical", "name": "Ceiling Fan", "quantity": 0 },
+            { "category": "Electrical", "name": "Down Rod (specify length)", "quantity": 0 },
+            { "category": "Electrical", "name": "Chandelier", "quantity": 0 },
+            { "category": "Electrical", "name": "Sconce", "quantity": 0 },
+            { "category": "Hardware", "name": "Cabinet Pulls", "quantity": 0 },
+            { "category": "Hardware", "name": "Cabinet Knobs", "quantity": 0 }
+          ]
+        },
+        {
+          "type": "bathroom",
+          "displayName": "Bathroom",
+          "quantity": 2,
+          "fixtures": [
+            { "category": "Electrical", "name": "Vanity Light", "quantity": 0 },
+            { "category": "Electrical", "name": "Sconce", "quantity": 0 },
+            { "category": "Plumbing", "name": "Sink Faucet", "quantity": 0 },
+            { "category": "Plumbing", "name": "Shower Head", "quantity": 0 },
+            { "category": "Plumbing", "name": "Shower Drain", "quantity": 0 },
+            { "category": "Plumbing", "name": "Toilet", "quantity": 0 },
+            { "category": "Countertops", "name": "Countertop", "quantity": 0 },
+            { "category": "Tile", "name": "Floor Tile (sq ft)", "quantity": 0 }
+          ]
+        },
+        {
+          "type": "kitchen",
+          "displayName": "Kitchen",
+          "quantity": 1,
+          "fixtures": [
+            { "category": "Electrical", "name": "Pendant", "quantity": 0 },
+            { "category": "Electrical", "name": "Under Cabinet Lighting", "quantity": 0 },
+            { "category": "Plumbing", "name": "Kitchen Sink", "quantity": 0 },
+            { "category": "Plumbing", "name": "Kitchen Faucet", "quantity": 0 },
+            { "category": "Countertops", "name": "Countertop", "quantity": 0 },
+            { "category": "Appliances", "name": "Dishwasher", "quantity": 0 },
+            { "category": "Appliances", "name": "Range / Cooktop", "quantity": 0 }
+          ]
+        },
+        {
+          "type": "laundry",
+          "displayName": "Laundry",
+          "quantity": 1,
+          "fixtures": [
+            { "category": "Electrical", "name": "Flush Mount", "quantity": 0 },
+            { "category": "Plumbing", "name": "Laundry Sink", "quantity": 0 },
+            { "category": "Countertops", "name": "Countertop", "quantity": 0 }
+          ]
+        },
+        {
+          "type": "mudroom",
+          "displayName": "Mudroom",
+          "quantity": 1,
+          "fixtures": [
+            { "category": "Electrical", "name": "Pendant", "quantity": 0 },
+            { "category": "Plumbing", "name": "Sink (optional)", "quantity": 0 },
+            { "category": "Cabinetry", "name": "Storage Cabinets", "quantity": 0 }
+          ]
+        },
+        {
+          "type": "exterior",
+          "displayName": "Exterior",
+          "quantity": 1,
+          "fixtures": [
+            { "category": "Exterior", "name": "Sconce", "quantity": 0 },
+            { "category": "Exterior", "name": "Chandelier", "quantity": 0 },
+            { "category": "Exterior", "name": "Fan", "quantity": 0 }
+          ]
+        },
+        {
+          "type": "systems",
+          "displayName": "Systems",
+          "quantity": 1,
+          "fixtures": [
+            { "category": "Systems", "name": "Water Heater (type)", "quantity": 0 },
+            { "category": "Systems", "name": "Propane Tank (if applicable)", "quantity": 0 },
+            { "category": "Systems", "name": "Water Filtration", "quantity": 0 }
+          ]
+        }
+      ]
+    }
+  ]
+}

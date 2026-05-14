@@ -1,5 +1,9 @@
+"use client";
+
 import Image from 'next/image';
+import { useState } from 'react';
 import Card from '@/components/ui/Card';
+import ImageViewer from '@/components/ui/ImageViewer';
 
 interface CuratedOptionCardProps {
   imageUrl: string;
@@ -22,6 +26,7 @@ export default function CuratedOptionCard({
   onSelect,
   selected = false,
 }: CuratedOptionCardProps) {
+  const [showViewer, setShowViewer] = useState(false);
   const tierConfig = {
     good: {
       label: 'Good',
@@ -68,7 +73,20 @@ export default function CuratedOptionCard({
           fill
           className="object-cover"
         />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowViewer(true);
+          }}
+          className="absolute top-2 right-2 bg-white bg-opacity-90 px-2 py-1 text-xs rounded"
+        >
+          View
+        </button>
       </div>
+
+      {showViewer && (
+        <ImageViewer images={[imageUrl]} onClose={() => setShowViewer(false)} />
+      )}
 
       {/* Content */}
       <div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
+import { countRoomsFromDetails } from '@/lib/projects/roomCounts';
 
 // GET project by ID
 export async function GET(
@@ -18,11 +19,29 @@ export async function GET(
       );
     }
 
+    const roomsSnapshot = await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('rooms')
+      .get();
+
+    const rooms = roomsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    const roomCounts = countRoomsFromDetails(rooms as Array<{ type?: string }>);
+    const projectData = projectDoc.data() || {};
+    const normalizedRooms = rooms.length > 0 ? roomCounts : projectData.rooms || roomCounts;
+
     return NextResponse.json({
       success: true,
       project: {
         id: projectDoc.id,
-        ...projectDoc.data(),
+        ...projectData,
+        rooms: normalizedRooms,
+        roomCounts,
+        roomCountTotal: rooms.length,
       },
     });
   } catch (error: any) {

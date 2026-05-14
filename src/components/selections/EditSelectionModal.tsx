@@ -19,6 +19,13 @@ const PAINT_SUBTYPES = [
   { value: 'cabinets', label: 'Cabinets' },
 ];
 
+const COUNTERTOP_MATERIALS = [
+  { value: 'granite', label: 'Granite' },
+  { value: 'quartz', label: 'Quartz' },
+  { value: 'quartzite', label: 'Quartzite' },
+  { value: 'marble', label: 'Marble' },
+];
+
 export default function EditSelectionModal({
   selection,
   projectId,
@@ -45,6 +52,8 @@ export default function EditSelectionModal({
     description: selection.description || '',
     dueDate: selection.dueDate ? new Date(selection.dueDate).toISOString().split('T')[0] : '',
     subType: selection.subType || '',
+    material: selection.material || '', // For countertops
+    notes: selection.notes || '', // Additional notes
     imageUrl: selection.imageUrl || '',
     productLink: selection.productLink || '',
   });
@@ -150,6 +159,8 @@ export default function EditSelectionModal({
         difference: (parseFloat(formData.price as any) || 0) - (selection.allowance || 0),
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : null,
         subType: formData.subType || null,
+        material: formData.material || null, // For countertops
+        notes: formData.notes.trim() || null, // Additional notes
       };
 
       await apiClient.patch(`/api/items/${selection.id}`, updateData);
@@ -167,6 +178,7 @@ export default function EditSelectionModal({
 
   const selectedCategory = categories.find(c => c.id === formData.categoryId);
   const isPaintCategory = selectedCategory?.name.toLowerCase() === 'paint';
+  const isCountertopsCategory = selectedCategory?.name.toLowerCase() === 'countertops';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -269,6 +281,28 @@ export default function EditSelectionModal({
                 </div>
               )}
 
+              {/* Countertops Material (conditional) */}
+              {isCountertopsCategory && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Material *
+                  </label>
+                  <select
+                    value={formData.material}
+                    onChange={(e) => handleChange('material', e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-neutral-300 rounded-button focus:outline-none focus:ring-2 focus:ring-brass-500 bg-white text-neutral-900"
+                  >
+                    <option value="">Select material...</option>
+                    {COUNTERTOP_MATERIALS.map(material => (
+                      <option key={material.value} value={material.value}>
+                        {material.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Brand */}
               <Input
                 label="Brand (Optional)"
@@ -301,6 +335,22 @@ export default function EditSelectionModal({
                   placeholder="Additional details about this selection..."
                 />
               </div>
+
+              {/* Notes (for countertops and other categories) */}
+              {isCountertopsCategory && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={formData.notes}
+                    onChange={(e) => handleChange('notes', e.target.value)}
+                    rows={2}
+                    className="w-full px-4 py-3 border border-neutral-300 rounded-button focus:outline-none focus:ring-2 focus:ring-brass-500 bg-white text-neutral-900"
+                    placeholder="Additional notes about material, finish, edge profile, etc..."
+                  />
+                </div>
+              )}
 
               {/* Product Link */}
               <Input

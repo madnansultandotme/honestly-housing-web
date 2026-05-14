@@ -83,11 +83,11 @@ service firebase.storage {
     }
     
     // Builder organization options (product images)
-    match /options/{builderOrgId}/{optionId} {
+    match /options/{fileName} {
       allow read: if isSignedIn();
       
       allow write: if isBuilderOrDesignerOrAdmin() && 
-                      (belongsToBuilderOrg(builderOrgId) || isAdmin()) && 
+                      
                       isImage() && 
                       isValidImageSize();
     }
@@ -157,6 +157,28 @@ service firebase.storage {
                       isValidImageSize();
     }
     
+    // Paint images (paint swatch uploads)
+    match /paint/{fileName} {
+      // Allow anyone authenticated to read paint images
+      allow read: if isSignedIn();
+      
+      // Allow builders, designers, and admins to upload paint images
+      allow write: if isBuilderOrDesignerOrAdmin() && 
+                      isImage() && 
+                      isValidImageSize();
+    }
+
+    // Cabinetry images
+    match /cabinetry/{fileName} {
+      // Allow anyone authenticated to read cabinetry images
+      allow read: if isSignedIn();
+      
+      // Allow builders, designers, and admins to upload cabinetry images
+      allow write: if isBuilderOrDesignerOrAdmin() && 
+                      isImage() && 
+                      isValidImageSize();
+    }
+
     // Fixture images (for room builder)
     match /fixtures/{fileName} {
       // Allow anyone authenticated to read fixture images

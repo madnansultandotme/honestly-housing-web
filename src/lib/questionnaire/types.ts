@@ -13,6 +13,7 @@ export interface QuestionnaireQuestion {
   question: string;
   answerType: QuestionnaireAnswerType;
   options: string[];
+  required?: boolean;
   conditionalLogic?: string | null;
   notes?: string | null;
   categorySlug: string;

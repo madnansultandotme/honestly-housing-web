@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
         allowance: itemData.allowance || 0,
         actualCost: itemData.actualCost || 0,
         difference: itemData.difference || 0,
+        purchased: itemData.purchased || false,
         status: itemData.status || 'notStarted',
         dueDate: itemData.dueDate || null,
         roomId: itemData.roomId || null,

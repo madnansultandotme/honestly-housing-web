@@ -74,16 +74,25 @@ The system uses 3 main project statuses:
      - **Add fixtures to each room**
        - Expand room to see details
        - Click "Add Fixture"
-       - Select category (Electrical, Plumbing, Flooring, Paint Colors, etc.)
+       - Select category (Electrical, Plumbing, Flooring, Tile, etc.)
+       - **Note:** Paint is NOT in fixture categories - handled separately in Step 3
        - Enter fixture name (e.g., "Fan", "Down Rod", "Vanity Light")
        - Set quantity
        - **Upload sample image (optional)** - Builder can upload reference images
        - Use quick-add buttons for common fixtures
      - **Example configurations:**
-       - Living Room: Electrical (Fan, Down Rod), Flooring, Paint Colors (Trim, Ceiling, Walls, Cabinets)
-       - Half Bath: Electrical (Vanity Light), Plumbing (Bathroom Faucet, Drain), Mirror, Paint Colors
+       - Living Room: Electrical (Fan, Down Rod), Flooring
+       - Half Bath: Electrical (Vanity Light), Plumbing (Bathroom Faucet, Drain), Mirror
        - Kitchen: Electrical (multiple lights), Plumbing (Faucet), Countertops, Cabinetry, Appliances
-   - **Step 3: Categories**
+   - **Step 3: Paint Selections** (NEW - Dedicated Paint Section)
+     - **Add paint colors** separate from room fixtures
+     - Paint data structure: image, color name, paint code, sheen, notes (NO price)
+     - **Two assignment modes:**
+       - **Entire Home:** Assign to Walls, Trim, Ceiling, Cabinets, Doors, etc.
+       - **Specific Rooms:** Assign to individual rooms created in Step 2
+     - **Upload paint swatch images** (optional)
+     - Paint selections stored in: `projects/{projectId}/paint/{paintId}`
+   - **Step 4: Categories**
      - Mark required categories (Flooring, Lighting, Plumbing, etc.)
      - Mark optional categories (Appliances, Cabinetry)
      - **Add custom categories** using "Add Custom Category" section
@@ -91,12 +100,12 @@ The system uses 3 main project statuses:
        - Click "Add Category" button
        - Custom category appears immediately in list
        - Can toggle custom categories between required/optional
-   - **Step 4: Allowances**
+   - **Step 5: Allowances**
      - Set budget for each category
      - Choose "Fixed Amount" or "Per Sq Ft"
-   - **Step 5: Template (Optional)**
+   - **Step 6: Template (Optional)**
      - Save configuration as template for future projects
-   - **Step 6: Review & Create**
+   - **Step 7: Review & Create**
      - Review all settings
      - Click "Create Project"
    - **Result**: Project created with status **"active"** and ready to use
@@ -691,7 +700,8 @@ Before marking a feature complete:
 - Fixtures are automatically created as items (subcollection) when project is saved
 - Categories are auto-created if they don't exist (e.g., "Mirrors" category created on-the-fly)
 - Room types: Bedroom, Bathroom, Kitchen, Living Room, Dining Room, Office, Laundry, Foyer, Mudroom, Pantry, Garage, Bonus Room, Other
-- Fixture categories: Electrical, Plumbing, Flooring, Paint Colors, Tile, Countertops, Hardware, Cabinetry, Appliances, Mirrors, Other
+- Fixture categories: Electrical, Plumbing, Flooring, Tile, Countertops, Hardware, Cabinetry, Appliances, Mirrors, Other
+  - **Note:** Paint Colors removed from fixture categories - now handled by dedicated Paint section
 - Common fixtures are pre-populated for quick selection (e.g., Fan, Down Rod, Vanity Light for Electrical)
 - Each fixture supports quantity specification (e.g., 2 Vanity Lights, 1 Ceiling Fan)
 
@@ -703,9 +713,40 @@ Before marking a feature complete:
 - Items include: categoryId, categoryName, roomId, roomName, quantity, status, subType, etc.
 
 **Example Use Cases:**
-- **Living Room**: Electrical (Fan, Down Rod), Flooring, Paint Colors (Trim, Ceiling, Walls, Cabinets)
-- **Half Bath**: Electrical (Vanity Light), Plumbing (Bathroom Faucet, Drain), Mirror, Paint Colors (Trim, Ceiling, Walls)
+- **Living Room**: Electrical (Fan, Down Rod), Flooring
+- **Half Bath**: Electrical (Vanity Light), Plumbing (Bathroom Faucet, Drain), Mirror
 - **Kitchen**: Electrical (Recessed Lights x6, Pendant Lights x3), Plumbing (Kitchen Faucet), Countertops, Cabinetry, Appliances
+
+### Paint System (Dedicated Section)
+
+**IMPORTANT:** Paint is NO LONGER part of room fixtures. It has its own dedicated section.
+
+**Paint Data Structure:**
+- `colorName` (required) - e.g., "Swiss Coffee", "Alabaster"
+- `paintCode` (optional) - e.g., "SW 7012"
+- `sheen` (optional) - Flat, Matte, Eggshell, Satin, Semi-Gloss, Gloss
+- `notes` (optional) - Additional notes about the paint
+- `image` (optional) - Paint swatch image URL
+- **NO price field** - Paint doesn't have pricing in the system
+
+**Assignment Types:**
+1. **Whole Home** - Assign to entire home areas:
+   - Walls, Trim, Ceiling, Cabinets, Doors, Baseboards, Crown Molding, Window Frames
+2. **Specific Rooms** - Assign to individual rooms created in room configuration
+
+**Storage:**
+- Firestore subcollection: `projects/{projectId}/paint/{paintId}`
+- API endpoints: `/api/paint` (GET, POST, DELETE) and `/api/paint/[id]` (GET, PUT, DELETE)
+
+**Integration Points:**
+- Project creation wizard: Step 3 (after Rooms, before Categories)
+- Project edit/setup page: Dedicated Paint section
+- Client portal: Paint selections visible for review/approval (future enhancement)
+
+**Key Files:**
+- `src/components/ui/PaintBuilder.tsx` - Paint configuration component
+- `src/app/api/paint/route.ts` - Paint API endpoints
+- `src/app/api/paint/[id]/route.ts` - Individual paint endpoint
 
 **Key Files:**
 - `src/components/ui/DynamicRoomBuilder.tsx` - Main room and fixture builder component
@@ -787,6 +828,12 @@ Before marking a feature complete:
 - **Password change** - secure password update with re-authentication
 - **Avatar display in headers** - profile pictures shown in both Builder and Client headers
 - **Profile settings link** - accessible from user menu dropdown
+- **Paint System Overhaul** - dedicated paint section separate from room fixtures
+- **Paint Builder component** - configure paint with color name, paint code, sheen, notes, image (NO price)
+- **Paint assignment modes** - assign to entire home areas OR specific rooms
+- **Paint API endpoints** - full CRUD operations for paint selections
+- **Paint in project wizard** - Step 3 in project creation flow
+- **Paint in setup page** - dedicated section in project edit/configuration
 
 ### ❌ Not Implemented
 - AI Mood Board generation (marked as "coming soon")

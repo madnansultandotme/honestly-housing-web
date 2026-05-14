@@ -8,9 +8,11 @@ import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import ClientHeader from '@/components/navigation/ClientHeader';
+import ProjectTabs from '@/components/projects/ProjectTabs';
 import { uploadProjectPhoto } from '@/lib/api/upload';
 import { apiClient } from '@/lib/api/client';
 import Link from 'next/link';
+import ImageViewer from '@/components/ui/ImageViewer';
 
 export default function ProjectPhotosPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -27,6 +29,8 @@ export default function ProjectPhotosPage({ params }: { params: Promise<{ id: st
   const [category, setCategory] = useState<'progress' | 'before' | 'after' | 'detail'>('progress');
   const [error, setError] = useState('');
   const [preview, setPreview] = useState<string>('');
+  const [showViewer, setShowViewer] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -147,6 +151,7 @@ export default function ProjectPhotosPage({ params }: { params: Promise<{ id: st
         subtitle={project?.name || 'Photos'}
         showBackButton
       />
+      <ProjectTabs projectId={id} />
 
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
 
@@ -235,53 +240,58 @@ export default function ProjectPhotosPage({ params }: { params: Promise<{ id: st
             <div className="text-center py-8 text-neutral-600">No photos yet. Upload your first photo above.</div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {photos.map((photo) => (
-              <Card key={photo.id} className="overflow-hidden">
-                <div className="aspect-[4/3] bg-neutral-100">
-                  <img
-                    src={photo.imageUrl}
-                    alt={photo.caption || 'Project photo'}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-4">
-                  {photo.caption && (
-                    <div className="text-sm font-medium text-neutral-900 mb-2">
-                      {photo.caption}
-                    </div>
-                  )}
-                  <div className="text-xs text-neutral-600 mb-2">
-                    {photo.category && (
-                      <span className="inline-block bg-brass-100 text-brass-700 px-2 py-1 rounded mr-2">
-                        {photo.category}
-                      </span>
-                    )}
-                    {photo.uploaderName && (
-                      <span className="text-neutral-500">by {photo.uploaderName}</span>
-                    )}
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {photos.map((photo, idx) => (
+                <Card key={photo.id} className="overflow-hidden">
+                  <div className="aspect-[4/3] bg-neutral-100 cursor-pointer" onClick={() => { setViewerIndex(idx); setShowViewer(true); }}>
+                    <img
+                      src={photo.imageUrl}
+                      alt={photo.caption || 'Project photo'}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  {photo.createdAt && (
-                    <div className="text-xs text-neutral-500 mb-3">
-                      {new Date(photo.createdAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                  <div className="p-4">
+                    {photo.caption && (
+                      <div className="text-sm font-medium text-neutral-900 mb-2">
+                        {photo.caption}
+                      </div>
+                    )}
+                    <div className="text-xs text-neutral-600 mb-2">
+                      {photo.category && (
+                        <span className="inline-block bg-brass-100 text-brass-700 px-2 py-1 rounded mr-2">
+                          {photo.category}
+                        </span>
+                      )}
+                      {photo.uploaderName && (
+                        <span className="text-neutral-500">by {photo.uploaderName}</span>
+                      )}
                     </div>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeletePhoto(photo.id)}
-                    className="w-full text-red-600 hover:bg-red-50"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+                    {photo.createdAt && (
+                      <div className="text-xs text-neutral-500 mb-3">
+                        {new Date(photo.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </div>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeletePhoto(photo.id)}
+                      className="w-full text-red-600 hover:bg-red-50"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            {showViewer && (
+              <ImageViewer images={photos.map(p => p.imageUrl)} initialIndex={viewerIndex} onClose={() => setShowViewer(false)} />
+            )}
+          </>
         )}
       </main>
     </div>

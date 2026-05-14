@@ -10,6 +10,7 @@ import ProgressBar from '@/components/ui/ProgressBar';
 import StatusBadge from '@/components/ui/StatusBadge';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import ClientHeader from '@/components/navigation/ClientHeader';
+import ProjectTabs from '@/components/projects/ProjectTabs';
 import BulkUploadModal from '@/components/selections/BulkUploadModal';
 import AddSelectionModal from '@/components/selections/AddSelectionModal';
 import EditSelectionModal from '@/components/selections/EditSelectionModal';
@@ -209,6 +210,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
           )
         }
       />
+      <ProjectTabs projectId={id} />
 
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {error && (

@@ -1,7 +1,11 @@
+"use client";
+
 import Image from 'next/image';
+import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import BudgetImpactRow from './BudgetImpactRow';
+import ImageViewer from '@/components/ui/ImageViewer';
 
 interface VisualApprovalCardProps {
   imageUrl: string;
@@ -34,6 +38,8 @@ export default function VisualApprovalCard({
   onRequestChange,
   showActions = true,
 }: VisualApprovalCardProps) {
+  const [showViewer, setShowViewer] = useState(false);
+
   console.log('[VisualApprovalCard] Render:', { status, showActions });
   
   return (
@@ -116,6 +122,15 @@ export default function VisualApprovalCard({
         {/* Actions */}
         {showActions && (
           <div className="flex gap-3 pt-2">
+            {imageUrl && imageUrl !== '/placeholder-image.jpg' && (
+              <Button
+                variant="outline"
+                onClick={() => setShowViewer(true)}
+                className="mr-2"
+              >
+                View Image
+              </Button>
+            )}
             <Button
               onClick={onApprove}
               className="flex-1"
@@ -131,6 +146,9 @@ export default function VisualApprovalCard({
             </Button>
           </div>
         )}
+      {showViewer && (
+        <ImageViewer images={[imageUrl]} initialIndex={0} onClose={() => setShowViewer(false)} />
+      )}
       </div>
     </div>
   );

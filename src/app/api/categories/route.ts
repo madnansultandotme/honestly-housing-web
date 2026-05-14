@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
         required: categoryData.required !== false,
         allowanceType: categoryData.allowanceType || 'fixed',
         allowanceAmount: categoryData.allowanceAmount || 0,
+        scopeOfWork: categoryData.scopeOfWork || null,
         progress: categoryData.progress || {
           totalItems: 0,
           completedItems: 0,
@@ -80,6 +81,40 @@ export async function POST(request: NextRequest) {
     console.error('Create category error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create category' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE category from subcollection
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
+    const categoryId = searchParams.get('categoryId');
+
+    if (!projectId || !categoryId) {
+      return NextResponse.json(
+        { error: 'projectId and categoryId are required' },
+        { status: 400 }
+      );
+    }
+
+    await adminDb
+      .collection('projects')
+      .doc(projectId)
+      .collection('categories')
+      .doc(categoryId)
+      .delete();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Category deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Delete category error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete category' },
       { status: 500 }
     );
   }

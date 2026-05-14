@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, isAdminInitialized } from '@/lib/firebase/admin';
-import { getDefaultQuestionCount } from '@/lib/questionnaire/defaultQuestionnaire';
+import { getProjectQuestionCount } from '@/lib/questionnaire/projectQuestionnaire';
 
 function isNonEmptyAnswer(value: any): boolean {
   if (value === null || value === undefined) return false;
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const answerRef = submissionRef.collection('answers').doc(String(questionId));
 
     const now = new Date().toISOString();
-    const totalCount = getDefaultQuestionCount();
+    const totalCount = await getProjectQuestionCount(projectId);
 
     const submissionSnap = await submissionRef.get();
     if (!submissionSnap.exists) {

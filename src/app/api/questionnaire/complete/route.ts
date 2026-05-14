@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, isAdminInitialized } from '@/lib/firebase/admin';
-import { getDefaultQuestionCount } from '@/lib/questionnaire/defaultQuestionnaire';
+import { getProjectQuestionCount } from '@/lib/questionnaire/projectQuestionnaire';
 
 function isNonEmptyAnswer(value: any): boolean {
   if (value === null || value === undefined) return false;
@@ -9,6 +9,10 @@ function isNonEmptyAnswer(value: any): boolean {
   if (typeof value === 'boolean') return true;
   if (Array.isArray(value)) return value.length > 0;
   return true;
+}
+
+function isAnsweredAnswerDoc(data: any): boolean {
+  return isNonEmptyAnswer(data?.value) || isNonEmptyAnswer(data?.customText) || isNonEmptyAnswer(data?.imageUrl);
 }
 
 export async function POST(request: NextRequest) {
@@ -31,13 +35,6 @@ export async function POST(request: NextRequest) {
       ? requiredQuestionIds.map((x) => String(x))
       : [];
 
-    if (requiredIds.length === 0) {
-      return NextResponse.json(
-        { error: 'requiredQuestionIds must be a non-empty array' },
-        { status: 400 }
-      );
-    }
-
     const submissionRef = adminDb
       .collection('projects')
       .doc(projectId)
@@ -52,28 +49,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const answerRefs = requiredIds.map((qid) => submissionRef.collection('answers').doc(qid));
-    const answerSnaps = await adminDb.getAll(...answerRefs);
+    if (requiredIds.length > 0) {
+      const answerRefs = requiredIds.map((qid) => submissionRef.collection('answers').doc(qid));
+      const answerSnaps = await adminDb.getAll(...answerRefs);
 
-    const missing: string[] = [];
-    answerSnaps.forEach((snap, idx) => {
-      if (!snap.exists || !isNonEmptyAnswer(snap.data()?.value)) {
-        missing.push(requiredIds[idx]);
+      const missing: string[] = [];
+      answerSnaps.forEach((snap, idx) => {
+        if (!snap.exists || !isAnsweredAnswerDoc(snap.data())) {
+          missing.push(requiredIds[idx]);
+        }
+      });
+
+      if (missing.length > 0) {
+        return NextResponse.json(
+          { error: `Missing answers for: ${missing.join(', ')}` },
+          { status: 400 }
+        );
       }
-    });
-
-    if (missing.length > 0) {
-      return NextResponse.json(
-        { error: `Missing answers for: ${missing.join(', ')}` },
-        { status: 400 }
-      );
     }
 
     const now = new Date().toISOString();
-    const totalCount = getDefaultQuestionCount();
+    const totalCount = await getProjectQuestionCount(projectId);
 
     const answersSnap = await submissionRef.collection('answers').get();
-    const answeredCount = answersSnap.docs.filter((d) => isNonEmptyAnswer(d.data()?.value)).length;
+    const answeredCount = answersSnap.docs.filter((d) => isAnsweredAnswerDoc(d.data())).length;
     const percentComplete = Math.round((answeredCount / Math.max(1, totalCount)) * 100);
 
     await submissionRef.set(
