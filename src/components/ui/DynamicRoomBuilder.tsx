@@ -45,7 +45,6 @@ const FIXTURE_CATEGORIES = [
   'Electrical',
   'Plumbing',
   'Flooring',
-  'Paint Colors',
   'Tile',
   'Countertops',
   'Hardware',
@@ -55,10 +54,11 @@ const FIXTURE_CATEGORIES = [
   'Other',
 ];
 
+// Note: Paint Colors removed - now handled by dedicated PaintBuilder component
+
 const COMMON_FIXTURES: Record<string, string[]> = {
   'Electrical': ['Fan', 'Down Rod', 'Vanity Light', 'Ceiling Light', 'Recessed Light', 'Chandelier', 'Pendant Light', 'Sconce'],
   'Plumbing': ['Bathroom Faucet', 'Drain', 'Shower Head', 'Tub Faucet', 'Kitchen Faucet', 'Toilet', 'Sink'],
-  'Paint Colors': ['Trim', 'Ceiling', 'Walls', 'Cabinets', 'Doors'],
   'Flooring': ['Hardwood', 'Tile', 'Carpet', 'Vinyl', 'Laminate'],
   'Tile': ['Floor Tile', 'Wall Tile', 'Backsplash', 'Shower Tile'],
   'Hardware': ['Door Knobs', 'Cabinet Pulls', 'Hinges', 'Towel Bars'],

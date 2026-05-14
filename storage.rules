@@ -167,6 +167,18 @@ service firebase.storage {
                       isImage() && 
                       isValidImageSize();
     }
+
+    // Questionnaire attachments (client uploads)
+    match /questionnaire/{projectId}/{clientId}/{questionId}/{fileName} {
+      allow read: if isSignedIn() && hasAccessToProject(projectId);
+
+      // Only the client themselves can upload their questionnaire images
+      allow write: if isSignedIn() &&
+                      request.auth.uid == clientId &&
+                      hasAccessToProject(projectId) &&
+                      isImage() &&
+                      isValidImageSize();
+    }
     
     // Deny all other paths
     match /{allPaths=**} {

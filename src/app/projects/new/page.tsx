@@ -10,6 +10,7 @@ import Input from '@/components/ui/Input';
 import CategoryChecklist, { CategoryItem } from '@/components/ui/CategoryChecklist';
 import AllowancePrompt, { AllowanceType } from '@/components/ui/AllowancePrompt';
 import DynamicRoomBuilder, { RoomDetail } from '@/components/ui/DynamicRoomBuilder';
+import PaintBuilder, { PaintDetail } from '@/components/ui/PaintBuilder';
 import CredentialsModal from '@/components/ui/CredentialsModal';
 import { apiClient } from '@/lib/api/client';
 
@@ -31,7 +32,7 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: 'cabinetry', name: 'Cabinetry', required: false, completedCount: 0, totalCount: 0 },
 ];
 
-type Step = 'basic' | 'rooms' | 'categories' | 'budgets' | 'template';
+type Step = 'basic' | 'rooms' | 'paint' | 'categories' | 'budgets' | 'template';
 
 export default function NewProjectPage() {
   const { user, profile } = useAuth();
@@ -64,7 +65,10 @@ export default function NewProjectPage() {
   const [roomDetails, setRoomDetails] = useState<RoomDetail[]>([]);
   const [squareFootage, setSquareFootage] = useState(2500);
 
-  // Step 3: Categories
+  // Step 3: Paint
+  const [paintSelections, setPaintSelections] = useState<PaintDetail[]>([]);
+
+  // Step 4: Categories
   const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
 
   // Step 5: Budgets
@@ -78,6 +82,7 @@ export default function NewProjectPage() {
   const steps: { id: Step; title: string; description: string }[] = [
     { id: 'basic', title: 'Basic Info', description: 'Project name and client' },
     { id: 'rooms', title: 'Rooms & Fixtures', description: 'Define rooms and their fixtures' },
+    { id: 'paint', title: 'Paint', description: 'Paint selections and assignments' },
     { id: 'categories', title: 'Categories', description: 'Required selection categories' },
     { id: 'budgets', title: 'Budgets', description: 'Set allowances per category' },
     { id: 'template', title: 'Save Template', description: 'Optional: Save for reuse' },
@@ -383,13 +388,29 @@ export default function NewProjectPage() {
             actualCost: 0,
             difference: 0,
             locked: false,
-            subType: fixture.category.toLowerCase() === 'paint colors' ? fixture.name.toLowerCase() : undefined,
             createdBy: user?.uid,
           });
         }
       }
 
-      // Step 4: Save as template if requested
+      // Step 4: Create paint selections as subcollection
+      for (const paint of paintSelections) {
+        await apiClient.post('/api/paint', {
+          projectId,
+          colorName: paint.colorName,
+          paintCode: paint.paintCode,
+          sheen: paint.sheen,
+          notes: paint.notes,
+          image: paint.image,
+          assignmentType: paint.assignmentType,
+          areas: paint.areas || [],
+          roomIds: paint.roomIds || [],
+          roomNames: paint.roomNames || [],
+          createdBy: user?.uid,
+        });
+      }
+
+      // Step 5: Save as template if requested
       if (saveAsTemplate && templateName.trim()) {
         const builderOrgId = profile?.builderOrgId || user?.uid;
         await apiClient.post('/api/templates', {
@@ -430,6 +451,8 @@ export default function NewProjectPage() {
         return projectName.trim() && selectedClient;
       case 'rooms':
         return roomDetails.length > 0;
+      case 'paint':
+        return true; // Paint is optional
       case 'categories':
         return categories.some(c => c.required);
       case 'budgets':
@@ -679,7 +702,27 @@ export default function NewProjectPage() {
             </div>
           )}
 
-          {/* Step 3: Categories */}
+          {/* Step 3: Paint */}
+          {currentStep === 'paint' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-display font-bold text-neutral-900 mb-2">
+                  Paint Selections
+                </h2>
+                <p className="text-neutral-600">
+                  Configure paint colors and assign them to entire home areas or specific rooms. Paint selections are optional and can be added later.
+                </p>
+              </div>
+
+              <PaintBuilder
+                paintSelections={paintSelections}
+                onChange={setPaintSelections}
+                availableRooms={roomDetails.map(r => ({ id: r.id, name: r.name }))}
+              />
+            </div>
+          )}
+
+          {/* Step 4: Categories */}
           {currentStep === 'categories' && (
             <div className="space-y-6">
               <div>
@@ -820,6 +863,12 @@ export default function NewProjectPage() {
                     <span className="text-neutral-600">Total Fixtures:</span>
                     <span className="font-medium text-neutral-900">
                       {roomDetails.reduce((sum, room) => sum + room.fixtures.length, 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-600">Paint Selections:</span>
+                    <span className="font-medium text-neutral-900">
+                      {paintSelections.length}
                     </span>
                   </div>
                   <div className="flex justify-between">

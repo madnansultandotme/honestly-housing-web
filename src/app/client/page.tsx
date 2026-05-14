@@ -37,12 +37,30 @@ export default function ClientPortal() {
   }, [user]);
 
   const loadData = async () => {
+    let redirected = false;
     try {
       setLoading(true);
 
       // Load user's projects
       const projectsData = await apiClient.get(`/api/projects?clientId=${user?.uid}`);
       setProjects(projectsData);
+
+      // If the client has a project but hasn't completed the questionnaire yet,
+      // redirect them into the questionnaire wizard before unlocking the dashboard.
+      if (projectsData && projectsData.length > 0) {
+        const firstProjectId = projectsData[0]?.id;
+        if (firstProjectId) {
+          const submissionData = await apiClient.get(
+            `/questionnaire/submission?projectId=${firstProjectId}&clientId=${user?.uid}`
+          );
+          const status = submissionData?.submission?.status;
+          if (status !== 'completed') {
+            redirected = true;
+            router.replace(`/projects/${firstProjectId}/questionnaire`);
+            return;
+          }
+        }
+      }
 
       // Load selections across all projects
       let allSelections: any[] = [];
@@ -93,7 +111,7 @@ export default function ClientPortal() {
     } catch (err) {
       console.error('Failed to load client data:', err);
     } finally {
-      setLoading(false);
+      if (!redirected) setLoading(false);
     }
   };
 

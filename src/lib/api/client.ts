@@ -32,6 +32,8 @@ class ApiClient {
       }
 
       if (data && data.success === true) {
+        if (Object.prototype.hasOwnProperty.call(data, 'questionnaire')) return data.questionnaire;
+        if (Object.prototype.hasOwnProperty.call(data, 'questionnaireSubmission')) return data.questionnaireSubmission;
         if (Object.prototype.hasOwnProperty.call(data, 'project')) return data.project;
         if (Object.prototype.hasOwnProperty.call(data, 'projects')) return data.projects;
         if (Object.prototype.hasOwnProperty.call(data, 'user')) return data.user;

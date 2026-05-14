@@ -42,3 +42,22 @@ export interface Photo {
   uploadedBy: string;
   createdAt: Date;
 }
+
+export interface PaintSelection {
+  id: string;
+  projectId: string;
+  image?: string;
+  colorName: string;
+  paintCode?: string;
+  sheen?: string;
+  notes?: string;
+  assignmentType: 'wholeHome' | 'specificRooms';
+  // For whole home assignments
+  areas?: string[]; // e.g., ['walls', 'trim', 'ceiling', 'cabinets']
+  // For specific room assignments
+  roomIds?: string[];
+  roomNames?: string[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}

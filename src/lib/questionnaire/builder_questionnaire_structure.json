@@ -1,0 +1,764 @@
+{
+  "appFlow": {
+    "description": "Builder creates project questionnaire and client submits answers",
+    "roles": ["builder", "client"],
+    "firebaseCollections": {
+      "categories": "Stores category metadata",
+      "questions": "Stores all builder questions",
+      "projects": "Stores builder projects",
+      "clientAnswers": "Stores answers submitted by clients"
+    },
+    "recommendedNextjsFlow": [
+      "Builder selects categories",
+      "Questions are loaded dynamically from Firebase",
+      "Client answers questions step-by-step",
+      "Answers are autosaved",
+      "Builder reviews submissions",
+      "Export answers as PDF/CSV if needed"
+    ]
+  },
+  "categories": [
+    {
+      "categoryName": "Foundation",
+      "slug": "foundation",
+      "questions": [
+        {
+          "questionId": "F1",
+          "question": "Foundation Type",
+          "answerType": "Dropdown",
+          "options": ["Slab", "Pier & Beam"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "F5",
+          "question": "Vapor Barrier",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Framing",
+      "slug": "framing",
+      "questions": [
+        {
+          "questionId": "FR1",
+          "question": "Exterior Walls",
+          "answerType": "Dropdown",
+          "options": ["2x4", "2x6"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "FR2",
+          "question": "Ceiling Type",
+          "answerType": "Multi Select",
+          "options": ["Flat", "Vaulted", "Cathedral"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "FR3",
+          "question": "Roof Pitch",
+          "answerType": "Dropdown",
+          "options": ["4/12", "6/12", "8/12", "Custom"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "FR4",
+          "question": "Spray Foam Insulation",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Exterior Materials",
+      "slug": "exterior-materials",
+      "questions": [
+        {
+          "questionId": "EX1",
+          "question": "Exterior Material",
+          "answerType": "Multi Select",
+          "options": ["Brick", "Stone", "Siding", "Metal", "Board & Batten Hardie"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "EX2",
+          "question": "Brick Type",
+          "answerType": "Text/Image Select",
+          "options": ["Custom"],
+          "conditionalLogic": "Show only if EX1 includes Brick",
+          "notes": null
+        },
+        {
+          "questionId": "EX3",
+          "question": "Stone Type",
+          "answerType": "Text/Image Select",
+          "options": ["Custom"],
+          "conditionalLogic": "Show only if EX1 includes Stone",
+          "notes": null
+        },
+        {
+          "questionId": "EX4",
+          "question": "Siding Type",
+          "answerType": "Dropdown",
+          "options": ["Hardie", "Cedar", "Metal"],
+          "conditionalLogic": "Show only if EX1 includes Siding",
+          "notes": null
+        },
+        {
+          "questionId": "EX5",
+          "question": "Porch Ceilings",
+          "answerType": "Dropdown",
+          "options": ["Tongue & Groove Pine", "Beadboard Trimmed out", "custom"],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Windows & Doors",
+      "slug": "windows-and-doors",
+      "questions": [
+        {
+          "questionId": "WD1",
+          "question": "Window Material",
+          "answerType": "Dropdown",
+          "options": ["Vinyl", "Aluminum", "Wood"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "WD2",
+          "question": "Window Color",
+          "answerType": "Dropdown",
+          "options": ["Black/white", "Black/Black", "White", "Bronze", "Custom"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "WD3",
+          "question": "Front Door Type",
+          "answerType": "Text/Image",
+          "options": ["Custom"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "WD4",
+          "question": "Patio Door Type",
+          "answerType": "Dropdown",
+          "options": ["Sliding", "French", "Multi-Slide", "Bifold"],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Roofing",
+      "slug": "roofing",
+      "questions": [
+        {
+          "questionId": "RF1",
+          "question": "Roofing Material",
+          "answerType": "Dropdown",
+          "options": ["Shingle", "Metal", "Tile"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "RF2",
+          "question": "Shingle Type",
+          "answerType": "Dropdown",
+          "options": ["Architectural", "Designer"],
+          "conditionalLogic": "Show only if RF1 = Shingle",
+          "notes": null
+        },
+        {
+          "questionId": "RF3",
+          "question": "Metal Roof Type",
+          "answerType": "Dropdown",
+          "options": ["Standing Seam", "R Panel"],
+          "conditionalLogic": "Show only if RF1 = Metal",
+          "notes": null
+        },
+        {
+          "questionId": "RF4",
+          "question": "Roof Color",
+          "answerType": "Dropdown",
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "HVAC",
+      "slug": "hvac",
+      "questions": [
+        {
+          "questionId": "HVAC1",
+          "question": "HVAC System Type",
+          "answerType": "Dropdown",
+          "options": ["Electric", "Natural Gas"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "HVAC2",
+          "question": "Number of Units",
+          "answerType": "Number",
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "HVAC3",
+          "question": "Smart Thermostat",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "HVAC4",
+          "question": "Unit Size",
+          "answerType": "Text",
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Plumbing",
+      "slug": "plumbing",
+      "questions": [
+        {
+          "questionId": "PL1",
+          "question": "Water Heater Type",
+          "answerType": "Dropdown",
+          "options": ["Tank", "Tankless"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PL2",
+          "question": "Fuel Type",
+          "answerType": "Dropdown",
+          "options": ["Electric", "Propane", "Natural Gas"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PL3",
+          "question": "Propane Tank",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PL4",
+          "question": "Pot Filler",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PL5",
+          "question": "Free Standing Tub",
+          "answerType": "Yes/No",
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PL6",
+          "question": "Alcove Tub",
+          "answerType": "Dropdown",
+          "options": ["None", "1", "2", "3", "4"],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Electrical",
+      "slug": "electrical",
+      "questions": [
+        {
+          "questionId": "EL1",
+          "question": "Electrical Service Size",
+          "answerType": "Dropdown",
+          "options": ["200 Amp", "320 Amp", "400 Amp"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "EL2",
+          "question": "Generator Ready",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "EL3",
+          "question": "EV Charger",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Cabinetry",
+      "slug": "cabinetry",
+      "questions": [
+        {
+          "questionId": "CAB1",
+          "question": "Cabinet Style",
+          "answerType": "Multi Dropdown",
+          "options": ["Shaker", "Slab", "Traditional"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "CAB2",
+          "question": "Cabinet Construction",
+          "answerType": "Dropdown",
+          "options": ["Custom", "Semi-Custom", "Stock"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "CAB3",
+          "question": "Soft Close Drawers",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "CAB4",
+          "question": "Inset Upgrade",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "CAB5",
+          "question": "Wood Type",
+          "answerType": "Dropdown",
+          "options": ["All Paint Grade", "Some Stain Grade"],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Countertops",
+      "slug": "countertops",
+      "questions": [
+        {
+          "questionId": "CT1",
+          "question": "Countertop Material",
+          "answerType": "Dropdown",
+          "options": ["Quartz", "Granite", "Quartzite", "Marble"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "CT2",
+          "question": "Full Height Backsplash",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "CT3",
+          "question": "Countertop Edge Upgrades",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Flooring",
+      "slug": "flooring",
+      "questions": [
+        {
+          "questionId": "FL1",
+          "question": "Main Flooring Type",
+          "answerType": "Dropdown",
+          "options": ["Hardwood", "Engineered Hardwood", "LVP", "Tile"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "FL2",
+          "question": "Tile In Wet Areas",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "FL3",
+          "question": "Carpet In Bedrooms",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "FL4",
+          "question": "Special Requests",
+          "answerType": "Text",
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Tile",
+      "slug": "tile",
+      "questions": [
+        {
+          "questionId": "TL1",
+          "question": "Shower Wall Tile",
+          "answerType": "Image Select",
+          "options": ["Custom"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "TL2",
+          "question": "Shower Floor Tile",
+          "answerType": "Image Select",
+          "options": ["Custom"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "TL3",
+          "question": "Tile above tub",
+          "answerType": "yes/no",
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "TL4",
+          "question": "Schluter Trim Color",
+          "answerType": "Dropdown",
+          "options": ["Brass", "Black", "Nickel", "Matte White", "Ivory", "Greige", "Text"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "TL5",
+          "question": "Grout",
+          "answerType": "Text",
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Paint",
+      "slug": "paint",
+      "questions": [
+        {
+          "questionId": "PT1",
+          "question": "Wall Texture",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT2",
+          "question": "Wall Paint Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT3",
+          "question": "Ceiling Paint Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT4",
+          "question": "Trim Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT5",
+          "question": "Door Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT6",
+          "question": "Kitchen Cabinet Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT7",
+          "question": "Laundry Cabinet Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT8",
+          "question": "Pantry Wall + Shelf Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT9",
+          "question": "Mudroom Cabinet Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT10",
+          "question": "Primary Bathroom Cabinet Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT11",
+          "question": "Bathroom 2 Cabinet Color",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT12",
+          "question": "Interior Stain",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "PT13",
+          "question": "Exterior Stain",
+          "answerType": null,
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Interior Doors & Trim",
+      "slug": "interior-doors-and-trim",
+      "questions": [
+        {
+          "questionId": "ID1",
+          "question": "Interior Door Style",
+          "answerType": "Dropdown",
+          "options": ["2 Panel Shaker", "2 Panel Molded", "Flush"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "ID2",
+          "question": "Trim Style",
+          "answerType": "Dropdown",
+          "options": ["Modern", "Craftsman", "Traditional", "Flat"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "ID3",
+          "question": "Door Hardware Finish",
+          "answerType": "Dropdown",
+          "options": ["Brass", "Black", "Nickel", "Chrome", "Polished Nickel"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "ID4",
+          "question": "Any Accent Walls",
+          "answerType": "Yes/No",
+          "options": [],
+          "conditionalLogic": "If Yes, ID5",
+          "notes": null
+        },
+        {
+          "questionId": "ID5",
+          "question": "What Rooms",
+          "answerType": "Text, Image upload",
+          "options": [],
+          "conditionalLogic": "Give option to add more than one ",
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Fireplace",
+      "slug": "fireplace",
+      "questions": [
+        {
+          "questionId": "FP1",
+          "question": "Fireplace Included",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "FP2",
+          "question": "Fireplace Type",
+          "answerType": "Dropdown",
+          "options": ["Gas", "Wood Burning", "Electric"],
+          "conditionalLogic": "Show only if FP1 = Yes",
+          "notes": null
+        },
+        {
+          "questionId": "FP3",
+          "question": "Raised Hearth",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": "Show only if FP1 = Yes",
+          "notes": null
+        },
+        {
+          "questionId": "FP4",
+          "question": "Raised Hearth Dimensions",
+          "answerType": "Text",
+          "options": [],
+          "conditionalLogic": "Show only if FP3 = Yes",
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Appliances",
+      "slug": "appliances",
+      "questions": [
+        {
+          "questionId": "AP1",
+          "question": "Appliance Package",
+          "answerType": "Dropdown",
+          "options": ["Standard", "Premium", "Luxury"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "AP2",
+          "question": "Range Type",
+          "answerType": "Dropdown",
+          "options": ["Gas", "Electric", "Induction"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "AP3",
+          "question": "Panel Ready Appliances",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    },
+    {
+      "categoryName": "Site Work",
+      "slug": "site-work",
+      "questions": [
+        {
+          "questionId": "SW1",
+          "question": "Septic or Sewer",
+          "answerType": "Dropdown",
+          "options": ["Septic", "Sewer"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "SW2",
+          "question": "Driveway Material",
+          "answerType": "Dropdown",
+          "options": ["Concrete", "Asphalt", "Gravel"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "SW3",
+          "question": "Irrigation System",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": "if Yes SW4",
+          "notes": null
+        },
+        {
+          "questionId": "SW4",
+          "question": "How many zones",
+          "answerType": "Dropdown",
+          "options": ["3", "4", "5", "6", "7"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "SW5",
+          "question": "Sod",
+          "answerType": "Yes/No",
+          "options": ["Yes", "No"],
+          "conditionalLogic": null,
+          "notes": null
+        },
+        {
+          "questionId": "SW6",
+          "question": "Seed",
+          "answerType": "Yes/No",
+          "options": [],
+          "conditionalLogic": null,
+          "notes": null
+        }
+      ]
+    }
+  ]
+}
