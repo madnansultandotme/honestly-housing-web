@@ -30,16 +30,18 @@ export async function GET(
       ...doc.data(),
     }));
 
-    const roomCounts = countRoomsFromDetails(rooms as Array<{ type?: string }>);
     const projectData = projectDoc.data() || {};
-    const normalizedRooms = rooms.length > 0 ? roomCounts : projectData.rooms || roomCounts;
+    const subcollectionRoomCounts = countRoomsFromDetails(rooms as Array<{ type?: string }>);
+    const roomCounts = rooms.length > 0
+      ? subcollectionRoomCounts
+      : projectData.rooms || subcollectionRoomCounts;
 
     return NextResponse.json({
       success: true,
       project: {
         id: projectDoc.id,
         ...projectData,
-        rooms: normalizedRooms,
+        rooms: roomCounts,
         roomCounts,
         roomCountTotal: rooms.length,
       },

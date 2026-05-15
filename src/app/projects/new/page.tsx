@@ -310,11 +310,17 @@ export default function NewProjectPage() {
   };
 
   const handleAddCategory = () => {
-    if (!newCategoryName.trim()) return;
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+
+    if (categories.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
+      setError('A category with this name already exists');
+      return;
+    }
 
     const newCategory: CategoryItem = {
       id: `custom-${Date.now()}`,
-      name: newCategoryName.trim(),
+      name: trimmed,
       required: true,
       completedCount: 0,
       totalCount: 0,
@@ -437,6 +443,7 @@ export default function NewProjectPage() {
             lightingFixtures: 0,
           },
           squareFootage: squareFootage || null,
+          roomDetails,
           categories: requiredCategories.map((c, i) => {
             const allowance = allowances.find(a => a.categoryId === c.id);
             return {

@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       name,
       builderOrgId,
       rooms,
+      roomDetails,
       fixtureCounts,
       squareFootage,
       categories,
@@ -61,18 +62,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check for duplicate template name
+    const existingTemplates = await adminDb
+      .collection('builderOrgs')
+      .doc(builderOrgId)
+      .collection('templates')
+      .where('name', '==', name)
+      .get();
+
+    if (!existingTemplates.empty) {
+      return NextResponse.json(
+        { error: 'A template with this name already exists' },
+        { status: 409 }
+      );
+    }
+
+    // Deduplicate categories by name
+    const seenCatNames = new Set<string>();
+    const dedupedCategories = (categories || []).filter((cat: any) => {
+      const key = cat.name.toLowerCase();
+      if (seenCatNames.has(key)) return false;
+      seenCatNames.add(key);
+      return true;
+    });
+
     const now = new Date();
 
     const template = {
       name,
       description: null,
       rooms: rooms || {},
+      roomDetails: roomDetails || [],
       fixtureCounts: fixtureCounts || {
         plumbingFixtures: 0,
         lightingFixtures: 0,
       },
       squareFootage: squareFootage || null,
-      categories: categories || [],
+      categories: dedupedCategories,
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
       createdBy: createdBy || null,

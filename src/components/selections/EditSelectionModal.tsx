@@ -4,6 +4,7 @@ import Input from '@/components/ui/Input';
 import { useNotification } from '@/contexts/NotificationContext';
 import { apiClient } from '@/lib/api/client';
 import { uploadImage as uploadImageToStorage } from '@/lib/api/upload';
+import SubCategorySelect from './SubCategorySelect';
 
 interface EditSelectionModalProps {
   selection: any;
@@ -40,6 +41,7 @@ export default function EditSelectionModal({
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(selection.imageUrl || '');
+  const [builderOrgId, setBuilderOrgId] = useState<string>('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -54,6 +56,8 @@ export default function EditSelectionModal({
     subType: selection.subType || '',
     material: selection.material || '', // For countertops
     notes: selection.notes || '', // Additional notes
+    subCategoryId: selection.subCategoryId || '',
+    subCategoryName: selection.subCategoryName || '',
     imageUrl: selection.imageUrl || '',
     productLink: selection.productLink || '',
   });
@@ -73,6 +77,18 @@ export default function EditSelectionModal({
       // Load rooms
       const roomsData = await apiClient.get(`/rooms?projectId=${projectId}`);
       setRooms(Array.isArray(roomsData) ? roomsData : []);
+
+      // Load builderOrgId from project
+      if (!builderOrgId) {
+        try {
+          const project = await apiClient.get(`/projects/${projectId}`);
+          if (project?.builderOrgId) {
+            setBuilderOrgId(project.builderOrgId);
+          }
+        } catch (err) {
+          console.error('Failed to load builderOrgId:', err);
+        }
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
       showError('Failed to load categories and rooms');
@@ -161,6 +177,8 @@ export default function EditSelectionModal({
         subType: formData.subType || null,
         material: formData.material || null, // For countertops
         notes: formData.notes.trim() || null, // Additional notes
+        subCategoryId: formData.subCategoryId || null,
+        subCategoryName: formData.subCategoryName || null,
       };
 
       await apiClient.patch(`/api/items/${selection.id}`, updateData);
@@ -222,6 +240,20 @@ export default function EditSelectionModal({
                   ))}
                 </select>
               </div>
+
+              {/* Sub-Category */}
+              {builderOrgId && formData.categoryId && selectedCategory && (
+                <SubCategorySelect
+                  builderOrgId={builderOrgId}
+                  categoryId={formData.categoryId}
+                  categoryName={selectedCategory?.name || ''}
+                  value={formData.subCategoryId}
+                  onChange={(id, name) => {
+                    handleChange('subCategoryId', id);
+                    handleChange('subCategoryName', name);
+                  }}
+                />
+              )}
 
               {/* Name */}
               <Input

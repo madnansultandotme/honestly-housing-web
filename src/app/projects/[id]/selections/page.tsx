@@ -130,6 +130,18 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
     return selections.filter(s => s.categoryId === categoryId);
   };
 
+  const groupBySubCategory = (items: any[]) => {
+    const grouped = new Map<string, { subCategoryName: string; items: any[] }>();
+    items.forEach(item => {
+      const key = item.subCategoryId || '__none__';
+      if (!grouped.has(key)) {
+        grouped.set(key, { subCategoryName: item.subCategoryName || 'General', items: [] });
+      }
+      grouped.get(key)!.items.push(item);
+    });
+    return Array.from(grouped.values());
+  };
+
   const getCompletedCount = () => {
     return selections.filter(s => s.status === 'approved' || s.status === 'installed').length;
   };
@@ -246,7 +258,10 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                     <div className="flex justify-between items-center">
                       <div>
                         <div className="font-medium text-neutral-900">{selection.name}</div>
-                        <div className="text-sm text-neutral-600">{selection.categoryName}</div>
+                        <div className="text-sm text-neutral-600">
+                          {selection.categoryName}
+                          {selection.subCategoryName && ` • ${selection.subCategoryName}`}
+                        </div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-medium text-brass-700">
@@ -270,8 +285,16 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
             <h3 className="text-lg font-semibold text-neutral-900 mb-4">
               {filteredCategory?.name || 'Category'} Items
             </h3>
-            <div className="space-y-3">
-              {filteredSelections.map((selection) => (
+            <div className="space-y-6">
+              {groupBySubCategory(filteredSelections).map((group) => (
+                <div key={group.subCategoryName}>
+                  {group.subCategoryName !== 'General' && (
+                    <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wide mb-2">
+                      {group.subCategoryName}
+                    </h4>
+                  )}
+                  <div className="space-y-3">
+                    {group.items.map((selection) => (
                 <div key={selection.id} className="bg-white border border-neutral-200 rounded-button p-4 hover:shadow-sm transition-shadow">
                   <div className="flex items-center justify-between">
                     <Link href={`/projects/${id}/selections/${selection.id}`} className="flex-1">
@@ -322,6 +345,9 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+              ))}
                   </div>
                 </div>
               ))}
@@ -434,6 +460,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
         <AddSelectionModal
           projectId={id}
           userId={user?.uid || ''}
+          builderOrgId={project?.builderOrgId || ''}
           onClose={() => setShowAddSelection(false)}
           onSuccess={fetchData}
         />

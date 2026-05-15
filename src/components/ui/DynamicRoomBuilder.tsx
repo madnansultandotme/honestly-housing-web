@@ -417,13 +417,13 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
                     {/* Quick Add Suggestions */}
                     {COMMON_FIXTURES[newFixtureCategory] && (
                       <div>
-                        <p className="text-xs text-neutral-600 mb-2">Quick add:</p>
+                        <p className="text-xs text-neutral-600 mb-2">Common fixtures (click to add):</p>
                         <div className="flex flex-wrap gap-2">
                           {COMMON_FIXTURES[newFixtureCategory].map(fixtureName => (
                             <button
                               key={fixtureName}
                               onClick={() => handleQuickAddFixture(room.id, newFixtureCategory, fixtureName)}
-                              className="text-xs bg-white border border-neutral-300 hover:border-brass-500 px-2 py-1 rounded transition-colors"
+                              className="text-xs bg-white border border-neutral-300 hover:border-brass-500 hover:bg-brass-50 px-3 py-1.5 rounded-button border-neutral-300 hover:border-brass-500 px-2 py-1 rounded transition-colors"
                             >
                               + {fixtureName}
                             </button>

@@ -280,23 +280,44 @@ export default function BuilderProjectSetup() {
       const builderOrgId = profile?.builderOrgId || user?.uid;
       const template = await apiClient.get(`/templates/${templateId}?builderOrgId=${builderOrgId}`);
 
-      // Note: Templates don't store room details, only room counts
-      // User will need to manually add rooms after applying template
+      // Apply room details from template
+      if (template.roomDetails && Array.isArray(template.roomDetails) && template.roomDetails.length > 0) {
+        const seededRooms = template.roomDetails.map((rd: any) => ({
+          id: `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          name: rd.name,
+          type: rd.type || 'other',
+          fixtures: (rd.fixtures || []).map((f: any) => ({
+            id: `tpl-fix-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            category: f.category || 'Other',
+            name: f.name,
+            quantity: f.quantity || 1,
+            imageUrl: f.imageUrl || undefined,
+          })),
+        }));
+        setRoomDetails(seededRooms);
+      }
 
       if (template.squareFootage) {
         setSquareFootage(template.squareFootage);
       }
 
       if (template.categories?.length) {
-        setCategories(
-          template.categories.map((cat: any) => ({
-            id: cat.id || normalizeKey(cat.name),
+        const seenNames = new Set<string>();
+        const dedupedCategories = template.categories
+          .filter((cat: any) => {
+            const key = cat.name.toLowerCase();
+            if (seenNames.has(key)) return false;
+            seenNames.add(key);
+            return true;
+          })
+          .map((cat: any) => ({
+            id: cat.id || cat.name.toLowerCase().replace(/\s+/g, "-"),
             name: cat.name,
             required: cat.required !== false,
             completedCount: 0,
             totalCount: 0,
-          }))
-        );
+          }));
+        setCategories(dedupedCategories);
       }
 
       if (template.allowances) {
@@ -349,11 +370,17 @@ export default function BuilderProjectSetup() {
   };
 
   const handleAddCategory = () => {
-    if (!newCategoryName.trim()) return;
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+
+    if (categories.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
+      setError('A category with this name already exists');
+      return;
+    }
 
     const newCategory: CategoryItem = {
       id: `custom-${Date.now()}`,
-      name: newCategoryName.trim(),
+      name: trimmed,
       required: true,
       completedCount: 0,
       totalCount: 0,
@@ -445,8 +472,14 @@ export default function BuilderProjectSetup() {
         console.error('Failed to delete existing categories:', err);
       }
 
-      // Create/update categories
-      for (const category of requiredCategories) {
+      // Track created category names to prevent duplicates
+      const createdCategoryNames = new Set<string>();
+
+      // Create/update categories (save ALL categories, not just required)
+      for (const category of categories) {
+        const normalizedName = category.name.toLowerCase();
+        if (createdCategoryNames.has(normalizedName)) continue;
+        createdCategoryNames.add(normalizedName);
         await apiClient.post('/categories', {
           projectId,
           name: category.name,
@@ -472,29 +505,33 @@ export default function BuilderProjectSetup() {
 
         // Create items (fixtures) for this room
         for (const fixture of room.fixtures) {
-          // Find matching category by name
-          const matchingCategory = requiredCategories.find(
+          // Find matching category by name (use all categories, not just required)
+          const matchingCategory = categories.find(
             c => c.name.toLowerCase() === fixture.category.toLowerCase()
           );
 
           let categoryId = matchingCategory?.id;
           let categoryName = fixture.category;
 
-          // If category doesn't exist, create it
+          // If category doesn't exist, create it (with dedup check)
           if (!matchingCategory) {
-            const newCategoryResponse = await apiClient.post('/categories', {
-              projectId,
-              name: fixture.category,
-              displayOrder: requiredCategories.length,
-              required: false,
-              allowanceType: 'fixed',
-              allowanceAmount: 0,
-              progress: {
-                totalItems: 0,
-                completedItems: 0,
-              },
-            });
-            categoryId = newCategoryResponse?.id || newCategoryResponse?.categoryId;
+            const normalizedFixtureCat = fixture.category.toLowerCase();
+            if (!createdCategoryNames.has(normalizedFixtureCat)) {
+              createdCategoryNames.add(normalizedFixtureCat);
+              const newCategoryResponse = await apiClient.post('/categories', {
+                projectId,
+                name: fixture.category,
+                displayOrder: categories.length,
+                required: false,
+                allowanceType: 'fixed',
+                allowanceAmount: 0,
+                progress: {
+                  totalItems: 0,
+                  completedItems: 0,
+                },
+              });
+              categoryId = newCategoryResponse?.id || newCategoryResponse?.categoryId;
+            }
           }
 
           // Create item (selection)

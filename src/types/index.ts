@@ -43,6 +43,18 @@ export interface Photo {
   createdAt: Date;
 }
 
+export interface SubCategory {
+  id: string;
+  builderOrgId: string;
+  parentCategoryId: string;
+  parentCategoryName: string;
+  name: string;
+  displayOrder: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PaintSelection {
   id: string;
   projectId: string;

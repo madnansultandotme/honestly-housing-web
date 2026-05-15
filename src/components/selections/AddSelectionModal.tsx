@@ -4,10 +4,12 @@ import Input from '@/components/ui/Input';
 import { useNotification } from '@/contexts/NotificationContext';
 import { apiClient } from '@/lib/api/client';
 import { uploadImage } from '@/lib/api/upload';
+import SubCategorySelect from './SubCategorySelect';
 
 interface AddSelectionModalProps {
   projectId: string;
   userId: string;
+  builderOrgId?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -29,6 +31,7 @@ const COUNTERTOP_MATERIALS = [
 export default function AddSelectionModal({
   projectId,
   userId,
+  builderOrgId,
   onClose,
   onSuccess,
 }: AddSelectionModalProps) {
@@ -40,6 +43,7 @@ export default function AddSelectionModal({
   const [uploading, setUploading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [builderOrgIdState, setBuilderOrgIdState] = useState<string>(builderOrgId || '');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -54,6 +58,8 @@ export default function AddSelectionModal({
     subType: '',
     material: '', // For countertops
     notes: '', // Additional notes
+    subCategoryId: '',
+    subCategoryName: '',
     imageUrl: '',
     productLink: '',
   });
@@ -73,6 +79,19 @@ export default function AddSelectionModal({
       // Load rooms
       const roomsData = await apiClient.get(`/rooms?projectId=${projectId}`);
       setRooms(Array.isArray(roomsData) ? roomsData : []);
+
+      // Load builderOrgId from project if not provided
+      if (!builderOrgId) {
+        try {
+          const project = await apiClient.get(`/projects/${projectId}`);
+          if (project?.builderOrgId) {
+            // We'll use this via a ref later since props are immutable
+            setBuilderOrgIdState(project.builderOrgId);
+          }
+        } catch (err) {
+          console.error('Failed to load builderOrgId:', err);
+        }
+      }
     } catch (error) {
       console.error('Failed to load data:', error);
       showError('Failed to load categories and rooms');
@@ -163,6 +182,8 @@ export default function AddSelectionModal({
         subType: formData.subType || null,
         material: formData.material || null, // For countertops
         notes: formData.notes.trim() || null, // Additional notes
+        subCategoryId: formData.subCategoryId || null,
+        subCategoryName: formData.subCategoryName || null,
         locked: false,
         createdBy: userId,
       };
@@ -226,6 +247,20 @@ export default function AddSelectionModal({
                   ))}
                 </select>
               </div>
+
+              {/* Sub-Category */}
+              {(builderOrgIdState || builderOrgId) && formData.categoryId && selectedCategory && (
+                <SubCategorySelect
+                  builderOrgId={builderOrgIdState || builderOrgId || ''}
+                  categoryId={formData.categoryId}
+                  categoryName={selectedCategory?.name || ''}
+                  value={formData.subCategoryId}
+                  onChange={(id, name) => {
+                    handleChange('subCategoryId', id);
+                    handleChange('subCategoryName', name);
+                  }}
+                />
+              )}
 
               {/* Name */}
               <Input
