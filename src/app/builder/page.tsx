@@ -8,6 +8,7 @@ import Card from '@/components/ui/Card';
 import BuilderHeader from '@/components/navigation/BuilderHeader';
 import { LoadingOverlay, LoadingCard } from '@/components/ui/LoadingSpinner';
 import Link from 'next/link';
+import { isSelectionCompleted, isSelectionPendingApproval } from '@/lib/selections/status';
 
 export default function BuilderDashboard() {
   const { user, profile } = useAuth();
@@ -59,7 +60,7 @@ export default function BuilderDashboard() {
 
         // Count completed items this month
         const completedInMonth = selections.filter((s: any) => {
-          if (s.status !== 'approved' && s.status !== 'installed') return false;
+          if (!isSelectionCompleted(s.status)) return false;
           if (!s.approvedAt) return false;
           const approvedDate = new Date(s.approvedAt);
           return approvedDate >= monthAgo && approvedDate <= now;
@@ -68,14 +69,14 @@ export default function BuilderDashboard() {
       }
 
       // Count pending approvals
-      const pendingApprovals = allSelections.filter((s: any) => s.status === 'awaiting_approval').length;
+      const pendingApprovals = allSelections.filter((s: any) => isSelectionPendingApproval(s.status)).length;
 
       // Count due this week
       const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       const dueThisWeek = allSelections.filter((s: any) => {
         if (!s.dueDate) return false;
         const dueDate = new Date(s.dueDate);
-        return dueDate >= now && dueDate <= weekFromNow && s.status !== 'approved' && s.status !== 'installed';
+        return dueDate >= now && dueDate <= weekFromNow && !isSelectionCompleted(s.status);
       }).length;
 
       setStats({

@@ -11,6 +11,7 @@ import DueThisWeekList from '@/components/selections/DueThisWeekList';
 import { LoadingCard } from '@/components/ui/LoadingSpinner';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
+import { isSelectionCompleted, isSelectionPendingApproval } from '@/lib/selections/status';
 
 export default function ClientPortal() {
   const { user } = useAuth();
@@ -76,10 +77,8 @@ export default function ClientPortal() {
       }
 
       // Calculate stats
-      const completed = allSelections.filter(
-        (s) => s.status === 'approved' || s.status === 'installed'
-      ).length;
-      const pending = allSelections.filter((s) => s.status === 'awaiting_approval').length;
+      const completed = allSelections.filter((s) => isSelectionCompleted(s.status)).length;
+      const pending = allSelections.filter((s) => isSelectionPendingApproval(s.status)).length;
 
       // Get due this week
       const now = new Date();

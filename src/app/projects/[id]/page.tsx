@@ -18,6 +18,7 @@ import AddTeamMemberModal from '@/components/projects/AddTeamMemberModal';
 import TeamMembersList from '@/components/projects/TeamMembersList';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
+import { isSelectionCompleted, isSelectionPendingApproval } from '@/lib/selections/status';
 
 export default function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -97,9 +98,9 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
   }
 
   const isBuilder = profile?.role === 'builder' || profile?.role === 'designer' || profile?.role === 'admin';
-  const completedSelections = selections.filter(s => s.status === 'approved' || s.status === 'installed').length;
+  const completedSelections = selections.filter(s => isSelectionCompleted(s.status)).length;
   const totalSelections = selections.length;
-  const pendingApprovals = selections.filter(s => s.status === 'awaiting_approval').length;
+  const pendingApprovals = selections.filter(s => isSelectionPendingApproval(s.status)).length;
   const roomCounts = project.roomCounts || project.rooms || {
     bedrooms: 0,
     bathrooms: 0,

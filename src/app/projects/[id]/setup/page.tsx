@@ -8,7 +8,8 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import CategoryChecklist, { CategoryItem } from '@/components/ui/CategoryChecklist';
 import AllowancePrompt, { AllowanceType } from '@/components/ui/AllowancePrompt';
-import DynamicRoomBuilder, { RoomDetail } from '@/components/ui/DynamicRoomBuilder';
+import type { RoomDetail } from '@/components/ui/DynamicRoomBuilder';
+import RoomSelectionOptions from '@/components/ui/RoomSelectionOptions';
 import PaintBuilder, { PaintDetail } from '@/components/ui/PaintBuilder';
 import CabinetryBuilder, { CabinetryDetail } from '@/components/ui/CabinetryBuilder';
 import TemplateViewer from '@/components/templates/TemplateViewer';
@@ -474,6 +475,8 @@ export default function BuilderProjectSetup() {
 
       // Track created category names to prevent duplicates
       const createdCategoryNames = new Set<string>();
+      const createdRoomIdsByPreviousId = new Map<string, string>();
+      const createdRoomNamesByPreviousId = new Map<string, string>();
 
       // Create/update categories (save ALL categories, not just required)
       for (const category of categories) {
@@ -502,6 +505,12 @@ export default function BuilderProjectSetup() {
         });
 
         const roomId = roomResponse?.id || roomResponse?.roomId;
+        if (!roomId) {
+          throw new Error(`Failed to create room: ${room.name}`);
+        }
+
+        createdRoomIdsByPreviousId.set(room.id, roomId);
+        createdRoomNamesByPreviousId.set(room.id, room.name);
 
         // Create items (fixtures) for this room
         for (const fixture of room.fixtures) {
@@ -554,6 +563,14 @@ export default function BuilderProjectSetup() {
         }
       }
 
+      const mapPersistedRoomIds = (roomIds: string[] = []) =>
+        roomIds.map((roomId) => createdRoomIdsByPreviousId.get(roomId) || roomId);
+
+      const mapPersistedRoomNames = (roomIds: string[] = [], roomNames: string[] = []) =>
+        roomIds.length > 0
+          ? roomIds.map((roomId, index) => createdRoomNamesByPreviousId.get(roomId) || roomNames[index] || '')
+          : roomNames;
+
       // Delete existing paint selections and recreate them
       try {
         const existingPaint = await apiClient.get(`/paint?projectId=${projectId}`);
@@ -577,8 +594,8 @@ export default function BuilderProjectSetup() {
           image: paint.image,
           assignmentType: paint.assignmentType,
           areas: paint.areas || [],
-          roomIds: paint.roomIds || [],
-          roomNames: paint.roomNames || [],
+          roomIds: mapPersistedRoomIds(paint.roomIds),
+          roomNames: mapPersistedRoomNames(paint.roomIds, paint.roomNames),
           createdBy: user?.uid,
         });
       }
@@ -609,8 +626,8 @@ export default function BuilderProjectSetup() {
           image: cabinetry.image,
           assignmentType: cabinetry.assignmentType,
           areas: cabinetry.areas || [],
-          roomIds: cabinetry.roomIds || [],
-          roomNames: cabinetry.roomNames || [],
+          roomIds: mapPersistedRoomIds(cabinetry.roomIds),
+          roomNames: mapPersistedRoomNames(cabinetry.roomIds, cabinetry.roomNames),
           createdBy: user?.uid,
         });
       }
@@ -775,13 +792,13 @@ export default function BuilderProjectSetup() {
               </div>
             </Card>
 
-            {/* Rooms & Fixtures */}
+            {/* Room Selection Options */}
             <Card>
-              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Rooms & Fixtures</h2>
+              <h2 className="text-lg font-semibold text-neutral-900 mb-4">Room Selection Options</h2>
               <p className="text-sm text-neutral-600 mb-4">
-                Add, edit, or remove rooms and their fixtures. Changes will be saved when you click "Save Configuration".
+                Choose the predefined selection items needed for each room type. Changes will be saved when you click "Save Configuration".
               </p>
-              <DynamicRoomBuilder
+              <RoomSelectionOptions
                 rooms={roomDetails}
                 onChange={setRoomDetails}
               />

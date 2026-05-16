@@ -9,8 +9,9 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import CategoryChecklist, { CategoryItem } from '@/components/ui/CategoryChecklist';
 import AllowancePrompt, { AllowanceType } from '@/components/ui/AllowancePrompt';
-import DynamicRoomBuilder, { RoomDetail } from '@/components/ui/DynamicRoomBuilder';
+import type { RoomDetail } from '@/components/ui/DynamicRoomBuilder';
 import RoomChecklist, { RoomSelection, CustomRoom } from '@/components/ui/RoomChecklist';
+import RoomSelectionOptions from '@/components/ui/RoomSelectionOptions';
 import CabinetryBuilder, { CabinetryDetail } from '@/components/ui/CabinetryBuilder';
 import PaintBuilder, { PaintDetail } from '@/components/ui/PaintBuilder';
 import CredentialsModal from '@/components/ui/CredentialsModal';
@@ -36,11 +37,45 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: 'cabinetry', name: 'Cabinetry', required: false, completedCount: 0, totalCount: 0 },
 ];
 
-type Step = 'basic' | 'rooms' | 'fixtures' | 'paint' | 'cabinetry' | 'categories' | 'budgets' | 'template';
+type Step = 'basic' | 'rooms' | 'roomSelections' | 'paint' | 'cabinetry' | 'categories' | 'budgets' | 'template';
+
+function buildRoomName(room: RoomSelection, index: number) {
+  if (room.type === 'bedroom') return index === 0 ? 'Primary Bedroom' : `Bedroom ${index + 1}`;
+  if (room.type === 'bathroom') return index === 0 ? 'Primary Bathroom' : `Bathroom ${index + 1}`;
+  return room.quantity > 1 ? `${room.displayName} ${index + 1}` : room.displayName;
+}
+
+function buildRoomDetailsFromSelections(roomSelections: RoomSelection[], customRooms: CustomRoom[]) {
+  const seededRooms: RoomDetail[] = [];
+
+  roomSelections
+    .filter((room) => room.selected && room.quantity > 0)
+    .forEach((room) => {
+      for (let index = 0; index < room.quantity; index += 1) {
+        seededRooms.push({
+          id: `room-${room.type}-${index}`,
+          name: buildRoomName(room, index),
+          type: room.type,
+          fixtures: [],
+        });
+      }
+    });
+
+  customRooms.forEach((room) => {
+    seededRooms.push({
+      id: room.id,
+      name: room.name,
+      type: room.type,
+      fixtures: [],
+    });
+  });
+
+  return seededRooms;
+}
 
 export default function NewProjectPage() {
   const { user, profile } = useAuth();
-  const { showSuccess, showError } = useNotification();
+  const { showSuccess } = useNotification();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('basic');
   const [saving, setSaving] = useState(false);
@@ -65,7 +100,7 @@ export default function NewProjectPage() {
     displayName: string;
   } | null>(null);
 
-  // Step 2: Rooms (Checklist + Dynamic Fixtures)
+  // Step 2: Rooms (Checklist + Selection Options)
   const [roomSelections, setRoomSelections] = useState<RoomSelection[]>([
     { type: 'bedroom', displayName: 'Bedrooms', quantity: 0, selected: false },
     { type: 'bathroom', displayName: 'Bathrooms', quantity: 0, selected: false },
@@ -107,7 +142,7 @@ export default function NewProjectPage() {
   const steps: { id: Step; title: string; description: string }[] = [
     { id: 'basic', title: 'Basic Info', description: 'Project name and client' },
     { id: 'rooms', title: 'Select Rooms', description: 'Choose which rooms apply' },
-    { id: 'fixtures', title: 'Room Fixtures', description: 'Add fixtures to each room' },
+    { id: 'roomSelections', title: 'Room Selections', description: 'Choose options by room' },
     { id: 'paint', title: 'Paint', description: 'Paint selections and assignments' },
     { id: 'cabinetry', title: 'Cabinetry', description: 'Cabinetry selections and assignments' },
     { id: 'categories', title: 'Categories', description: 'Required selection categories' },
@@ -226,35 +261,16 @@ export default function NewProjectPage() {
     if (currentStepIndex < steps.length - 1) {
       const nextStep = steps[currentStepIndex + 1].id;
 
-      // Seed roomDetails from roomSelections when moving from rooms to fixtures
-      if (nextStep === 'fixtures' && roomDetails.length === 0) {
-        const seededRooms: RoomDetail[] = [];
-
-        roomSelections
-          .filter(r => r.selected && r.quantity > 0)
-          .forEach(room => {
-            for (let i = 0; i < room.quantity; i++) {
-              seededRooms.push({
-                id: `room-${Date.now()}-${seededRooms.length}`,
-                name: room.quantity > 1 ? `${room.displayName} ${i + 1}` : room.displayName,
-                type: room.type,
-                fixtures: [],
-              });
-            }
-          });
-
-        customRooms.forEach(room => {
-          seededRooms.push({
-            id: `room-${Date.now()}-${seededRooms.length}`,
-            name: room.name,
-            type: room.type,
-            fixtures: [],
-          });
-        });
-
-        if (seededRooms.length > 0) {
-          setRoomDetails(seededRooms);
-        }
+      // Seed roomDetails from roomSelections when moving from rooms to room selection options
+      if (nextStep === 'roomSelections') {
+        const nextRooms = buildRoomDetailsFromSelections(roomSelections, customRooms);
+        const existingById = new Map(roomDetails.map((room) => [room.id, room]));
+        setRoomDetails(
+          nextRooms.map((room) => ({
+            ...room,
+            fixtures: existingById.get(room.id)?.fixtures || [],
+          }))
+        );
       }
 
       // If a template is selected (not empty) and we're moving from basic to rooms, apply template
@@ -367,39 +383,8 @@ export default function NewProjectPage() {
       // Calculate total fixtures
       const totalFixturesCount = roomDetails.reduce((sum, room) => sum + room.fixtures.length, 0);
 
-      // Step 1: Create project with schema-compliant structure
-      const projectResponse: any = await apiClient.post('/api/projects', {
-        name: projectName,
-        builderOrgId: profile?.builderOrgId || user?.uid,
-        clientId: selectedClient.uid,
-        clientEmail: selectedClient.email, // Store email for easy access
-        status: 'active', // Project is active immediately after creation
-        address: address || '',
-        startDate: new Date().toISOString(),
-        rooms: roomsObject,
-        fixtureCounts: {
-          plumbingFixtures: totalFixturesCount,
-          lightingFixtures: 0,
-        },
-        squareFootage: squareFootage || null,
-        progress: {
-          totalItems: 0,
-          completedItems: 0,
-          approvedItems: 0,
-          pendingItems: 0,
-          installedItems: 0,
-        },
-        createdBy: user?.uid,
-      });
-
-      const projectId = projectResponse?.id || projectResponse?.projectId;
-
-      if (!projectId) {
-        throw new Error('Failed to create project');
-      }
-
-      // Create only the project record; defer rooms/items/paint/cabinetry creation to the Setup page
-      const projectResponseOnly: any = await apiClient.post('/api/projects', {
+      // Create the project record, then persist the selected room options as subcollections.
+      const projectResponseOnly: any = await apiClient.post('/projects', {
         name: projectName,
         builderOrgId: profile?.builderOrgId || user?.uid,
         clientId: selectedClient.uid,
@@ -408,18 +393,17 @@ export default function NewProjectPage() {
         address: address || '',
         startDate: new Date().toISOString(),
         rooms: roomsObject,
-        initialRoomDetails: roomDetails,
         templateId: selectedTemplateId || null,
         fixtureCounts: {
           plumbingFixtures: totalFixturesCount,
-          lightingFixtures: 0,
+          lightingFixtures: roomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
         },
         squareFootage: squareFootage || null,
         progress: {
-          totalItems: 0,
+          totalItems: totalFixturesCount,
           completedItems: 0,
           approvedItems: 0,
-          pendingItems: 0,
+          pendingItems: totalFixturesCount,
           installedItems: 0,
         },
         createdBy: user?.uid,
@@ -429,6 +413,128 @@ export default function NewProjectPage() {
 
       if (!createdProjectId) {
         throw new Error('Failed to create project');
+      }
+
+      const createdCategoriesByName = new Map<string, string>();
+      const createdRoomIdsByLocalId = new Map<string, string>();
+      const createdRoomNamesByLocalId = new Map<string, string>();
+
+      for (const category of categories) {
+        const allowance = allowances.find(a => a.categoryId === category.id);
+        const response: any = await apiClient.post('/categories', {
+          projectId: createdProjectId,
+          name: category.name,
+          displayOrder: categories.findIndex(c => c.id === category.id),
+          required: category.required,
+          allowanceType: allowance?.type || 'fixed',
+          allowanceAmount: allowance?.amount || 0,
+          scopeOfWork: scopeOfWorks[category.id] || null,
+        });
+
+        const categoryId = response?.id || response?.categoryId;
+        if (categoryId) {
+          createdCategoriesByName.set(category.name.toLowerCase(), categoryId);
+        }
+      }
+
+      for (const room of roomDetails) {
+        const roomResponse: any = await apiClient.post('/rooms', {
+          projectId: createdProjectId,
+          name: room.name,
+          type: room.type.toLowerCase().replace(' ', '-'),
+          fixtureCounts: {
+            total: room.fixtures.length,
+            assigned: 0,
+          },
+        });
+
+        const roomId = roomResponse?.id || roomResponse?.roomId;
+        if (!roomId) {
+          throw new Error(`Failed to create room: ${room.name}`);
+        }
+
+        createdRoomIdsByLocalId.set(room.id, roomId);
+        createdRoomNamesByLocalId.set(room.id, room.name);
+
+        for (const fixture of room.fixtures) {
+          const normalizedCategoryName = fixture.category.toLowerCase();
+          let categoryId = createdCategoriesByName.get(normalizedCategoryName);
+
+          if (!categoryId) {
+            const categoryResponse: any = await apiClient.post('/categories', {
+              projectId: createdProjectId,
+              name: fixture.category,
+              displayOrder: categories.length + createdCategoriesByName.size,
+              required: false,
+              allowanceType: 'fixed',
+              allowanceAmount: 0,
+            });
+            categoryId = categoryResponse?.id || categoryResponse?.categoryId;
+            if (categoryId) {
+              createdCategoriesByName.set(normalizedCategoryName, categoryId);
+            }
+          }
+
+          await apiClient.post('/items', {
+            projectId: createdProjectId,
+            categoryId,
+            categoryName: fixture.category,
+            roomId,
+            roomName: room.name,
+            name: fixture.name,
+            quantity: fixture.quantity,
+            imageUrl: fixture.imageUrl || null,
+            status: 'notStarted',
+            allowance: 0,
+            actualCost: 0,
+            difference: 0,
+            locked: false,
+            createdBy: user?.uid,
+          });
+        }
+      }
+
+      const mapPersistedRoomIds = (roomIds: string[] = []) =>
+        roomIds.map((roomId) => createdRoomIdsByLocalId.get(roomId) || roomId);
+
+      const mapPersistedRoomNames = (roomIds: string[] = [], roomNames: string[] = []) =>
+        roomIds.length > 0
+          ? roomIds.map((roomId, index) => createdRoomNamesByLocalId.get(roomId) || roomNames[index] || '')
+          : roomNames;
+
+      for (const paint of paintSelections) {
+        await apiClient.post('/paint', {
+          projectId: createdProjectId,
+          colorName: paint.colorName,
+          paintCode: paint.paintCode,
+          sheen: paint.sheen,
+          notes: paint.notes,
+          image: paint.image,
+          assignmentType: paint.assignmentType,
+          areas: paint.areas || [],
+          roomIds: mapPersistedRoomIds(paint.roomIds),
+          roomNames: mapPersistedRoomNames(paint.roomIds, paint.roomNames),
+          createdBy: user?.uid,
+        });
+      }
+
+      for (const cabinetry of cabinetrySelections) {
+        await apiClient.post('/cabinetry', {
+          projectId: createdProjectId,
+          cabinetryType: cabinetry.cabinetryType,
+          material: cabinetry.material,
+          finish: cabinetry.finish,
+          doorStyle: cabinetry.doorStyle,
+          constructionType: cabinetry.constructionType,
+          hardware: cabinetry.hardware,
+          notes: cabinetry.notes,
+          image: cabinetry.image,
+          assignmentType: cabinetry.assignmentType,
+          areas: cabinetry.areas || [],
+          roomIds: mapPersistedRoomIds(cabinetry.roomIds),
+          roomNames: mapPersistedRoomNames(cabinetry.roomIds, cabinetry.roomNames),
+          createdBy: user?.uid,
+        });
       }
 
       // Save as template if requested
@@ -457,8 +563,8 @@ export default function NewProjectPage() {
         });
       }
 
-      // Redirect to Setup so the builder can complete full configuration
-      router.push(`/projects/${createdProjectId}/setup`);
+      showSuccess('Project created successfully');
+      router.push(`/projects/${createdProjectId}`);
     } catch (err) {
       console.error('Failed to create project:', err);
       setError(err instanceof Error ? err.message : 'Failed to create project');
@@ -476,8 +582,8 @@ export default function NewProjectPage() {
         const hasSelectedRooms = roomSelections.some(r => r.selected && r.quantity > 0);
         const hasCustomRooms = customRooms.length > 0;
         return hasSelectedRooms || hasCustomRooms;
-      case 'fixtures':
-        return true; // Fixtures are optional
+      case 'roomSelections':
+        return true; // Room selection options are optional
       case 'paint':
         return true; // Paint is optional
       case 'cabinetry':
@@ -760,19 +866,19 @@ export default function NewProjectPage() {
             </div>
           )}
 
-          {/* Step 3: Room Fixtures */}
-          {currentStep === 'fixtures' && (
+          {/* Step 3: Room Selections */}
+          {currentStep === 'roomSelections' && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-display font-bold text-neutral-900 mb-2">
-                  Room Fixtures
+                  Room Selection Options
                 </h2>
                 <p className="text-neutral-600">
-                  Add fixtures to each room. You can add fixtures for the rooms you selected in the previous step.
+                  Choose the selection items needed for each room type. Checked options become client-facing selections when the project is created.
                 </p>
               </div>
 
-              <DynamicRoomBuilder
+              <RoomSelectionOptions
                 rooms={roomDetails}
                 onChange={setRoomDetails}
               />

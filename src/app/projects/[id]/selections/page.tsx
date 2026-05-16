@@ -17,6 +17,7 @@ import EditSelectionModal from '@/components/selections/EditSelectionModal';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api/client';
+import { isSelectionCompleted, isSelectionPendingApproval } from '@/lib/selections/status';
 
 export default function SelectionsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -143,7 +144,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
   };
 
   const getCompletedCount = () => {
-    return selections.filter(s => s.status === 'approved' || s.status === 'installed').length;
+    return selections.filter(s => isSelectionCompleted(s.status)).length;
   };
 
   const getDueThisWeek = () => {
@@ -171,7 +172,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
     ? categories.find((category) => category.id === categoryId)
     : null;
   const filteredCompleted = filteredSelections.filter(
-    (selection) => selection.status === 'approved' || selection.status === 'installed'
+    (selection) => isSelectionCompleted(selection.status)
   ).length;
 
   if (loading) {
@@ -368,9 +369,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {categories.map((category) => {
                 const categorySelections = getSelectionsByCategory(category.id);
-                const completed = categorySelections.filter(s => 
-                  s.status === 'approved' || s.status === 'installed'
-                ).length;
+                const completed = categorySelections.filter(s => isSelectionCompleted(s.status)).length;
                 
                 return (
                   <Link key={category.id} href={`/projects/${id}/selections?category=${category.id}`}>
@@ -413,7 +412,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
             <h4 className="font-semibold text-neutral-900 mb-4">Awaiting Approval</h4>
             <div className="space-y-2">
               {selections
-                .filter(s => s.status === 'awaitingClientApproval')
+                .filter(s => isSelectionPendingApproval(s.status))
                 .map(selection => (
                   <Link
                     key={selection.id}
@@ -424,7 +423,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                     <div className="text-sm text-neutral-600">{selection.categoryName}</div>
                   </Link>
                 ))}
-              {selections.filter(s => s.status === 'awaitingClientApproval').length === 0 && (
+              {selections.filter(s => isSelectionPendingApproval(s.status)).length === 0 && (
                 <p className="text-neutral-500 text-sm">No items awaiting approval</p>
               )}
             </div>
@@ -434,7 +433,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
             <h4 className="font-semibold text-neutral-900 mb-4">Recently Approved</h4>
             <div className="space-y-2">
               {selections
-                .filter(s => s.status === 'approved')
+                .filter(s => isSelectionCompleted(s.status))
                 .slice(0, 5)
                 .map(selection => (
                   <Link
@@ -446,7 +445,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                     <div className="text-sm text-neutral-600">{selection.categoryName}</div>
                   </Link>
                 ))}
-              {selections.filter(s => s.status === 'approved').length === 0 && (
+              {selections.filter(s => isSelectionCompleted(s.status)).length === 0 && (
                 <p className="text-neutral-500 text-sm">No approved items yet</p>
               )}
             </div>

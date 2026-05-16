@@ -9,6 +9,7 @@ import Card from '@/components/ui/Card';
 import ProgressBar from '@/components/ui/ProgressBar';
 import CategoryChecklist, { CategoryItem } from '@/components/ui/CategoryChecklist';
 import { apiClient } from '@/lib/api/client';
+import { isSelectionCompleted } from '@/lib/selections/status';
 
 export default function SelectionCategoriesPage() {
   const { user } = useAuth();
@@ -57,9 +58,7 @@ export default function SelectionCategoriesPage() {
       // Build category items with counts
       const categoryItems: CategoryItem[] = categoriesData.map((cat: any) => {
         const categorySelections = selections.filter((s: any) => s.categoryId === cat.id);
-        const completedCount = categorySelections.filter(
-          (s: any) => s.status === 'approved' || s.status === 'installed'
-        ).length;
+        const completedCount = categorySelections.filter((s: any) => isSelectionCompleted(s.status)).length;
 
         return {
           id: cat.id,
