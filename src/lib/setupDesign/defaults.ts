@@ -12,6 +12,26 @@ export interface SetupDesignGroup {
 
 export type SetupDesignConfig = Record<string, SetupDesignGroup>;
 
+export interface StandardRoomDefault {
+  type: string;
+  displayName: string;
+}
+
+export const DEFAULT_STANDARD_ROOMS: StandardRoomDefault[] = [
+  { type: 'bedroom', displayName: 'Bedrooms' },
+  { type: 'bathroom', displayName: 'Bathrooms' },
+  { type: 'kitchen', displayName: 'Kitchen' },
+  { type: 'living-room', displayName: 'Living Room' },
+  { type: 'dining-room', displayName: 'Dining Room' },
+  { type: 'office', displayName: 'Office' },
+  { type: 'laundry', displayName: 'Laundry Room' },
+  { type: 'foyer', displayName: 'Foyer/Entry' },
+  { type: 'mudroom', displayName: 'Mudroom' },
+  { type: 'pantry', displayName: 'Pantry' },
+  { type: 'garage', displayName: 'Garage' },
+  { type: 'bonus-room', displayName: 'Bonus Room' },
+];
+
 export const DEFAULT_SETUP_DESIGN: SetupDesignConfig = {
   bedroom: {
     title: 'Bedroom',
@@ -89,6 +109,18 @@ export const DEFAULT_SETUP_DESIGN: SetupDesignConfig = {
       { category: 'Hardware', name: 'Cabinet Pulls', measureLabel: 'Quantity' },
       { category: 'Hardware', name: 'Cabinet Knobs', measureLabel: 'Quantity' },
       { category: 'Flooring', name: 'Flooring', measureLabel: 'Square Feet' },
+    ],
+  },
+  exterior: {
+    title: 'Exterior',
+    appliesTo: 'Applies to exterior areas, porches, patios, pools, and outdoor living spaces.',
+    options: [
+      { category: 'Electrical', name: 'Exterior Fan', measureLabel: 'Quantity' },
+      { category: 'Electrical', name: 'Exterior Sconce', measureLabel: 'Quantity' },
+      { category: 'Electrical', name: 'Landscape Lighting', measureLabel: 'Quantity' },
+      { category: 'Exterior', name: 'Pool', measureLabel: 'Quantity' },
+      { category: 'Exterior', name: 'Outdoor Kitchen', measureLabel: 'Quantity' },
+      { category: 'Exterior', name: 'Patio Flooring', measureLabel: 'Square Feet' },
     ],
   },
 };

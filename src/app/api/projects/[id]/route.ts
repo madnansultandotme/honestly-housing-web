@@ -46,10 +46,10 @@ export async function GET(
         roomCountTotal: rooms.length,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Get project error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to get project' },
+      { error: error instanceof Error ? error.message : 'Failed to get project' },
       { status: 500 }
     );
   }
@@ -73,10 +73,10 @@ export async function PATCH(
       success: true,
       message: 'Project updated successfully',
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Update project error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to update project' },
+      { error: error instanceof Error ? error.message : 'Failed to update project' },
       { status: 500 }
     );
   }
@@ -90,16 +90,50 @@ export async function DELETE(
   try {
     const { id: projectId } = await params;
 
+    const subcollections = [
+      'selections',
+      'items',
+      'categories',
+      'rooms',
+      'photos',
+      'messages',
+      'teamMembers',
+      'invitations',
+      'changeRequests',
+      'changeOrders',
+      'paint',
+      'cabinetry',
+      'roomCategories',
+    ];
+
+    for (const subcollection of subcollections) {
+      const snapshot = await adminDb
+        .collection('projects')
+        .doc(projectId)
+        .collection(subcollection)
+        .get();
+
+      if (snapshot.empty) {
+        continue;
+      }
+
+      const batch = adminDb.batch();
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+    }
+
     await adminDb.collection('projects').doc(projectId).delete();
 
     return NextResponse.json({
       success: true,
       message: 'Project deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Delete project error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to delete project' },
+      { error: error instanceof Error ? error.message : 'Failed to delete project' },
       { status: 500 }
     );
   }

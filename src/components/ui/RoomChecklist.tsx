@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Button from './Button';
-import Input from './Input';
 import Card from './Card';
 
 export interface RoomSelection {
@@ -24,21 +23,6 @@ interface RoomChecklistProps {
   onRoomSelectionsChange: (selections: RoomSelection[]) => void;
   onCustomRoomsChange: (rooms: CustomRoom[]) => void;
 }
-
-const STANDARD_ROOMS: { type: string; displayName: string }[] = [
-  { type: 'bedroom', displayName: 'Bedrooms' },
-  { type: 'bathroom', displayName: 'Bathrooms' },
-  { type: 'kitchen', displayName: 'Kitchen' },
-  { type: 'living-room', displayName: 'Living Room' },
-  { type: 'dining-room', displayName: 'Dining Room' },
-  { type: 'office', displayName: 'Office' },
-  { type: 'laundry', displayName: 'Laundry Room' },
-  { type: 'foyer', displayName: 'Foyer/Entry' },
-  { type: 'mudroom', displayName: 'Mudroom' },
-  { type: 'pantry', displayName: 'Pantry' },
-  { type: 'garage', displayName: 'Garage' },
-  { type: 'bonus-room', displayName: 'Bonus Room' },
-];
 
 export default function RoomChecklist({
   roomSelections,
@@ -180,7 +164,7 @@ export default function RoomChecklist({
           Custom Rooms
         </h3>
         <p className="text-sm text-neutral-600 mb-4">
-          Add any additional rooms with custom names (e.g., "Wine Cellar", "Theater Room").
+          Add any additional rooms with custom names, such as Wine Cellar or Theater Room.
         </p>
 
         {/* Custom Rooms List */}

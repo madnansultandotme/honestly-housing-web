@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
-import { DEFAULT_SETUP_DESIGN, SetupDesignConfig } from '@/lib/setupDesign/defaults';
+import {
+  DEFAULT_SETUP_DESIGN,
+  DEFAULT_STANDARD_ROOMS,
+  SetupDesignConfig,
+  StandardRoomDefault,
+} from '@/lib/setupDesign/defaults';
 
 const SETTINGS_COLLECTION = 'systemSettings';
 const SETUP_DESIGN_DOC = 'setupDesign';
@@ -27,19 +32,43 @@ function sanitizeConfig(config: SetupDesignConfig): SetupDesignConfig {
   }, {});
 }
 
+function sanitizeStandardRooms(rooms: StandardRoomDefault[]): StandardRoomDefault[] {
+  const seen = new Set<string>();
+
+  return (rooms || [])
+    .map((room) => ({
+      type: String(room.type || '').trim().toLowerCase().replace(/\s+/g, '-'),
+      displayName: String(room.displayName || '').trim(),
+    }))
+    .filter((room) => {
+      if (!room.type || !room.displayName || seen.has(room.type)) {
+        return false;
+      }
+
+      seen.add(room.type);
+      return true;
+    });
+}
+
 export async function GET() {
   try {
     const doc = await adminDb.collection(SETTINGS_COLLECTION).doc(SETUP_DESIGN_DOC).get();
-    const config = doc.exists ? doc.data()?.config : DEFAULT_SETUP_DESIGN;
+    const data = doc.exists ? doc.data() : null;
 
     return NextResponse.json({
       success: true,
-      config: config || DEFAULT_SETUP_DESIGN,
+      config: data?.config || DEFAULT_SETUP_DESIGN,
+      standardRooms: data?.standardRooms || DEFAULT_STANDARD_ROOMS,
     });
   } catch (error) {
     console.error('Failed to load setup design:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to load setup design', config: DEFAULT_SETUP_DESIGN },
+      {
+        success: false,
+        error: 'Failed to load setup design',
+        config: DEFAULT_SETUP_DESIGN,
+        standardRooms: DEFAULT_STANDARD_ROOMS,
+      },
       { status: 500 }
     );
   }
@@ -63,10 +92,12 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const config = sanitizeConfig(body.config || DEFAULT_SETUP_DESIGN);
+    const standardRooms = sanitizeStandardRooms(body.standardRooms || DEFAULT_STANDARD_ROOMS);
 
     await adminDb.collection(SETTINGS_COLLECTION).doc(SETUP_DESIGN_DOC).set(
       {
         config,
+        standardRooms,
         updatedAt: new Date().toISOString(),
       },
       { merge: true }
@@ -75,6 +106,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       config,
+      standardRooms,
     });
   } catch (error) {
     console.error('Failed to save setup design:', error);

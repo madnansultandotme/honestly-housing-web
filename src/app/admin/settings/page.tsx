@@ -9,17 +9,27 @@ import AdminHeader from '@/components/navigation/AdminHeader';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { LoadingOverlay } from '@/components/ui/LoadingSpinner';
-import { DEFAULT_SETUP_DESIGN, SetupDesignConfig, SetupDesignOption } from '@/lib/setupDesign/defaults';
+import {
+  DEFAULT_SETUP_DESIGN,
+  DEFAULT_STANDARD_ROOMS,
+  SetupDesignConfig,
+  SetupDesignOption,
+  StandardRoomDefault,
+} from '@/lib/setupDesign/defaults';
 
 const cloneConfig = (config: SetupDesignConfig): SetupDesignConfig => JSON.parse(JSON.stringify(config));
+const cloneRooms = (rooms: StandardRoomDefault[]): StandardRoomDefault[] => JSON.parse(JSON.stringify(rooms));
+const toRoomType = (name: string) => name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 export default function AdminSettingsPage() {
   const { user, profile } = useAuth();
   const { confirm, showError, showSuccess } = useNotification();
   const router = useRouter();
   const [setupDesign, setSetupDesign] = useState<SetupDesignConfig>(() => cloneConfig(DEFAULT_SETUP_DESIGN));
+  const [standardRooms, setStandardRooms] = useState<StandardRoomDefault[]>(() => cloneRooms(DEFAULT_STANDARD_ROOMS));
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
   const [newOption, setNewOption] = useState({
     groupKey: 'bathroom',
     category: '',
@@ -33,10 +43,12 @@ export default function AdminSettingsPage() {
       const response = await fetch('/api/setup-design');
       const data = await response.json();
       setSetupDesign(data.config || DEFAULT_SETUP_DESIGN);
+      setStandardRooms(Array.isArray(data.standardRooms) ? data.standardRooms : DEFAULT_STANDARD_ROOMS);
     } catch (error) {
       console.error('Failed to load setup design:', error);
       showError('Failed to load setup design settings');
       setSetupDesign(cloneConfig(DEFAULT_SETUP_DESIGN));
+      setStandardRooms(cloneRooms(DEFAULT_STANDARD_ROOMS));
     } finally {
       setLoadingSettings(false);
     }
@@ -91,6 +103,24 @@ export default function AdminSettingsPage() {
     setNewOption((current) => ({ ...current, category: '', name: '', measureLabel: 'Quantity' }));
   };
 
+  const handleAddRoom = () => {
+    const displayName = newRoomName.trim();
+    const type = toRoomType(displayName);
+    if (!displayName || !type) return;
+
+    if (standardRooms.some((room) => room.type === type)) {
+      showError('That standard room already exists');
+      return;
+    }
+
+    setStandardRooms((current) => [...current, { type, displayName }]);
+    setNewRoomName('');
+  };
+
+  const handleRemoveRoom = (type: string) => {
+    setStandardRooms((current) => current.filter((room) => room.type !== type));
+  };
+
   const handleRemoveOption = (groupKey: string, optionToRemove: SetupDesignOption) => {
     setSetupDesign((current) => ({
       ...current,
@@ -118,7 +148,7 @@ export default function AdminSettingsPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ config: setupDesign }),
+        body: JSON.stringify({ config: setupDesign, standardRooms }),
       });
 
       const data = await response.json();
@@ -127,6 +157,7 @@ export default function AdminSettingsPage() {
       }
 
       setSetupDesign(data.config || setupDesign);
+      setStandardRooms(data.standardRooms || standardRooms);
       showSuccess('Setup design defaults saved');
     } catch (error) {
       console.error('Failed to save setup design:', error);
@@ -144,6 +175,7 @@ export default function AdminSettingsPage() {
 
     if (confirmed) {
       setSetupDesign(cloneConfig(DEFAULT_SETUP_DESIGN));
+      setStandardRooms(cloneRooms(DEFAULT_STANDARD_ROOMS));
     }
   };
 
@@ -184,6 +216,53 @@ export default function AdminSettingsPage() {
             </Button>
           </div>
         </div>
+
+        <Card className="mb-6">
+          <h3 className="mb-2 text-lg font-semibold text-neutral-900">Standard Rooms</h3>
+          <p className="mb-4 text-sm text-neutral-600">
+            These rooms appear in the pre-populated room checklist for new project setup.
+          </p>
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <input
+              type="text"
+              value={newRoomName}
+              onChange={(event) => setNewRoomName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleAddRoom();
+                }
+              }}
+              placeholder="Room name, e.g. Wine Cellar"
+              className="rounded-button border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brass-500"
+            />
+            <Button onClick={handleAddRoom} disabled={!newRoomName.trim()}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Room
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {standardRooms.map((room) => (
+              <div
+                key={room.type}
+                className="flex items-center justify-between gap-3 rounded-button border border-neutral-200 bg-white px-4 py-3"
+              >
+                <div>
+                  <div className="font-medium text-neutral-900">{room.displayName}</div>
+                  <div className="text-xs text-neutral-500">{room.type}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveRoom(room.type)}
+                  className="rounded-button p-2 text-red-600 transition-colors hover:bg-red-50"
+                  title={`Remove ${room.displayName}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         <Card className="mb-6">
           <h3 className="mb-4 text-lg font-semibold text-neutral-900">Add Setup Option</h3>

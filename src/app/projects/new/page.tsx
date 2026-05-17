@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotification } from '@/contexts/NotificationContext';
@@ -13,11 +13,12 @@ import type { RoomDetail } from '@/components/ui/DynamicRoomBuilder';
 import RoomChecklist, { RoomSelection, CustomRoom } from '@/components/ui/RoomChecklist';
 import RoomSelectionOptions from '@/components/ui/RoomSelectionOptions';
 import CabinetryBuilder, { CabinetryDetail } from '@/components/ui/CabinetryBuilder';
-import PaintBuilder, { PaintDetail } from '@/components/ui/PaintBuilder';
 import CredentialsModal from '@/components/ui/CredentialsModal';
 import { apiClient } from '@/lib/api/client';
 import { countRoomsFromDetails } from '@/lib/projects/roomCounts';
 import defaultTemplates from '@/lib/templates/defaultProjectTemplates.json';
+import { useSetupDesign } from '@/hooks/useSetupDesign';
+import { DEFAULT_STANDARD_ROOMS } from '@/lib/setupDesign/defaults';
 
 interface CategoryAllowance {
   categoryId: string;
@@ -29,15 +30,23 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: 'flooring', name: 'Flooring', required: true, completedCount: 0, totalCount: 0 },
   { id: 'lighting', name: 'Lighting', required: true, completedCount: 0, totalCount: 0 },
   { id: 'plumbing', name: 'Plumbing', required: true, completedCount: 0, totalCount: 0 },
-  { id: 'paint', name: 'Paint', required: true, completedCount: 0, totalCount: 0 },
   { id: 'tile', name: 'Tile', required: true, completedCount: 0, totalCount: 0 },
   { id: 'countertops', name: 'Countertops', required: true, completedCount: 0, totalCount: 0 },
   { id: 'hardware', name: 'Hardware', required: true, completedCount: 0, totalCount: 0 },
+  { id: 'exterior', name: 'Exterior', required: false, completedCount: 0, totalCount: 0 },
   { id: 'appliances', name: 'Appliances', required: false, completedCount: 0, totalCount: 0 },
   { id: 'cabinetry', name: 'Cabinetry', required: false, completedCount: 0, totalCount: 0 },
 ];
 
-type Step = 'basic' | 'rooms' | 'roomSelections' | 'paint' | 'cabinetry' | 'categories' | 'budgets' | 'template';
+const buildRoomSelections = (rooms = DEFAULT_STANDARD_ROOMS): RoomSelection[] =>
+  rooms.map((room) => ({
+    type: room.type,
+    displayName: room.displayName,
+    quantity: 0,
+    selected: false,
+  }));
+
+type Step = 'basic' | 'rooms' | 'roomSelections' | 'exterior' | 'cabinetry' | 'categories' | 'budgets' | 'template';
 
 function buildRoomName(room: RoomSelection, index: number) {
   if (room.type === 'bedroom') return index === 0 ? 'Primary Bedroom' : `Bedroom ${index + 1}`;
@@ -76,6 +85,7 @@ function buildRoomDetailsFromSelections(roomSelections: RoomSelection[], customR
 export default function NewProjectPage() {
   const { user, profile } = useAuth();
   const { showSuccess } = useNotification();
+  const { standardRooms } = useSetupDesign();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<Step>('basic');
   const [saving, setSaving] = useState(false);
@@ -101,26 +111,15 @@ export default function NewProjectPage() {
   } | null>(null);
 
   // Step 2: Rooms (Checklist + Selection Options)
-  const [roomSelections, setRoomSelections] = useState<RoomSelection[]>([
-    { type: 'bedroom', displayName: 'Bedrooms', quantity: 0, selected: false },
-    { type: 'bathroom', displayName: 'Bathrooms', quantity: 0, selected: false },
-    { type: 'kitchen', displayName: 'Kitchen', quantity: 0, selected: false },
-    { type: 'living-room', displayName: 'Living Room', quantity: 0, selected: false },
-    { type: 'dining-room', displayName: 'Dining Room', quantity: 0, selected: false },
-    { type: 'office', displayName: 'Office', quantity: 0, selected: false },
-    { type: 'laundry', displayName: 'Laundry Room', quantity: 0, selected: false },
-    { type: 'foyer', displayName: 'Foyer/Entry', quantity: 0, selected: false },
-    { type: 'mudroom', displayName: 'Mudroom', quantity: 0, selected: false },
-    { type: 'pantry', displayName: 'Pantry', quantity: 0, selected: false },
-    { type: 'garage', displayName: 'Garage', quantity: 0, selected: false },
-    { type: 'bonus-room', displayName: 'Bonus Room', quantity: 0, selected: false },
-  ]);
+  const [roomSelections, setRoomSelections] = useState<RoomSelection[]>(() => buildRoomSelections());
   const [customRooms, setCustomRooms] = useState<CustomRoom[]>([]);
   const [roomDetails, setRoomDetails] = useState<RoomDetail[]>([]);
   const [squareFootage, setSquareFootage] = useState(0);
 
-  // Step 3: Paint
-  const [paintSelections, setPaintSelections] = useState<PaintDetail[]>([]);
+  // Step 3: Exterior
+  const [exteriorDetails, setExteriorDetails] = useState<RoomDetail[]>([
+    { id: 'exterior', name: 'Exterior', type: 'exterior', fixtures: [] },
+  ]);
 
   // Step 4: Cabinetry
   const [cabinetrySelections, setCabinetrySelections] = useState<CabinetryDetail[]>([]);
@@ -139,11 +138,24 @@ export default function NewProjectPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [scopeOfWorks, setScopeOfWorks] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      setRoomSelections((current) => {
+        const existingByType = new Map(current.map((room) => [room.type, room]));
+        return buildRoomSelections(standardRooms).map((room) => ({
+          ...room,
+          quantity: existingByType.get(room.type)?.quantity || room.quantity,
+          selected: existingByType.get(room.type)?.selected || room.selected,
+        }));
+      });
+    });
+  }, [standardRooms]);
+
   const steps: { id: Step; title: string; description: string }[] = [
     { id: 'basic', title: 'Basic Info', description: 'Project name and client' },
     { id: 'rooms', title: 'Select Rooms', description: 'Choose which rooms apply' },
     { id: 'roomSelections', title: 'Room Selections', description: 'Choose options by room' },
-    { id: 'paint', title: 'Paint', description: 'Paint selections and assignments' },
+    { id: 'exterior', title: 'Exterior', description: 'Outdoor selections and counts' },
     { id: 'cabinetry', title: 'Cabinetry', description: 'Cabinetry selections and assignments' },
     { id: 'categories', title: 'Categories', description: 'Required selection categories' },
     { id: 'budgets', title: 'Budgets', description: 'Set allowances per category' },
@@ -378,10 +390,12 @@ export default function NewProjectPage() {
       }
 
       // Build rooms object from the actual room details that will be saved
-      const roomsObject = countRoomsFromDetails(roomDetails);
+      const exteriorRoomsToSave = exteriorDetails.filter((room) => room.fixtures.length > 0);
+      const allRoomDetails = [...roomDetails, ...exteriorRoomsToSave];
+      const roomsObject = countRoomsFromDetails(allRoomDetails);
 
       // Calculate total fixtures
-      const totalFixturesCount = roomDetails.reduce((sum, room) => sum + room.fixtures.length, 0);
+      const totalFixturesCount = allRoomDetails.reduce((sum, room) => sum + room.fixtures.length, 0);
 
       // Create the project record, then persist the selected room options as subcollections.
       const projectResponseOnly: any = await apiClient.post('/projects', {
@@ -396,7 +410,7 @@ export default function NewProjectPage() {
         templateId: selectedTemplateId || null,
         fixtureCounts: {
           plumbingFixtures: totalFixturesCount,
-          lightingFixtures: roomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
+          lightingFixtures: allRoomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
         },
         squareFootage: squareFootage || null,
         progress: {
@@ -437,7 +451,7 @@ export default function NewProjectPage() {
         }
       }
 
-      for (const room of roomDetails) {
+      for (const room of allRoomDetails) {
         const roomResponse: any = await apiClient.post('/rooms', {
           projectId: createdProjectId,
           name: room.name,
@@ -502,22 +516,6 @@ export default function NewProjectPage() {
           ? roomIds.map((roomId, index) => createdRoomNamesByLocalId.get(roomId) || roomNames[index] || '')
           : roomNames;
 
-      for (const paint of paintSelections) {
-        await apiClient.post('/paint', {
-          projectId: createdProjectId,
-          colorName: paint.colorName,
-          paintCode: paint.paintCode,
-          sheen: paint.sheen,
-          notes: paint.notes,
-          image: paint.image,
-          assignmentType: paint.assignmentType,
-          areas: paint.areas || [],
-          roomIds: mapPersistedRoomIds(paint.roomIds),
-          roomNames: mapPersistedRoomNames(paint.roomIds, paint.roomNames),
-          createdBy: user?.uid,
-        });
-      }
-
       for (const cabinetry of cabinetrySelections) {
         await apiClient.post('/cabinetry', {
           projectId: createdProjectId,
@@ -549,7 +547,7 @@ export default function NewProjectPage() {
             lightingFixtures: 0,
           },
           squareFootage: squareFootage || null,
-          roomDetails,
+          roomDetails: allRoomDetails,
           categories: requiredCategories.map((c, i) => {
             const allowance = allowances.find(a => a.categoryId === c.id);
             return {
@@ -584,8 +582,8 @@ export default function NewProjectPage() {
         return hasSelectedRooms || hasCustomRooms;
       case 'roomSelections':
         return true; // Room selection options are optional
-      case 'paint':
-        return true; // Paint is optional
+      case 'exterior':
+        return true; // Exterior selections are optional
       case 'cabinetry':
         return true; // Cabinetry is optional
       case 'categories':
@@ -885,22 +883,21 @@ export default function NewProjectPage() {
             </div>
           )}
 
-          {/* Step 4: Paint */}
-          {currentStep === 'paint' && (
+          {/* Step 4: Exterior */}
+          {currentStep === 'exterior' && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-display font-bold text-neutral-900 mb-2">
-                  Paint Selections
+                  Exterior Selection Options
                 </h2>
                 <p className="text-neutral-600">
-                  Configure paint colors and assign them to entire home areas or specific rooms. Paint selections are optional and can be added later.
+                  Specify exterior selections such as fans, sconces, pool items, and outdoor living features. Checked options become client-facing selections when the project is created.
                 </p>
               </div>
 
-              <PaintBuilder
-                paintSelections={paintSelections}
-                onChange={setPaintSelections}
-                availableRooms={roomDetails.map(r => ({ id: r.id, name: r.name }))}
+              <RoomSelectionOptions
+                rooms={exteriorDetails}
+                onChange={setExteriorDetails}
               />
             </div>
           )}
@@ -1084,12 +1081,12 @@ export default function NewProjectPage() {
                   </div>
 
                   {/* Fixture Counts by Category */}
-                  {roomDetails.length > 0 && (
+                  {[...roomDetails, ...exteriorDetails].some((room) => room.fixtures.length > 0) && (
                     <div className="mt-3 pt-3 border-t border-neutral-300">
                       <div className="font-medium text-neutral-900 mb-2">Fixtures by Category:</div>
                       {(() => {
                         const fixtureCounts: Record<string, number> = {};
-                        roomDetails.forEach(room => {
+                        [...roomDetails, ...exteriorDetails].forEach(room => {
                           room.fixtures.forEach(fixture => {
                             fixtureCounts[fixture.category] = (fixtureCounts[fixture.category] || 0) + fixture.quantity;
                           });
@@ -1106,9 +1103,9 @@ export default function NewProjectPage() {
 
                   <div className="mt-3 pt-3 border-t border-neutral-300">
                     <div className="flex justify-between">
-                      <span className="text-neutral-600">Paint Selections:</span>
+                      <span className="text-neutral-600">Exterior Selections:</span>
                       <span className="font-medium text-neutral-900">
-                        {paintSelections.length}
+                        {exteriorDetails.reduce((sum, room) => sum + room.fixtures.length, 0)}
                       </span>
                     </div>
                     <div className="flex justify-between">

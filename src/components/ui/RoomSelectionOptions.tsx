@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { CheckSquare, Square } from 'lucide-react';
 import type { RoomDetail, RoomFixture } from './DynamicRoomBuilder';
 import { useSetupDesign } from '@/hooks/useSetupDesign';
@@ -13,6 +12,7 @@ interface RoomSelectionOptionsProps {
 
 function getOptionSetKey(type: string) {
   const normalized = type.toLowerCase();
+  if (normalized.includes('exterior') || normalized.includes('outdoor') || normalized.includes('patio') || normalized.includes('pool')) return 'exterior';
   if (normalized.includes('bath') || normalized.includes('powder')) return 'bathroom';
   if (normalized.includes('kitchen') || normalized.includes('pantry')) return 'kitchen';
   if (normalized.includes('living') || normalized.includes('dining') || normalized.includes('bonus')) return 'living';
@@ -35,18 +35,10 @@ function createFixture(option: SetupDesignOption): RoomFixture {
 
 export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionOptionsProps) {
   const { setupDesign } = useSetupDesign();
-  const roomGroups = useMemo(() => {
-    return rooms.reduce<Record<string, RoomDetail[]>>((acc, room) => {
-      const key = getOptionSetKey(room.type);
-      acc[key] = [...(acc[key] || []), room];
-      return acc;
-    }, {});
-  }, [rooms]);
 
-  const toggleOption = (groupRooms: RoomDetail[], option: SetupDesignOption, checked: boolean) => {
-    const groupRoomIds = new Set(groupRooms.map((room) => room.id));
+  const toggleOption = (roomId: string, option: SetupDesignOption, checked: boolean) => {
     const updatedRooms = rooms.map((room) => {
-      if (!groupRoomIds.has(room.id)) return room;
+      if (room.id !== roomId) return room;
 
       const existing = room.fixtures.some((fixture) => fixtureMatches(fixture, option));
       if (checked && !existing) {
@@ -66,11 +58,10 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
     onChange(updatedRooms);
   };
 
-  const updateQuantity = (groupRooms: RoomDetail[], option: SetupDesignOption, quantity: number) => {
-    const groupRoomIds = new Set(groupRooms.map((room) => room.id));
+  const updateQuantity = (roomId: string, option: SetupDesignOption, quantity: number) => {
     onChange(
       rooms.map((room) => {
-        if (!groupRoomIds.has(room.id)) return room;
+        if (room.id !== roomId) return room;
 
         return {
           ...room,
@@ -92,25 +83,18 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
 
   return (
     <div className="space-y-8">
-      {Object.entries(roomGroups).map(([groupKey, groupRooms]) => {
+      {rooms.map((room) => {
+        const groupKey = getOptionSetKey(room.type);
         const config = setupDesign[groupKey] || setupDesign.bedroom;
         const categories = Array.from(new Set(config.options.map((option) => option.category)));
 
         return (
-          <section key={groupKey} className="border-b border-neutral-200 pb-8 last:border-b-0 last:pb-0">
+          <section key={room.id} className="border-b border-neutral-200 pb-8 last:border-b-0 last:pb-0">
             <div className="mb-4">
-              <h3 className="text-xl font-semibold text-neutral-900">{config.title}</h3>
-              <p className="mt-1 text-sm text-neutral-600">{config.appliesTo}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {groupRooms.map((room) => (
-                  <span
-                    key={room.id}
-                    className="rounded-button border border-brass-200 bg-brass-50 px-3 py-1 text-xs font-medium text-neutral-800"
-                  >
-                    {room.name}
-                  </span>
-                ))}
-              </div>
+              <h3 className="text-xl font-semibold text-neutral-900">{room.name}</h3>
+              <p className="mt-1 text-sm text-neutral-600">
+                {config.title} defaults. Select only the items needed for this room.
+              </p>
             </div>
 
             <div className="space-y-8">
@@ -121,31 +105,22 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
                     {config.options
                       .filter((option) => option.category === category)
                       .map((option) => {
-                        const selectedCount = groupRooms.filter((room) =>
-                          room.fixtures.some((fixture) => fixtureMatches(fixture, option))
-                        ).length;
-                        const checked = selectedCount === groupRooms.length;
-                        const partial = selectedCount > 0 && selectedCount < groupRooms.length;
-                        const selectedFixture = groupRooms
-                          .flatMap((room) => room.fixtures)
-                          .find((fixture) => fixtureMatches(fixture, option));
+                        const selectedFixture = room.fixtures.find((fixture) => fixtureMatches(fixture, option));
+                        const checked = Boolean(selectedFixture);
 
                         return (
                           <div
-                            key={`${category}-${option.name}`}
+                            key={`${room.id}-${category}-${option.name}`}
                             className="grid grid-cols-[minmax(0,1fr)_minmax(120px,180px)] items-center gap-4 pl-8 pr-2 py-1"
                           >
                             <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-neutral-900">
                               <input
                                 type="checkbox"
                                 checked={checked}
-                                ref={(input) => {
-                                  if (input) input.indeterminate = partial;
-                                }}
-                                onChange={(event) => toggleOption(groupRooms, option, event.target.checked)}
+                                onChange={(event) => toggleOption(room.id, option, event.target.checked)}
                                 className="sr-only"
                               />
-                              {selectedCount > 0 ? (
+                              {checked ? (
                                 <CheckSquare className="h-5 w-5 flex-none text-brass-700" />
                               ) : (
                                 <Square className="h-5 w-5 flex-none text-neutral-500" />
@@ -153,14 +128,14 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
                               <span>{option.name}</span>
                             </label>
 
-                            {selectedCount > 0 ? (
+                            {checked ? (
                               <input
                                 type="number"
                                 min="1"
                                 value={selectedFixture?.quantity || 1}
                                 aria-label={`${option.name} ${option.measureLabel || 'Quantity'}`}
                                 onChange={(event) =>
-                                  updateQuantity(groupRooms, option, parseInt(event.target.value, 10) || 1)
+                                  updateQuantity(room.id, option, parseInt(event.target.value, 10) || 1)
                                 }
                                 className="w-full rounded-button border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brass-500"
                               />
