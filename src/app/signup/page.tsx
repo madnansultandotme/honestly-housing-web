@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
@@ -11,6 +11,14 @@ import { db } from '@/lib/firebase/config';
 
 type UserRole = 'builder' | 'designer' | 'homeowner' | 'admin';
 type SignupStep = 'role' | 'homeowner-question' | 'credentials';
+
+const getSafeRedirect = (redirect: string | null) => {
+  if (!redirect || !redirect.startsWith('/') || redirect.startsWith('//')) {
+    return null;
+  }
+
+  return redirect;
+};
 
 export default function SignupPage() {
   const [step, setStep] = useState<SignupStep>('role');
@@ -22,8 +30,10 @@ export default function SignupPage() {
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp, signInWithGoogle } = useAuth();
+  const { signUp } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const safeRedirect = getSafeRedirect(searchParams.get('redirect'));
 
   const handleRoleSelect = (selectedRole: UserRole) => {
     setRole(selectedRole);
@@ -76,29 +86,17 @@ export default function SignupPage() {
       }
 
       // Redirect based on role
-      if (roleForProfile === 'admin') {
+      if (safeRedirect) {
+        router.push(safeRedirect);
+      } else if (roleForProfile === 'admin') {
         router.push('/admin');
       } else if (roleForProfile === 'builder' || roleForProfile === 'designer') {
         router.push('/builder');
       } else {
         router.push('/client');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to create account');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setError('');
-    setLoading(true);
-
-    try {
-      await signInWithGoogle();
-      router.push('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Failed to sign in with Google');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create account');
     } finally {
       setLoading(false);
     }
@@ -209,7 +207,7 @@ export default function SignupPage() {
                 onClick={() => handleHomeownerQuestion(true)}
                 className="w-full p-4 border-2 border-neutral-200 rounded-button hover:border-brass-500 hover:bg-brass-50 transition-all"
               >
-                <div className="font-semibold text-neutral-900">Yes, I'm working with a builder</div>
+                <div className="font-semibold text-neutral-900">Yes, I am working with a builder</div>
                 <div className="text-sm text-neutral-600 mt-1">Use credentials sent by your builder</div>
               </button>
 
@@ -217,7 +215,7 @@ export default function SignupPage() {
                 onClick={() => handleHomeownerQuestion(false)}
                 className="w-full p-4 border-2 border-neutral-200 rounded-button hover:border-brass-500 hover:bg-brass-50 transition-all"
               >
-                <div className="font-semibold text-neutral-900">No, I'm on my own</div>
+                <div className="font-semibold text-neutral-900">No, I am on my own</div>
                 <div className="text-sm text-neutral-600 mt-1">Create your own account</div>
               </button>
 
@@ -225,7 +223,7 @@ export default function SignupPage() {
                 onClick={() => setStep('role')}
                 className="w-full text-sm text-neutral-600 hover:text-neutral-900 mt-4"
               >
-                ← Back to role selection
+                Back to role selection
               </button>
             </div>
           )}
@@ -335,7 +333,7 @@ export default function SignupPage() {
                 onClick={() => setStep('role')}
                 className="w-full text-sm text-neutral-600 hover:text-neutral-900"
               >
-                ← Back to role selection
+                Back to role selection
               </button>
 
               <div className="text-center">
@@ -350,14 +348,14 @@ export default function SignupPage() {
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-neutral-200">
             <div className="flex justify-center items-center gap-2 text-xs text-neutral-500">
-              <span>◆</span>
+              <span>|</span>
               <span>Builder Team</span>
-              <span>◆</span>
+              <span>|</span>
               <span>Client Portal</span>
-              <span>◆</span>
+              <span>|</span>
             </div>
             <div className="text-center mt-2 text-xs text-neutral-400">
-              Role-based access • Secure authentication
+              Role-based access - Secure authentication
             </div>
           </div>
         </div>

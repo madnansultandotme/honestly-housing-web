@@ -19,6 +19,27 @@ import { useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api/client';
 import { isSelectionCompleted, isSelectionPendingApproval } from '@/lib/selections/status';
 
+const normalizeLabel = (value?: string | null) => (value || '').trim().toLowerCase();
+
+interface SelectionDisplayFields {
+  name?: string | null;
+  category?: string | null;
+  categoryName?: string | null;
+  roomName?: string | null;
+}
+
+const getSelectionDisplayName = (selection: SelectionDisplayFields) => {
+  const name = selection.name || selection.categoryName || 'Untitled Selection';
+  const categoryName = selection.categoryName || selection.category || '';
+  const roomName = selection.roomName || '';
+
+  if (roomName && categoryName && normalizeLabel(name) === normalizeLabel(categoryName)) {
+    return `${categoryName} - ${roomName}`;
+  }
+
+  return name;
+};
+
 export default function SelectionsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user, profile } = useAuth();
@@ -258,7 +279,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                   <div className="bg-taupe-50 rounded-button p-4 hover:bg-taupe-100 transition-colors">
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="font-medium text-neutral-900">{selection.name}</div>
+                        <div className="font-medium text-neutral-900">{getSelectionDisplayName(selection)}</div>
                         <div className="text-sm text-neutral-600">
                           {selection.categoryName}
                           {selection.subCategoryName && ` • ${selection.subCategoryName}`}
@@ -300,7 +321,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                   <div className="flex items-center justify-between">
                     <Link href={`/projects/${id}/selections/${selection.id}`} className="flex-1">
                       <div>
-                        <div className="font-medium text-neutral-900">{selection.name}</div>
+                        <div className="font-medium text-neutral-900">{getSelectionDisplayName(selection)}</div>
                         <div className="text-sm text-neutral-600">{selection.categoryName}</div>
                         {selection.quantity && selection.quantity > 1 && (
                           <div className="text-xs text-neutral-500 mt-1">Qty: {selection.quantity}</div>
@@ -419,7 +440,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                     href={`/projects/${id}/selections/${selection.id}`}
                     className="block p-3 bg-taupe-50 rounded-button hover:bg-taupe-100 transition-colors"
                   >
-                    <div className="font-medium text-neutral-900">{selection.name}</div>
+                    <div className="font-medium text-neutral-900">{getSelectionDisplayName(selection)}</div>
                     <div className="text-sm text-neutral-600">{selection.categoryName}</div>
                   </Link>
                 ))}
@@ -441,7 +462,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                     href={`/projects/${id}/selections/${selection.id}`}
                     className="block p-3 bg-taupe-50 rounded-button hover:bg-taupe-100 transition-colors"
                   >
-                    <div className="font-medium text-neutral-900">{selection.name}</div>
+                    <div className="font-medium text-neutral-900">{getSelectionDisplayName(selection)}</div>
                     <div className="text-sm text-neutral-600">{selection.categoryName}</div>
                   </Link>
                 ))}

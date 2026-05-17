@@ -3,98 +3,13 @@
 import { useMemo } from 'react';
 import { CheckSquare, Square } from 'lucide-react';
 import type { RoomDetail, RoomFixture } from './DynamicRoomBuilder';
-
-interface SelectionOption {
-  category: string;
-  name: string;
-  measureLabel?: string;
-}
+import { useSetupDesign } from '@/hooks/useSetupDesign';
+import type { SetupDesignOption } from '@/lib/setupDesign/defaults';
 
 interface RoomSelectionOptionsProps {
   rooms: RoomDetail[];
   onChange: (rooms: RoomDetail[]) => void;
 }
-
-const ROOM_SELECTION_OPTIONS: Record<string, { title: string; appliesTo: string; options: SelectionOption[] }> = {
-  bedroom: {
-    title: 'Bedroom',
-    appliesTo: 'Applies to primary bedrooms, additional bedrooms, foyers, and offices.',
-    options: [
-      { category: 'Electrical', name: 'Ceiling Fan', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Down Rod', measureLabel: 'Length' },
-      { category: 'Electrical', name: 'Chandelier', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Sconce', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Cabinet Pulls', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Cabinet Knobs', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Privacy Door Knob', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Passage Door Knob', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Dummy Door Knob', measureLabel: 'Quantity' },
-    ],
-  },
-  bathroom: {
-    title: 'Bathroom',
-    appliesTo: 'Applies to primary bathrooms, powder rooms, half baths, and additional bathrooms.',
-    options: [
-      { category: 'Electrical', name: 'Vanity Light', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Sconce', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Chandelier', measureLabel: 'Quantity' },
-      { category: 'Plumbing', name: 'Sink Faucet', measureLabel: 'Quantity' },
-      { category: 'Plumbing', name: 'Shower System', measureLabel: 'Number of Shower Heads' },
-      { category: 'Plumbing', name: 'Shower Drain', measureLabel: 'Quantity' },
-      { category: 'Plumbing', name: 'Alcove Tub', measureLabel: 'Quantity' },
-      { category: 'Plumbing', name: 'Drop In Tub', measureLabel: 'Quantity' },
-      { category: 'Plumbing', name: 'Overflow + Drain', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Toilet Paper Holder', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Hand Towel Holder', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Towel Bar', measureLabel: 'Quantity' },
-      { category: 'Mirrors', name: 'Bathroom Mirror', measureLabel: 'Quantity' },
-      { category: 'Tile', name: 'Floor Tile', measureLabel: 'Square Feet' },
-      { category: 'Tile', name: 'Shower Wall Tile', measureLabel: 'Square Feet' },
-    ],
-  },
-  kitchen: {
-    title: 'Kitchen',
-    appliesTo: 'Applies to kitchens, pantries, and prep kitchen spaces.',
-    options: [
-      { category: 'Electrical', name: 'Pendant Light', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Recessed Light', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Under Cabinet Lighting', measureLabel: 'Quantity' },
-      { category: 'Plumbing', name: 'Kitchen Faucet', measureLabel: 'Quantity' },
-      { category: 'Plumbing', name: 'Kitchen Sink', measureLabel: 'Quantity' },
-      { category: 'Countertops', name: 'Countertop', measureLabel: 'Square Feet' },
-      { category: 'Hardware', name: 'Cabinet Pulls', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Cabinet Knobs', measureLabel: 'Quantity' },
-      { category: 'Appliances', name: 'Dishwasher', measureLabel: 'Quantity' },
-      { category: 'Appliances', name: 'Range / Cooktop', measureLabel: 'Quantity' },
-    ],
-  },
-  living: {
-    title: 'Living / Dining',
-    appliesTo: 'Applies to living rooms, dining rooms, bonus rooms, and similar shared spaces.',
-    options: [
-      { category: 'Electrical', name: 'Ceiling Fan', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Down Rod', measureLabel: 'Length' },
-      { category: 'Electrical', name: 'Chandelier', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Sconce', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Recessed Light', measureLabel: 'Quantity' },
-      { category: 'Flooring', name: 'Flooring', measureLabel: 'Square Feet' },
-      { category: 'Hardware', name: 'Passage Door Knob', measureLabel: 'Quantity' },
-    ],
-  },
-  utility: {
-    title: 'Utility / Mudroom',
-    appliesTo: 'Applies to laundry rooms, mudrooms, garages, and utility areas.',
-    options: [
-      { category: 'Electrical', name: 'Flush Mount Light', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Recessed Light', measureLabel: 'Quantity' },
-      { category: 'Plumbing', name: 'Utility Sink', measureLabel: 'Quantity' },
-      { category: 'Countertops', name: 'Countertop', measureLabel: 'Square Feet' },
-      { category: 'Hardware', name: 'Cabinet Pulls', measureLabel: 'Quantity' },
-      { category: 'Hardware', name: 'Cabinet Knobs', measureLabel: 'Quantity' },
-      { category: 'Flooring', name: 'Flooring', measureLabel: 'Square Feet' },
-    ],
-  },
-};
 
 function getOptionSetKey(type: string) {
   const normalized = type.toLowerCase();
@@ -105,11 +20,11 @@ function getOptionSetKey(type: string) {
   return 'bedroom';
 }
 
-function fixtureMatches(fixture: RoomFixture, option: SelectionOption) {
+function fixtureMatches(fixture: RoomFixture, option: SetupDesignOption) {
   return fixture.category === option.category && fixture.name === option.name;
 }
 
-function createFixture(option: SelectionOption): RoomFixture {
+function createFixture(option: SetupDesignOption): RoomFixture {
   return {
     id: `fixture-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     category: option.category,
@@ -119,6 +34,7 @@ function createFixture(option: SelectionOption): RoomFixture {
 }
 
 export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionOptionsProps) {
+  const { setupDesign } = useSetupDesign();
   const roomGroups = useMemo(() => {
     return rooms.reduce<Record<string, RoomDetail[]>>((acc, room) => {
       const key = getOptionSetKey(room.type);
@@ -127,7 +43,7 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
     }, {});
   }, [rooms]);
 
-  const toggleOption = (groupRooms: RoomDetail[], option: SelectionOption, checked: boolean) => {
+  const toggleOption = (groupRooms: RoomDetail[], option: SetupDesignOption, checked: boolean) => {
     const groupRoomIds = new Set(groupRooms.map((room) => room.id));
     const updatedRooms = rooms.map((room) => {
       if (!groupRoomIds.has(room.id)) return room;
@@ -150,7 +66,7 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
     onChange(updatedRooms);
   };
 
-  const updateQuantity = (groupRooms: RoomDetail[], option: SelectionOption, quantity: number) => {
+  const updateQuantity = (groupRooms: RoomDetail[], option: SetupDesignOption, quantity: number) => {
     const groupRoomIds = new Set(groupRooms.map((room) => room.id));
     onChange(
       rooms.map((room) => {
@@ -177,7 +93,7 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
   return (
     <div className="space-y-8">
       {Object.entries(roomGroups).map(([groupKey, groupRooms]) => {
-        const config = ROOM_SELECTION_OPTIONS[groupKey] || ROOM_SELECTION_OPTIONS.bedroom;
+        const config = setupDesign[groupKey] || setupDesign.bedroom;
         const categories = Array.from(new Set(config.options.map((option) => option.category)));
 
         return (

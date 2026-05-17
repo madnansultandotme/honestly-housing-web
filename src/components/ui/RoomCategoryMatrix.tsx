@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import Card from './Card';
+import { useSetupDesign } from '@/hooks/useSetupDesign';
+import type { SetupDesignOption } from '@/lib/setupDesign/defaults';
 
 interface Room {
   id: string;
@@ -10,12 +12,6 @@ interface Room {
 interface Category {
   id: string;
   name: string;
-}
-
-interface FixtureOption {
-  category: string;
-  name: string;
-  measureLabel: string;
 }
 
 interface SelectedItem {
@@ -33,77 +29,13 @@ interface RoomCategoryMatrixProps {
   selectedMappings: { roomId: string; categoryId: string }[];
   onToggle: (roomId: string, categoryId: string, selected: boolean) => void;
   selectedItems?: SelectedItem[];
-  onToggleItem?: (roomId: string, category: Category, fixture: FixtureOption, selected: boolean) => void;
+  onToggleItem?: (roomId: string, category: Category, fixture: SetupDesignOption, selected: boolean) => void;
   onUpdateItemQuantity?: (roomId: string, category: Category, itemName: string, quantity: number) => void;
   onAddCustomItem?: (roomId: string, category: Category, itemName: string) => void;
   notesByRoomCategory?: Record<string, string>;
   onNotesChange?: (roomId: string, category: Category, notes: string) => void;
   disabled?: boolean;
 }
-
-const FIXTURE_OPTIONS_BY_ROOM_TYPE: Record<string, FixtureOption[]> = {
-  bedroom: [
-    { category: 'Electrical', name: 'Ceiling Fan', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Down Rod', measureLabel: 'Length' },
-    { category: 'Electrical', name: 'Chandelier', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Sconce', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Cabinet Pulls', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Cabinet Knobs', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Privacy Door Knob', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Passage Door Knob', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Dummy Door Knob', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Toilet Paper Holder', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Hand Towel Holder', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Towel Bar', measureLabel: 'Quantity' },
-  ],
-  bathroom: [
-    { category: 'Electrical', name: 'Vanity Light', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Sconce', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Chandelier', measureLabel: 'Quantity' },
-    { category: 'Plumbing', name: 'Sink Faucet', measureLabel: 'Quantity' },
-    { category: 'Plumbing', name: 'Shower System', measureLabel: 'Number of Shower Heads' },
-    { category: 'Plumbing', name: 'Shower Drain', measureLabel: 'Quantity' },
-    { category: 'Plumbing', name: 'Alcove Tub', measureLabel: 'Quantity' },
-    { category: 'Plumbing', name: 'Drop In Tub', measureLabel: 'Quantity' },
-    { category: 'Plumbing', name: 'Overflow + Drain', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Toilet Paper Holder', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Hand Towel Holder', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Towel Bar', measureLabel: 'Quantity' },
-    { category: 'Mirrors', name: 'Bathroom Mirror', measureLabel: 'Quantity' },
-    { category: 'Tile', name: 'Floor Tile', measureLabel: 'Square Feet' },
-    { category: 'Tile', name: 'Shower Wall Tile', measureLabel: 'Square Feet' },
-  ],
-  kitchen: [
-    { category: 'Electrical', name: 'Pendant Light', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Recessed Light', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Under Cabinet Lighting', measureLabel: 'Quantity' },
-    { category: 'Plumbing', name: 'Kitchen Faucet', measureLabel: 'Quantity' },
-    { category: 'Plumbing', name: 'Kitchen Sink', measureLabel: 'Quantity' },
-    { category: 'Countertops', name: 'Countertop', measureLabel: 'Square Feet' },
-    { category: 'Hardware', name: 'Cabinet Pulls', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Cabinet Knobs', measureLabel: 'Quantity' },
-    { category: 'Appliances', name: 'Dishwasher', measureLabel: 'Quantity' },
-    { category: 'Appliances', name: 'Range / Cooktop', measureLabel: 'Quantity' },
-  ],
-  living: [
-    { category: 'Electrical', name: 'Ceiling Fan', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Down Rod', measureLabel: 'Length' },
-    { category: 'Electrical', name: 'Chandelier', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Sconce', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Recessed Light', measureLabel: 'Quantity' },
-    { category: 'Flooring', name: 'Flooring', measureLabel: 'Square Feet' },
-    { category: 'Hardware', name: 'Passage Door Knob', measureLabel: 'Quantity' },
-  ],
-  utility: [
-    { category: 'Electrical', name: 'Flush Mount Light', measureLabel: 'Quantity' },
-    { category: 'Electrical', name: 'Recessed Light', measureLabel: 'Quantity' },
-    { category: 'Plumbing', name: 'Utility Sink', measureLabel: 'Quantity' },
-    { category: 'Countertops', name: 'Countertop', measureLabel: 'Square Feet' },
-    { category: 'Hardware', name: 'Cabinet Pulls', measureLabel: 'Quantity' },
-    { category: 'Hardware', name: 'Cabinet Knobs', measureLabel: 'Quantity' },
-    { category: 'Flooring', name: 'Flooring', measureLabel: 'Square Feet' },
-  ],
-};
 
 function getRoomOptionKey(room: Room) {
   const normalized = `${room.type || ''} ${room.name}`.toLowerCase();
@@ -128,6 +60,7 @@ export default function RoomCategoryMatrix({
   disabled = false,
 }: RoomCategoryMatrixProps) {
   const [customItemNames, setCustomItemNames] = useState<Record<string, string>>({});
+  const { setupDesign } = useSetupDesign();
 
   const visibleCategories = categories.filter((category, index, allCategories) => {
     const normalizedName = category.name.trim().toLowerCase();
@@ -191,7 +124,10 @@ export default function RoomCategoryMatrix({
 
   const getCustomInputKey = (roomId: string, categoryId: string) => `${roomId}-${categoryId}`;
 
-  const getPresetOptions = (room: Room) => FIXTURE_OPTIONS_BY_ROOM_TYPE[getRoomOptionKey(room)];
+  const getPresetOptions = (room: Room) => {
+    const key = getRoomOptionKey(room);
+    return setupDesign[key]?.options || setupDesign.bedroom.options;
+  };
 
   const getCustomItems = (room: Room, category: Category) => {
     const presetNames = new Set(
