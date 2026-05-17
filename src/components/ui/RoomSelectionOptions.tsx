@@ -197,11 +197,11 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
               </div>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-8">
               {categories.map((category) => (
-                <div key={category}>
-                  <h4 className="mb-2 text-sm font-semibold text-neutral-900">{category}</h4>
-                  <div className="space-y-2">
+                <div key={category} className="space-y-2">
+                  <h4 className="text-base font-semibold text-neutral-900">{category}</h4>
+                  <div className="space-y-1">
                     {config.options
                       .filter((option) => option.category === category)
                       .map((option) => {
@@ -217,11 +217,7 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
                         return (
                           <div
                             key={`${category}-${option.name}`}
-                            className={`grid grid-cols-[minmax(0,1fr)_120px] items-center gap-4 rounded-button border px-3 py-2 transition-colors ${
-                              selectedCount > 0
-                                ? 'border-brass-300 bg-brass-50'
-                                : 'border-neutral-200 bg-white hover:border-brass-200'
-                            }`}
+                            className="grid grid-cols-[minmax(0,1fr)_minmax(120px,180px)] items-center gap-4 pl-8 pr-2 py-1"
                           >
                             <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-neutral-900">
                               <input
@@ -253,12 +249,13 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
                                 className="w-full rounded-button border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brass-500"
                               />
                             ) : (
-                              <span className="text-sm text-neutral-600">{option.measureLabel || 'Quantity'}</span>
+                              <span className="text-sm text-neutral-700">{option.measureLabel || 'Quantity'}</span>
                             )}
                           </div>
                         );
                       })}
                   </div>
+                  <div className="pt-1 text-sm text-neutral-700">Notes:</div>
                 </div>
               ))}
             </div>

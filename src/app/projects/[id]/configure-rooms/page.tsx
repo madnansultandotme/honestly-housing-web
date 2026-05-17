@@ -7,10 +7,9 @@ import { useNotification } from '@/contexts/NotificationContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import RoomCategoryMatrix from '@/components/ui/RoomCategoryMatrix';
-import SubSelectionCreator from '@/components/ui/SubSelectionCreator';
 import { apiClient } from '@/lib/api/client';
 
-type Step = 'rooms' | 'categories' | 'items' | 'review';
+type Step = 'rooms' | 'categories' | 'review';
 
 interface Room {
   id: string;
@@ -21,6 +20,12 @@ interface Room {
 interface Category {
   id: string;
   name: string;
+}
+
+interface FixtureOption {
+  category: string;
+  name: string;
+  measureLabel: string;
 }
 
 interface RoomCategoryMapping {
@@ -35,6 +40,7 @@ interface ItemToCreate {
   name: string;
   quantity: number;
   subType?: string;
+  notes?: string;
 }
 
 export default function ConfigureRoomsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -53,12 +59,11 @@ export default function ConfigureRoomsPage({ params }: { params: Promise<{ id: s
   const [categories, setCategories] = useState<Category[]>([]);
   const [roomCategoryMappings, setRoomCategoryMappings] = useState<RoomCategoryMapping[]>([]);
   const [itemsToCreate, setItemsToCreate] = useState<ItemToCreate[]>([]);
-  const [selectedRoomForItems, setSelectedRoomForItems] = useState<string>('');
+  const [notesByRoomCategory, setNotesByRoomCategory] = useState<Record<string, string>>({});
 
   const steps = [
     { id: 'rooms' as Step, title: 'Select Rooms', description: 'Choose which rooms exist' },
-    { id: 'categories' as Step, title: 'Assign Categories', description: 'Map categories to rooms' },
-    { id: 'items' as Step, title: 'Define Items', description: 'Add fixtures and quantities' },
+    { id: 'categories' as Step, title: 'Assign Items', description: 'Choose fixtures and quantities' },
     { id: 'review' as Step, title: 'Review', description: 'Review and save' },
   ];
 
@@ -115,7 +120,11 @@ export default function ConfigureRoomsPage({ params }: { params: Promise<{ id: s
 
   const handleRoomCategoryToggle = (roomId: string, categoryId: string, selected: boolean) => {
     if (selected) {
-      setRoomCategoryMappings(prev => [...prev, { roomId, categoryId }]);
+      setRoomCategoryMappings(prev =>
+        prev.some(m => m.roomId === roomId && m.categoryId === categoryId)
+          ? prev
+          : [...prev, { roomId, categoryId }]
+      );
     } else {
       setRoomCategoryMappings(prev =>
         prev.filter(m => !(m.roomId === roomId && m.categoryId === categoryId))
@@ -127,20 +136,97 @@ export default function ConfigureRoomsPage({ params }: { params: Promise<{ id: s
     }
   };
 
-  const handleAddItem = (roomId: string, categoryId: string, name: string, quantity: number, subType?: string) => {
-    const newItem: ItemToCreate = {
-      id: `${Date.now()}-${Math.random()}`,
-      roomId,
-      categoryId,
-      name,
-      quantity,
-      subType,
-    };
-    setItemsToCreate(prev => [...prev, newItem]);
+  const handlePresetItemToggle = (roomId: string, category: Category, fixture: FixtureOption, selected: boolean) => {
+    if (selected) {
+      const notes = notesByRoomCategory[`${roomId}-${category.id}`] || '';
+
+      setRoomCategoryMappings(prev =>
+        prev.some(m => m.roomId === roomId && m.categoryId === category.id)
+          ? prev
+          : [...prev, { roomId, categoryId: category.id }]
+      );
+
+      setItemsToCreate(prev =>
+        prev.some(item => item.roomId === roomId && item.categoryId === category.id && item.name === fixture.name)
+          ? prev
+          : [
+              ...prev,
+              {
+                id: `${Date.now()}-${Math.random()}`,
+                roomId,
+                categoryId: category.id,
+                name: fixture.name,
+                quantity: 1,
+                notes,
+              },
+            ]
+      );
+      return;
+    }
+
+    setItemsToCreate(prev => {
+      const nextItems = prev.filter(
+        item => !(item.roomId === roomId && item.categoryId === category.id && item.name === fixture.name)
+      );
+
+      const stillHasItemsForCategory = nextItems.some(
+        item => item.roomId === roomId && item.categoryId === category.id
+      );
+
+      if (!stillHasItemsForCategory) {
+        setRoomCategoryMappings(currentMappings =>
+          currentMappings.filter(mapping => !(mapping.roomId === roomId && mapping.categoryId === category.id))
+        );
+      }
+
+      return nextItems;
+    });
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    setItemsToCreate(prev => prev.filter(item => item.id !== itemId));
+  const handlePresetItemQuantityChange = (roomId: string, category: Category, itemName: string, quantity: number) => {
+    setItemsToCreate(prev =>
+      prev.map(item =>
+        item.roomId === roomId && item.categoryId === category.id && item.name === itemName
+          ? { ...item, quantity: Math.max(1, quantity) }
+          : item
+      )
+    );
+  };
+
+  const handleCustomItemAdd = (roomId: string, category: Category, itemName: string) => {
+    const notes = notesByRoomCategory[`${roomId}-${category.id}`] || '';
+
+    setRoomCategoryMappings(prev =>
+      prev.some(m => m.roomId === roomId && m.categoryId === category.id)
+        ? prev
+        : [...prev, { roomId, categoryId: category.id }]
+    );
+
+    setItemsToCreate(prev =>
+      prev.some(item => item.roomId === roomId && item.categoryId === category.id && item.name.toLowerCase() === itemName.toLowerCase())
+        ? prev
+        : [
+            ...prev,
+            {
+              id: `${Date.now()}-${Math.random()}`,
+              roomId,
+              categoryId: category.id,
+              name: itemName,
+              quantity: 1,
+              notes,
+            },
+          ]
+    );
+  };
+
+  const handleNotesChange = (roomId: string, category: Category, notes: string) => {
+    const key = `${roomId}-${category.id}`;
+    setNotesByRoomCategory(prev => ({ ...prev, [key]: notes }));
+    setItemsToCreate(prev =>
+      prev.map(item =>
+        item.roomId === roomId && item.categoryId === category.id ? { ...item, notes } : item
+      )
+    );
   };
 
   const handleNext = () => {
@@ -188,6 +274,7 @@ export default function ConfigureRoomsPage({ params }: { params: Promise<{ id: s
           roomName: room?.name || '',
           quantity: item.quantity,
           subType: item.subType,
+          notes: item.notes || notesByRoomCategory[`${item.roomId}-${item.categoryId}`] || '',
           status: 'not_started',
           allowance: 0,
           actualCost: 0,
@@ -213,8 +300,6 @@ export default function ConfigureRoomsPage({ params }: { params: Promise<{ id: s
         return rooms.length > 0;
       case 'categories':
         return roomCategoryMappings.length > 0;
-      case 'items':
-        return true; // Items are optional
       case 'review':
         return true;
       default:
@@ -336,77 +421,16 @@ export default function ConfigureRoomsPage({ params }: { params: Promise<{ id: s
               categories={categories}
               selectedMappings={roomCategoryMappings}
               onToggle={handleRoomCategoryToggle}
+              selectedItems={itemsToCreate}
+              onToggleItem={handlePresetItemToggle}
+              onUpdateItemQuantity={handlePresetItemQuantityChange}
+              onAddCustomItem={handleCustomItemAdd}
+              notesByRoomCategory={notesByRoomCategory}
+              onNotesChange={handleNotesChange}
             />
           )}
 
-          {/* Step 3: Items */}
-          {currentStep === 'items' && (
-            <div className="space-y-6">
-              <Card>
-                <h2 className="text-2xl font-display font-bold text-neutral-900 mb-2">
-                  Define Items & Fixtures
-                </h2>
-                <p className="text-neutral-600 mb-4">
-                  Add specific items or fixtures needed for each room-category combination.
-                </p>
-
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Select Room to Configure
-                  </label>
-                  <select
-                    value={selectedRoomForItems}
-                    onChange={(e) => setSelectedRoomForItems(e.target.value)}
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-button focus:outline-none focus:ring-2 focus:ring-brass-500 bg-white text-neutral-900"
-                  >
-                    <option value="">Choose a room...</option>
-                    {rooms.map(room => (
-                      <option key={room.id} value={room.id}>
-                        {room.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </Card>
-
-              {selectedRoomForItems && (
-                <div className="space-y-4">
-                  {roomCategoryMappings
-                    .filter(m => m.roomId === selectedRoomForItems)
-                    .map(mapping => {
-                      const category = categories.find(c => c.id === mapping.categoryId);
-                      const room = rooms.find(r => r.id === mapping.roomId);
-                      const items = itemsToCreate.filter(
-                        item => item.roomId === mapping.roomId && item.categoryId === mapping.categoryId
-                      );
-
-                      return (
-                        <SubSelectionCreator
-                          key={`${mapping.roomId}-${mapping.categoryId}`}
-                          categoryName={`${room?.name} - ${category?.name}`}
-                          isPaintCategory={category?.name.toLowerCase() === 'paint'}
-                          onAdd={(name, quantity, subType) =>
-                            handleAddItem(mapping.roomId, mapping.categoryId, name, quantity, subType)
-                          }
-                          onRemove={handleRemoveItem}
-                          items={items}
-                        />
-                      );
-                    })}
-
-                  {roomCategoryMappings.filter(m => m.roomId === selectedRoomForItems).length === 0 && (
-                    <Card>
-                      <div className="text-center py-8 text-neutral-500">
-                        No categories assigned to this room. Go back to assign categories.
-                      </div>
-                    </Card>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 4: Review */}
+          {/* Step 3: Review */}
           {currentStep === 'review' && (
             <Card>
               <h2 className="text-2xl font-display font-bold text-neutral-900 mb-6">
@@ -461,6 +485,9 @@ export default function ConfigureRoomsPage({ params }: { params: Promise<{ id: s
                                   <li key={item.id} className="text-sm text-neutral-900 ml-4">
                                     • {item.name} (Qty: {item.quantity})
                                     {item.subType && ` - ${item.subType}`}
+                                    {item.notes && (
+                                      <div className="ml-4 text-neutral-600">Notes: {item.notes}</div>
+                                    )}
                                   </li>
                                 ))}
                               </ul>
