@@ -8,10 +8,13 @@ import type { SetupDesignOption } from '@/lib/setupDesign/defaults';
 interface RoomSelectionOptionsProps {
   rooms: RoomDetail[];
   onChange: (rooms: RoomDetail[]) => void;
+  notesByRoomCategory?: Record<string, string>;
+  onNotesChange?: (roomId: string, category: string, notes: string) => void;
 }
 
 function getOptionSetKey(type: string) {
   const normalized = type.toLowerCase();
+  if (normalized.includes('interior')) return 'interior';
   if (normalized.includes('exterior') || normalized.includes('outdoor') || normalized.includes('patio') || normalized.includes('pool')) return 'exterior';
   if (normalized.includes('bath') || normalized.includes('powder')) return 'bathroom';
   if (normalized.includes('kitchen') || normalized.includes('pantry')) return 'kitchen';
@@ -33,8 +36,16 @@ function createFixture(option: SetupDesignOption): RoomFixture {
   };
 }
 
-export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionOptionsProps) {
+export default function RoomSelectionOptions({
+  rooms,
+  onChange,
+  notesByRoomCategory = {},
+  onNotesChange,
+}: RoomSelectionOptionsProps) {
   const { setupDesign } = useSetupDesign();
+
+  const getNotesKey = (roomId: string, category: string) =>
+    `${roomId}-${category.toLowerCase().trim().replace(/\s+/g, '-')}`;
 
   const toggleOption = (roomId: string, option: SetupDesignOption, checked: boolean) => {
     const updatedRooms = rooms.map((room) => {
@@ -146,7 +157,17 @@ export default function RoomSelectionOptions({ rooms, onChange }: RoomSelectionO
                         );
                       })}
                   </div>
-                  <div className="pt-1 text-sm text-neutral-700">Notes:</div>
+                  <div className="pt-3">
+                    <label className="mb-1 block text-sm font-medium text-neutral-700">Notes</label>
+                    <textarea
+                      value={notesByRoomCategory[getNotesKey(room.id, category)] || ''}
+                      onChange={(event) => onNotesChange?.(room.id, category, event.target.value)}
+                      disabled={!onNotesChange}
+                      rows={3}
+                        placeholder={`Add any notes for ${category.toLowerCase()} in this room...`}
+                      className="w-full rounded-button border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brass-500 disabled:cursor-not-allowed disabled:bg-neutral-100"
+                    />
+                  </div>
                 </div>
               ))}
             </div>

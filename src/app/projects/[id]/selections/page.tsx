@@ -21,6 +21,19 @@ import { isSelectionCompleted, isSelectionPendingApproval } from '@/lib/selectio
 
 const normalizeLabel = (value?: string | null) => (value || '').trim().toLowerCase();
 
+const formatDueDate = (dueDate?: string | null) => {
+  if (!dueDate) return 'No due date';
+
+  const parsedDate = new Date(dueDate);
+  if (Number.isNaN(parsedDate.getTime())) return 'No due date';
+
+  return parsedDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
 interface SelectionDisplayFields {
   name?: string | null;
   category?: string | null;
@@ -286,11 +299,9 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                         </div>
                       </div>
                       <div className="text-right">
+                        <div className="mb-1 text-xs font-medium text-neutral-500">Due Date</div>
                         <div className="text-sm font-medium text-brass-700">
-                          {new Date(selection.dueDate).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })}
+                          {formatDueDate(selection.dueDate)}
                         </div>
                         <StatusBadge status={selection.status} className="mt-1" />
                       </div>
@@ -329,6 +340,12 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
                       </div>
                     </Link>
                     <div className="flex items-center gap-2 ml-3">
+                      <div className="min-w-[120px] text-right">
+                        <div className="text-xs font-medium text-neutral-500">Due Date</div>
+                        <div className="text-sm font-medium text-neutral-800">
+                          {formatDueDate(selection.dueDate)}
+                        </div>
+                      </div>
                       <StatusBadge status={selection.status} />
                       {isBuilder && (
                         <div className="flex gap-1">

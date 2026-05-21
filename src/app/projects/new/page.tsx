@@ -82,6 +82,43 @@ function buildRoomDetailsFromSelections(roomSelections: RoomSelection[], customR
   return seededRooms;
 }
 
+const normalizeRoomKey = (value: string) => value.toLowerCase().trim().replace(/\s+/g, '-');
+
+const normalizeKey = normalizeRoomKey;
+
+function dedupeRoomDetails(rooms: RoomDetail[]) {
+  const mergedRooms = new Map<string, RoomDetail>();
+
+  rooms.forEach((room) => {
+    const roomKey = `${normalizeRoomKey(room.name)}|${normalizeRoomKey(room.type)}`;
+    const existingRoom = mergedRooms.get(roomKey);
+
+    if (!existingRoom) {
+      mergedRooms.set(roomKey, {
+        ...room,
+        fixtures: [...room.fixtures],
+      });
+      return;
+    }
+
+    const existingFixtureKeys = new Set(
+      existingRoom.fixtures.map(
+        (fixture) => `${normalizeRoomKey(fixture.category)}|${normalizeRoomKey(fixture.name)}|${fixture.quantity}|${fixture.imageUrl || ''}`
+      )
+    );
+
+    room.fixtures.forEach((fixture) => {
+      const fixtureKey = `${normalizeRoomKey(fixture.category)}|${normalizeRoomKey(fixture.name)}|${fixture.quantity}|${fixture.imageUrl || ''}`;
+      if (!existingFixtureKeys.has(fixtureKey)) {
+        existingFixtureKeys.add(fixtureKey);
+        existingRoom.fixtures.push(fixture);
+      }
+    });
+  });
+
+  return Array.from(mergedRooms.values());
+}
+
 export default function NewProjectPage() {
   const { user, profile } = useAuth();
   const { showSuccess } = useNotification();
@@ -126,6 +163,7 @@ export default function NewProjectPage() {
 
   // Step 5: Categories
   const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
+  const [notesByRoomCategory, setNotesByRoomCategory] = useState<Record<string, string>>({});
 
   // Step 6: Budgets
   const [allowances, setAllowances] = useState<CategoryAllowance[]>([]);
@@ -278,10 +316,12 @@ export default function NewProjectPage() {
         const nextRooms = buildRoomDetailsFromSelections(roomSelections, customRooms);
         const existingById = new Map(roomDetails.map((room) => [room.id, room]));
         setRoomDetails(
-          nextRooms.map((room) => ({
-            ...room,
-            fixtures: existingById.get(room.id)?.fixtures || [],
-          }))
+          dedupeRoomDetails(
+            nextRooms.map((room) => ({
+              ...room,
+              fixtures: existingById.get(room.id)?.fixtures || [],
+            }))
+          )
         );
       }
 
@@ -317,7 +357,7 @@ export default function NewProjectPage() {
               });
             }
           });
-          setRoomDetails(seededFromTemplate);
+          setRoomDetails(dedupeRoomDetails(seededFromTemplate));
         }
       }
 
@@ -391,7 +431,7 @@ export default function NewProjectPage() {
 
       // Build rooms object from the actual room details that will be saved
       const exteriorRoomsToSave = exteriorDetails.filter((room) => room.fixtures.length > 0);
-      const allRoomDetails = [...roomDetails, ...exteriorRoomsToSave];
+      const allRoomDetails = dedupeRoomDetails([...roomDetails, ...exteriorRoomsToSave]);
       const roomsObject = countRoomsFromDetails(allRoomDetails);
 
       // Calculate total fixtures
@@ -498,6 +538,7 @@ export default function NewProjectPage() {
             name: fixture.name,
             quantity: fixture.quantity,
             imageUrl: fixture.imageUrl || null,
+            notes: notesByRoomCategory[`${room.id}-${normalizeRoomKey(fixture.category)}`] || null,
             status: 'notStarted',
             allowance: 0,
             actualCost: 0,
@@ -879,6 +920,13 @@ export default function NewProjectPage() {
               <RoomSelectionOptions
                 rooms={roomDetails}
                 onChange={setRoomDetails}
+                notesByRoomCategory={notesByRoomCategory}
+                onNotesChange={(roomId, category, notes) =>
+                  setNotesByRoomCategory((prev) => ({
+                    ...prev,
+                    [`${roomId}-${normalizeRoomKey(category)}`]: notes,
+                  }))
+                }
               />
             </div>
           )}

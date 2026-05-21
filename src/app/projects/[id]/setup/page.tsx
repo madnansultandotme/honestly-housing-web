@@ -22,6 +22,41 @@ interface CategoryAllowance {
   type: AllowanceType;
 }
 
+const normalizeRoomKey = (value: string) => value.toLowerCase().trim().replace(/\s+/g, '-');
+
+function dedupeRoomDetails(rooms: RoomDetail[]) {
+  const mergedRooms = new Map<string, RoomDetail>();
+
+  rooms.forEach((room) => {
+    const roomKey = `${normalizeRoomKey(room.name)}|${normalizeRoomKey(room.type)}`;
+    const existingRoom = mergedRooms.get(roomKey);
+
+    if (!existingRoom) {
+      mergedRooms.set(roomKey, {
+        ...room,
+        fixtures: [...room.fixtures],
+      });
+      return;
+    }
+
+    const existingFixtureKeys = new Set(
+      existingRoom.fixtures.map(
+        (fixture) => `${normalizeRoomKey(fixture.category)}|${normalizeRoomKey(fixture.name)}|${fixture.quantity}|${fixture.imageUrl || ''}`
+      )
+    );
+
+    room.fixtures.forEach((fixture) => {
+      const fixtureKey = `${normalizeRoomKey(fixture.category)}|${normalizeRoomKey(fixture.name)}|${fixture.quantity}|${fixture.imageUrl || ''}`;
+      if (!existingFixtureKeys.has(fixtureKey)) {
+        existingFixtureKeys.add(fixtureKey);
+        existingRoom.fixtures.push(fixture);
+      }
+    });
+  });
+
+  return Array.from(mergedRooms.values());
+}
+
 
 const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: 'flooring', name: 'Flooring', required: true, completedCount: 0, totalCount: 0 },
@@ -53,6 +88,7 @@ export default function BuilderProjectSetup() {
   const [paintSelections, setPaintSelections] = useState<PaintDetail[]>([]);
   const [cabinetrySelections, setCabinetrySelections] = useState<CabinetryDetail[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
+  const [notesByRoomCategory, setNotesByRoomCategory] = useState<Record<string, string>>({});
 
   // Square footage
   const [squareFootage, setSquareFootage] = useState(2500);
@@ -144,7 +180,19 @@ export default function BuilderProjectSetup() {
             };
           });
 
-          setRoomDetails(loadedRoomDetails);
+          setRoomDetails(dedupeRoomDetails(loadedRoomDetails));
+
+          const loadedNotes: Record<string, string> = {};
+          if (Array.isArray(itemsData)) {
+            itemsData.forEach((item: any) => {
+              if (!item.notes) return;
+              const key = `${item.roomId}-${normalizeRoomKey(item.categoryName || item.categoryId || '')}`;
+              if (!loadedNotes[key]) {
+                loadedNotes[key] = item.notes;
+              }
+            });
+          }
+          setNotesByRoomCategory(loadedNotes);
         } else if (project.initialRoomDetails && Array.isArray(project.initialRoomDetails)) {
           // If no rooms saved yet, seed from initialRoomDetails provided at project creation (template)
           const seeded: RoomDetail[] = project.initialRoomDetails.map((r: any) => ({
@@ -159,7 +207,7 @@ export default function BuilderProjectSetup() {
               imageUrl: f.imageUrl || undefined,
             })),
           }));
-          setRoomDetails(seeded);
+          setRoomDetails(dedupeRoomDetails(seeded));
         }
       } catch (err) {
         console.error('Failed to load rooms and items:', err);
@@ -419,17 +467,18 @@ export default function BuilderProjectSetup() {
       }
 
       // Build rooms object from the actual room details that will be saved
-      const roomsObject = countRoomsFromDetails(roomDetails);
+      const uniqueRoomDetails = dedupeRoomDetails(roomDetails);
+      const roomsObject = countRoomsFromDetails(uniqueRoomDetails);
 
       // Calculate total fixtures
-      const totalFixturesCount = roomDetails.reduce((sum, room) => sum + room.fixtures.length, 0);
+      const totalFixturesCount = uniqueRoomDetails.reduce((sum, room) => sum + room.fixtures.length, 0);
 
       // Update project
       await apiClient.patch(`/projects/${projectId}`, {
         rooms: roomsObject,
         fixtureCounts: {
           plumbingFixtures: totalFixturesCount,
-          lightingFixtures: roomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
+          lightingFixtures: uniqueRoomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
         },
         squareFootage,
         allowances: allowances.reduce((acc, a) => {
@@ -492,7 +541,7 @@ export default function BuilderProjectSetup() {
       }
 
       // Create rooms and fixtures
-      for (const room of roomDetails) {
+      for (const room of uniqueRoomDetails) {
         // Create room
         const roomResponse = await apiClient.post('/rooms', {
           projectId,
@@ -553,6 +602,7 @@ export default function BuilderProjectSetup() {
             name: fixture.name,
             quantity: fixture.quantity,
             imageUrl: fixture.imageUrl || null,
+            notes: notesByRoomCategory[`${room.id}-${normalizeRoomKey(fixture.category)}`] || null,
             status: 'notStarted',
             allowance: 0,
             actualCost: 0,
@@ -801,6 +851,13 @@ export default function BuilderProjectSetup() {
               <RoomSelectionOptions
                 rooms={roomDetails}
                 onChange={setRoomDetails}
+                notesByRoomCategory={notesByRoomCategory}
+                onNotesChange={(roomId, category, notes) =>
+                  setNotesByRoomCategory((prev) => ({
+                    ...prev,
+                    [`${roomId}-${normalizeRoomKey(category)}`]: notes,
+                  }))
+                }
               />
             </Card>
 

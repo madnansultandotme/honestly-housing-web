@@ -39,6 +39,7 @@ interface RoomCategoryMatrixProps {
 
 function getRoomOptionKey(room: Room) {
   const normalized = `${room.type || ''} ${room.name}`.toLowerCase();
+  if (normalized.includes('interior')) return 'interior';
   if (normalized.includes('exterior') || normalized.includes('outdoor') || normalized.includes('patio') || normalized.includes('pool')) return 'exterior';
   if (normalized.includes('bath') || normalized.includes('powder')) return 'bathroom';
   if (normalized.includes('kitchen') || normalized.includes('pantry')) return 'kitchen';

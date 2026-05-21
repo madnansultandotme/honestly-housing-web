@@ -21,6 +21,7 @@ export const DEFAULT_STANDARD_ROOMS: StandardRoomDefault[] = [
   { type: 'bedroom', displayName: 'Bedrooms' },
   { type: 'bathroom', displayName: 'Bathrooms' },
   { type: 'kitchen', displayName: 'Kitchen' },
+  { type: 'interior', displayName: 'Interior' },
   { type: 'living-room', displayName: 'Living Room' },
   { type: 'dining-room', displayName: 'Dining Room' },
   { type: 'office', displayName: 'Office' },
@@ -83,6 +84,17 @@ export const DEFAULT_SETUP_DESIGN: SetupDesignConfig = {
       { category: 'Hardware', name: 'Cabinet Knobs', measureLabel: 'Quantity' },
       { category: 'Appliances', name: 'Dishwasher', measureLabel: 'Quantity' },
       { category: 'Appliances', name: 'Range / Cooktop', measureLabel: 'Quantity' },
+    ],
+  },
+  interior: {
+    title: 'Interior',
+    appliesTo: 'Applies to general interior spaces that do not fit a more specific room type.',
+    options: [
+      { category: 'Electrical', name: 'Recessed Light', measureLabel: 'Quantity' },
+      { category: 'Electrical', name: 'Sconce', measureLabel: 'Quantity' },
+      { category: 'Electrical', name: 'Ceiling Fan', measureLabel: 'Quantity' },
+      { category: 'Flooring', name: 'Flooring', measureLabel: 'Square Feet' },
+      { category: 'Hardware', name: 'Passage Door Knob', measureLabel: 'Quantity' },
     ],
   },
   living: {
