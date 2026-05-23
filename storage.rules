@@ -111,6 +111,20 @@ service firebase.storage {
                       ((isImage() && isValidImageSize()) || 
                        (isDocument() && isValidDocumentSize()));
     }
+
+    // Project documents (contracts, PDFs, docs)
+    match /projects/{projectId}/documents/{documentId} {
+      // Allow read for users who have access to the project
+      allow read: if isSignedIn() && hasAccessToProject(projectId);
+
+      // Allow write for builders/designers/admins, project creator, or project client
+      // and validate file type/size
+      allow write: if isSignedIn() && (
+                      isBuilderOrDesignerOrAdmin() ||
+                      firestore.get(/databases/(default)/documents/projects/$(projectId)).data.createdBy == request.auth.uid ||
+                      firestore.get(/databases/(default)/documents/projects/$(projectId)).data.clientId == request.auth.uid
+                    ) && isDocument() && isValidDocumentSize();
+    }
     
     // User profile photos (avatars)
     match /user_avatars/{fileName} {

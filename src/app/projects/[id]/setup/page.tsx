@@ -15,6 +15,7 @@ import CabinetryBuilder, { CabinetryDetail } from '@/components/ui/CabinetryBuil
 import TemplateViewer from '@/components/templates/TemplateViewer';
 import { apiClient } from '@/lib/api/client';
 import { countRoomsFromDetails } from '@/lib/projects/roomCounts';
+import { uploadProjectDocument } from '@/lib/api/upload';
 
 interface CategoryAllowance {
   categoryId: string;
@@ -106,6 +107,9 @@ export default function BuilderProjectSetup() {
   const [showTemplateViewer, setShowTemplateViewer] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [scopeOfWorks, setScopeOfWorks] = useState<Record<string, string>>({});
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -398,6 +402,48 @@ export default function BuilderProjectSetup() {
     }
   };
 
+  // Document upload handlers
+  const handleDocumentFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] || null;
+    setSelectedDocumentFile(f);
+  };
+
+  const handleUploadDocument = async () => {
+    if (!selectedDocumentFile || !user) return;
+    try {
+      setUploadingDocument(true);
+      // Upload to Firebase Storage
+      const downloadUrl = await uploadProjectDocument(selectedDocumentFile, projectId, user.uid);
+      // Persist metadata via API
+      const res = await apiClient.post('/documents', {
+        projectId,
+        name: selectedDocumentFile.name,
+        url: downloadUrl,
+        mimeType: selectedDocumentFile.type,
+        createdBy: user?.uid,
+      });
+      const newDoc = { id: res?.id || res?.documentId, name: selectedDocumentFile.name, url: downloadUrl, mimeType: selectedDocumentFile.type, createdAt: new Date().toISOString() };
+      setDocuments((prev) => [newDoc, ...prev]);
+      setSelectedDocumentFile(null);
+    } catch (err) {
+      console.error('Failed to upload document:', err);
+      setError('Failed to upload document');
+    } finally {
+      setUploadingDocument(false);
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm('Delete this document?')) return;
+    try {
+      await apiClient.delete(`/documents?projectId=${projectId}&documentId=${documentId}`);
+      setDocuments((prev) => prev.filter(d => d.id !== documentId));
+    } catch (err) {
+      console.error('Failed to delete document:', err);
+      setError('Failed to delete document');
+    }
+  };
+
   const handleDeleteTemplate = async (templateId: string) => {
     try {
       const builderOrgId = profile?.builderOrgId || user?.uid;
@@ -682,6 +728,14 @@ export default function BuilderProjectSetup() {
         });
       }
 
+        // Load project documents
+        try {
+          const docsData = await apiClient.get(`/documents?projectId=${projectId}`);
+          if (Array.isArray(docsData)) setDocuments(docsData);
+        } catch (err) {
+          console.error('Failed to load project documents:', err);
+        }
+
       // Save as template if requested
       if (saveAsTemplate && templateName.trim()) {
         const builderOrgId = profile?.builderOrgId || user?.uid;
@@ -822,6 +876,49 @@ export default function BuilderProjectSetup() {
                 <p className="mt-2 text-xs text-neutral-500">
                   Client is set when the project is created and cannot be changed here.
                 </p>
+              </div>
+            </Card>
+
+            {/* Project Documents */}
+            <Card>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-neutral-900 mb-1">Project Documents</h2>
+                  <p className="text-sm text-neutral-600">Upload construction contracts or other project documents</p>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <input
+                  type="file"
+                  onChange={handleDocumentFileChange}
+                  className="mb-3"
+                />
+                <div className="flex gap-3">
+                  <Button onClick={handleUploadDocument} disabled={!selectedDocumentFile || uploadingDocument}>
+                    {uploadingDocument ? 'Uploading...' : 'Upload Document'}
+                  </Button>
+                  {selectedDocumentFile && (
+                    <div className="text-sm text-neutral-600 self-center">{selectedDocumentFile.name}</div>
+                  )}
+                </div>
+
+                {documents.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {documents.map((doc) => (
+                      <div key={doc.id} className="flex items-center justify-between p-2 border border-neutral-100 rounded-button bg-white">
+                        <div className="flex items-center gap-3">
+                          <div className="text-sm font-medium text-neutral-900">{doc.name}</div>
+                          <div className="text-xs text-neutral-500">{new Date(doc.createdAt || Date.now()).toLocaleDateString()}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <a href={doc.url} target="_blank" rel="noreferrer" className="text-brass-600 hover:underline">Download</a>
+                          <button onClick={() => handleDeleteDocument(doc.id)} className="text-red-600">Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </Card>
 

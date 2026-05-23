@@ -27,6 +27,17 @@ export async function uploadProjectPhoto(
   return uploadFile(file, path);
 }
 
+export async function uploadProjectDocument(
+  file: File,
+  projectId: string,
+  userId: string
+): Promise<string> {
+  const timestamp = Date.now();
+  const fileName = `${timestamp}_${file.name}`;
+  const path = `projects/${projectId}/documents/${fileName}`;
+  return uploadFile(file, path);
+}
+
 export async function uploadUserAvatar(
   file: File,
   userId: string
