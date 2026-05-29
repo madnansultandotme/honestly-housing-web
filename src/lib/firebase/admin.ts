@@ -1,10 +1,12 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getStorage, Storage } from 'firebase-admin/storage';
 
 let adminApp: App;
 let adminAuth: Auth;
 let adminDb: Firestore;
+let adminStorage: Storage;
 
 // Only initialize if we have valid credentials (not during build time)
 const hasValidCredentials = 
@@ -27,15 +29,17 @@ if (hasValidCredentials) {
 
   adminAuth = getAuth(adminApp);
   adminDb = getFirestore(adminApp);
+  adminStorage = getStorage(adminApp);
 } else {
   // Create stub objects for build time
   adminApp = {} as App;
   adminAuth = {} as Auth;
   adminDb = {} as Firestore;
+  adminStorage = {} as Storage;
 }
 
 // Export
-export { adminApp, adminAuth, adminDb };
+export { adminApp, adminAuth, adminDb, adminStorage };
 
 // Helper to check if admin is initialized
 export function isAdminInitialized(): boolean {

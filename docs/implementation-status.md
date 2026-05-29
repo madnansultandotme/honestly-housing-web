@@ -30,6 +30,7 @@
 - [x] Options endpoints (Good/Better/Best)
 - [x] Approval workflow endpoint
 - [x] CSV export for materials list
+- [x] Budget rows, final approval, and draw invoicing endpoints
 
 ### UI Components
 - [x] Button (Primary, Secondary, Outline)
@@ -88,6 +89,9 @@
 - [x] Project messaging system (IMPLEMENTED - real-time chat with polling)
 - [x] Photo gallery with upload (IMPLEMENTED)
 - [x] Loading animations (IMPLEMENTED - comprehensive loading states)
+- [x] Budget builder with draft editing and final approval
+- [x] Draw invoicing with stored PDF downloads
+- [x] Client read-only budget and invoice access
 - [ ] Mood board generation (NOT IMPLEMENTED - marked as coming soon)
 - [ ] Client invitation system (NOT IMPLEMENTED)
 - [ ] Affiliate links support (Structure ready, not fully implemented)
@@ -103,6 +107,9 @@
 - [x] builderOrgs
 - [x] rooms
 - [x] templates
+- [x] budget
+- [x] budgetRows
+- [x] drawInvoices
 
 ## 📋 Feature Checklist by Requirement
 
@@ -114,6 +121,9 @@
 - [x] Selection system
 - [x] Approval workflow
 - [x] Budget tracking (allowance vs actual)
+- [x] Project budget builder
+- [x] Final approved budget visibility for clients
+- [x] Draw invoice creation and PDF download
 - [x] Due dates
 - [x] Photo gallery
 - [x] Messaging
@@ -211,7 +221,7 @@
 - [ ] Mobile optimization
 - [ ] Performance optimization
 - [ ] Analytics dashboard
-- [ ] Invoicing system
+- [x] Invoicing system
 
 ## 📊 Completion Status
 

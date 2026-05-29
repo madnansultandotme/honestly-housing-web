@@ -749,6 +749,164 @@
           "queryScope": "COLLECTION"
         }
       ]
+    },
+    "budget": {
+      "path": "projects/{projectId}/budget/{budgetId}",
+      "description": "Project budget summary and status",
+      "fields": {
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["draft", "finalApprovedBudget"],
+          "description": "Budget approval status"
+        },
+        "totalAmount": {
+          "type": "number",
+          "required": true,
+          "description": "Total approved budget amount"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Budget creation timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Last update timestamp"
+        },
+        "finalizedAt": {
+          "type": "timestamp",
+          "required": false,
+          "nullable": true,
+          "description": "Final approval timestamp"
+        },
+        "finalizedBy": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "User ID who finalized the budget"
+        }
+      }
+    },
+    "budgetRows": {
+      "path": "projects/{projectId}/budgetRows/{budgetRowId}",
+      "description": "Draft budget line items grouped under category totals",
+      "fields": {
+        "categoryCode": {
+          "type": "string",
+          "required": true,
+          "description": "Category code"
+        },
+        "categoryName": {
+          "type": "string",
+          "required": true,
+          "description": "Category name"
+        },
+        "itemCode": {
+          "type": "string",
+          "required": true,
+          "description": "Line item code"
+        },
+        "itemName": {
+          "type": "string",
+          "required": true,
+          "description": "Line item name"
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "nullable": true,
+          "description": "Description or notes"
+        },
+        "quantity": {
+          "type": "number",
+          "required": true,
+          "description": "Quantity"
+        },
+        "unitCost": {
+          "type": "number",
+          "required": true,
+          "description": "Unit cost"
+        },
+        "markup": {
+          "type": "number",
+          "required": true,
+          "description": "Markup amount"
+        },
+        "totalAmount": {
+          "type": "number",
+          "required": true,
+          "description": "Line total amount"
+        },
+        "costType": {
+          "type": "string",
+          "required": true,
+          "enum": ["labor", "material", "laborMaterial"],
+          "description": "Cost type"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Row creation timestamp"
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Last update timestamp"
+        }
+      }
+    },
+    "drawInvoices": {
+      "path": "projects/{projectId}/drawInvoices/{drawInvoiceId}",
+      "description": "Stored draw invoice metadata and PDF references",
+      "fields": {
+        "drawNumber": {
+          "type": "number",
+          "required": true,
+          "description": "Draw number"
+        },
+        "invoiceNumber": {
+          "type": "string",
+          "required": true,
+          "description": "Invoice number"
+        },
+        "date": {
+          "type": "string",
+          "required": true,
+          "description": "Invoice date"
+        },
+        "totalAmount": {
+          "type": "number",
+          "required": true,
+          "description": "Total invoice amount"
+        },
+        "pdfPath": {
+          "type": "string",
+          "required": true,
+          "description": "Firebase Storage path for the generated PDF"
+        },
+        "downloadUrl": {
+          "type": "string",
+          "required": true,
+          "description": "API download URL for the stored invoice PDF"
+        },
+        "createdAt": {
+          "type": "timestamp",
+          "required": true,
+          "description": "Invoice creation timestamp"
+        },
+        "createdBy": {
+          "type": "string",
+          "required": true,
+          "description": "User ID who generated the invoice"
+        },
+        "lineItems": {
+          "type": "array",
+          "required": true,
+          "description": "Draw line items included in the invoice"
+        }
+      }
     }
   }
 }

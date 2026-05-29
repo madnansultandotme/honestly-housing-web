@@ -104,6 +104,9 @@ export async function DELETE(
       'paint',
       'cabinetry',
       'roomCategories',
+      'budget',
+      'budgetRows',
+      'drawInvoices',
     ];
 
     for (const subcollection of subcollections) {

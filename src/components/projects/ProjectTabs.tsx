@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface ProjectTabsProps {
   projectId: string;
@@ -13,17 +12,14 @@ const tabs = [
   { id: 'selections', label: 'Selections', href: (id: string) => `/projects/${id}/selections` },
   { id: 'photos', label: 'Photos', href: (id: string) => `/projects/${id}/photos` },
   { id: 'messages', label: 'Messages', href: (id: string) => `/projects/${id}/messages` },
+  { id: 'budget', label: 'Budget & Draws', href: (id: string) => `/projects/${id}/purchasing` },
 ];
 
 export default function ProjectTabs({ projectId }: ProjectTabsProps) {
   const pathname = usePathname();
-  const { profile } = useAuth();
-  const isBuilder = profile?.role === 'builder' || profile?.role === 'designer' || profile?.role === 'admin';
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
-  const visibleTabs = isBuilder
-    ? [...tabs, { id: 'purchasing', label: 'Purchasing', href: (id: string) => `/projects/${id}/purchasing` }]
-    : tabs;
+  const visibleTabs = tabs;
 
   return (
     <div className="border-b border-neutral-200 bg-white">
