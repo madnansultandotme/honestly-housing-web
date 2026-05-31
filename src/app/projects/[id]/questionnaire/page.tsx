@@ -24,6 +24,13 @@ type AnswerState = {
   imageUrl?: string | null;
 };
 
+function getSubmissionAnswers(payload: any): Record<string, any> {
+  return payload?.questionnaireSubmission?.answers
+    || payload?.answers
+    || payload?.questionnaireSubmission?.submission?.answers
+    || {};
+}
+
 function parseConditionalLogicText(text: string) {
   const trimmed = text.trim();
 
@@ -90,6 +97,8 @@ export default function QuestionnairePage() {
   const [projectCategories, setProjectCategories] = useState<string[]>([]);
 
   const debouncedSaveTimer = useRef<any>(null);
+  const saveInFlightCount = useRef(0);
+  const dirtyQuestionIds = useRef<Set<string>>(new Set());
   const [showViewer, setShowViewer] = useState(false);
   const [viewerImages, setViewerImages] = useState<string[]>([]);
   const pendingSaveRef = useRef<{ questionId: string; next: AnswerState } | null>(null);
@@ -134,7 +143,7 @@ export default function QuestionnairePage() {
         );
 
         const initialAnswers: Record<string, AnswerState> = {};
-        const submissionAnswers = submission?.answers || {};
+        const submissionAnswers = getSubmissionAnswers(submission);
         Object.keys(submissionAnswers).forEach((qid) => {
           initialAnswers[qid] = {
             value: submissionAnswers[qid]?.value ?? null,
@@ -251,6 +260,11 @@ export default function QuestionnairePage() {
 
     const run = async () => {
       try {
+        if (debouncedSaveTimer.current) {
+          clearTimeout(debouncedSaveTimer.current);
+          debouncedSaveTimer.current = null;
+        }
+        saveInFlightCount.current += 1;
         setSaving(true);
         await apiClient.post('/questionnaire/answers', {
           projectId,
@@ -260,10 +274,12 @@ export default function QuestionnairePage() {
           customText: next.customText ?? null,
           imageUrl: next.imageUrl ?? null,
         });
+        dirtyQuestionIds.current.delete(questionId);
       } catch (e: any) {
         console.error('Failed to save answer:', e);
         setSaveError(e.message || 'Failed to save answer');
       } finally {
+        saveInFlightCount.current = Math.max(0, saveInFlightCount.current - 1);
         setSaving(false);
       }
     };
@@ -292,6 +308,31 @@ export default function QuestionnairePage() {
     await saveAnswer(pending.questionId, pending.next, 'immediate');
   };
 
+  const waitForAllSaves = async () => {
+    // Wait for any pending debounced saves to fire, then wait for all in-flight requests to finish.
+    while (debouncedSaveTimer.current || saveInFlightCount.current > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  };
+
+  const persistAllVisibleAnswers = async () => {
+    for (const questionId of Array.from(dirtyQuestionIds.current)) {
+      const current = answers[questionId];
+
+      if (!current) {
+        dirtyQuestionIds.current.delete(questionId);
+        continue;
+      }
+
+      if (!isNonEmpty(current.value) && !isNonEmpty(current.customText) && !isNonEmpty(current.imageUrl)) {
+        dirtyQuestionIds.current.delete(questionId);
+        continue;
+      }
+
+      await saveAnswer(questionId, current, 'immediate');
+    }
+  };
+
   const setAnswer = async (
     questionId: string,
     patch: Partial<AnswerState>,
@@ -305,6 +346,8 @@ export default function QuestionnairePage() {
         imageUrl: prev[questionId]?.imageUrl ?? null,
         ...patch,
       };
+
+      dirtyQuestionIds.current.add(questionId);
 
       return {
         ...prev,
@@ -353,6 +396,8 @@ export default function QuestionnairePage() {
       setSaveError(null);
 
       await flushPendingSave();
+      await persistAllVisibleAnswers();
+      await waitForAllSaves();
 
       // Only require questions from categories that match the project
       const requiredQuestionIds = visibleQuestions
@@ -364,7 +409,7 @@ export default function QuestionnairePage() {
         `/questionnaire/submission?projectId=${projectId}&clientId=${user?.uid}`
       );
 
-      const savedAnswers = submission?.answers || {};
+      const savedAnswers = getSubmissionAnswers(submission);
       const missing = requiredQuestionIds.filter((id) => {
         const a = savedAnswers[id];
         return !(isNonEmpty(a?.value) || isNonEmpty(a?.customText) || isNonEmpty(a?.imageUrl));

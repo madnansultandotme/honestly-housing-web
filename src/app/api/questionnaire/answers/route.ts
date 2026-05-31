@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, isAdminInitialized } from '@/lib/firebase/admin';
-import { getProjectQuestionCount } from '@/lib/questionnaire/projectQuestionnaire';
 
 function isNonEmptyAnswer(value: any): boolean {
   if (value === null || value === undefined) return false;
@@ -36,7 +35,6 @@ export async function POST(request: NextRequest) {
     const answerRef = submissionRef.collection('answers').doc(String(questionId));
 
     const now = new Date().toISOString();
-    const totalCount = await getProjectQuestionCount(projectId);
 
     const submissionSnap = await submissionRef.get();
     if (!submissionSnap.exists) {
@@ -48,7 +46,7 @@ export async function POST(request: NextRequest) {
         updatedAt: now,
         completedAt: null,
         answeredCount: 0,
-        totalCount,
+        totalCount: 0,
         percentComplete: 0,
       });
     } else {
@@ -73,16 +71,9 @@ export async function POST(request: NextRequest) {
       { merge: true }
     );
 
-    const answersSnap = await submissionRef.collection('answers').get();
-    const answeredCount = answersSnap.docs.filter((d) => isNonEmptyAnswer(d.data()?.value)).length;
-    const percentComplete = Math.round((answeredCount / Math.max(1, totalCount)) * 100);
-
     await submissionRef.set(
       {
         updatedAt: now,
-        answeredCount,
-        totalCount,
-        percentComplete,
         status: 'inProgress',
       },
       { merge: true }
