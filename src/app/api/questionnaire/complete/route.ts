@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, isAdminInitialized } from '@/lib/firebase/admin';
-import { getProjectQuestionCount } from '@/lib/questionnaire/projectQuestionnaire';
+import { getProjectQuestionCount, syncProjectQuestionnaire } from '@/lib/questionnaire/projectQuestionnaire';
 
 function isNonEmptyAnswer(value: any): boolean {
   if (value === null || value === undefined) return false;
@@ -61,8 +61,38 @@ export async function POST(request: NextRequest) {
       });
 
       if (missing.length > 0) {
+        console.warn('Questionnaire complete: missing required answers', {
+          requiredIds: requiredIds,
+          missing,
+        });
+
+        // Log which answer docs actually exist for debugging
+        try {
+          const answerDocs = await submissionRef.collection('answers').get();
+          const existingIds = answerDocs.docs.map((d) => d.id);
+          console.warn('Existing answer doc ids:', existingIds);
+        } catch (logErr) {
+          console.error('Failed to list answer docs for debugging:', logErr);
+        }
+
+        // Attempt to map missing ids to question text for a friendlier error
+        let missingFriendly: string[] = missing;
+        try {
+          const questionnaire = await syncProjectQuestionnaire(projectId);
+          missingFriendly = missing.map((id) => {
+            for (const cat of questionnaire.categories) {
+              for (const q of cat.questions || []) {
+                if (String(q.questionId) === id) return `${q.question} (${id})`;
+              }
+            }
+            return id;
+          });
+        } catch (mapErr) {
+          console.warn('Failed to map missing question ids to text:', mapErr);
+        }
+
         return NextResponse.json(
-          { error: `Missing answers for: ${missing.join(', ')}` },
+          { error: `Missing answers for: ${missingFriendly.join(', ')}`, missing: missing, missingFriendly },
           { status: 400 }
         );
       }

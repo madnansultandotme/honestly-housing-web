@@ -1,4 +1,5 @@
 import { adminDb, adminStorage } from '@/lib/firebase/admin';
+import { PDFDocument, PageSizes, StandardFonts, rgb } from 'pdf-lib';
 import type {
   BudgetRow,
   BudgetStatus,
@@ -300,167 +301,276 @@ export async function readInvoicePdf(projectId: string, drawId: string): Promise
 }
 
 export async function buildInvoicePdfBuffer(context: InvoicePdfContext): Promise<Buffer> {
-  const { default: PDFDocument } = await import('pdfkit');
+  const pdfDoc = await PDFDocument.create();
+  const pageSize = PageSizes.A4;
+  let page = pdfDoc.addPage(pageSize);
+  const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  return new Promise<Buffer>((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 48, bufferPages: true });
-    const chunks: Buffer[] = [];
+  const marginLeft = 48;
+  const marginRight = 48;
+  const marginTop = 48;
+  const marginBottom = 48;
+  const pageWidth = page.getWidth();
+  const pageHeight = page.getHeight();
+  const contentWidth = pageWidth - marginLeft - marginRight;
 
-    doc.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
-    doc.on('error', reject);
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
+  let cursorTop = marginTop;
 
-    const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-    const columnWidths = [55, 140, 42, 70, 54, 64, 70, 74];
-    let y = doc.y;
+  const colors = {
+    text: rgb(0.07, 0.09, 0.13),
+    muted: rgb(0.42, 0.45, 0.52),
+    line: rgb(0.82, 0.84, 0.86),
+    panel: rgb(0.97, 0.96, 0.92),
+    panelBorder: rgb(0.90, 0.89, 0.86),
+    accent: rgb(0.72, 0.62, 0.31),
+    white: rgb(1, 1, 1),
+  };
 
-    const ensureSpace = (neededHeight: number) => {
-      if (y + neededHeight > doc.page.height - doc.page.margins.bottom) {
-        doc.addPage();
-        y = doc.page.margins.top;
+  const topToPdfY = (topY: number, height = 0) => pageHeight - topY - height;
+
+  const beginNewPage = () => {
+    page = pdfDoc.addPage(pageSize);
+    cursorTop = marginTop;
+  };
+
+  const ensureSpace = (neededHeight: number) => {
+    if (cursorTop + neededHeight > pageHeight - marginBottom) {
+      beginNewPage();
+      return true;
+    }
+    return false;
+  };
+
+  const splitText = (text: string, font = regularFont, size = 10, width = contentWidth) => {
+    const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return [''];
+
+    const lines: string[] = [];
+    let current = '';
+
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (font.widthOfTextAtSize(candidate, size) <= width) {
+        current = candidate;
+      } else {
+        if (current) lines.push(current);
+        current = word;
       }
-    };
-
-    const drawLabelValue = (label: string, value: string, x: number, width: number) => {
-      doc.font('Helvetica-Bold').fontSize(9).fillColor('#6B7280').text(label, x, y, { width });
-      y += 12;
-      doc.font('Helvetica').fontSize(11).fillColor('#111827').text(value, x, y, { width });
-    };
-
-    const groupedItems = Array.from(
-      context.lineItems.reduce((groups, item) => {
-        const groupKey = `${item.categoryCode}__${item.categoryName}`;
-        const group = groups.get(groupKey) || {
-          categoryCode: item.categoryCode,
-          categoryName: item.categoryName,
-          totalAmount: 0,
-          lineItems: [] as DrawInvoiceLineItem[],
-        };
-
-        group.totalAmount += item.totalAmount;
-        group.lineItems.push(item);
-        groups.set(groupKey, group);
-        return groups;
-      }, new Map<string, { categoryCode: string; categoryName: string; totalAmount: number; lineItems: DrawInvoiceLineItem[] }>() )
-        .values()
-    );
-
-    doc.font('Helvetica-Bold').fontSize(24).fillColor('#111827').text('Draw Invoice', { align: 'left' });
-    y = doc.y + 12;
-
-    doc.font('Helvetica').fontSize(10).fillColor('#6B7280').text(`Invoice Number: ${context.invoiceNumber}`);
-    doc.text(`Draw Number: ${context.drawNumber}`);
-    doc.text(`Date: ${context.date}`);
-    y = doc.y + 18;
-
-    ensureSpace(90);
-    const sectionTop = y;
-    const sectionWidth = pageWidth / 3;
-
-    drawLabelValue('Project', String(context.project.name || 'Project'), doc.page.margins.left, sectionWidth - 12);
-    y = sectionTop;
-    drawLabelValue('Client', context.client?.name || 'Client not assigned', doc.page.margins.left + sectionWidth, sectionWidth - 12);
-    y = sectionTop;
-    drawLabelValue('Builder / Company', context.builderOrg?.name || 'Builder', doc.page.margins.left + sectionWidth * 2, sectionWidth - 12);
-    y = Math.max(doc.y + 10, sectionTop + 48);
-
-    const projectAddress = typeof context.project.address === 'string' ? context.project.address : '';
-    if (projectAddress) {
-      doc.font('Helvetica').fontSize(10).fillColor('#4B5563').text(projectAddress, { width: pageWidth });
-      y = doc.y + 12;
     }
 
-    const summaryTop = y;
-    const summaryWidth = pageWidth / 3;
-    doc.roundedRect(doc.page.margins.left, summaryTop, pageWidth, 64, 10).strokeColor('#E5E7EB').lineWidth(1).stroke();
-    doc.font('Helvetica-Bold').fontSize(9).fillColor('#6B7280').text('Budget Status', doc.page.margins.left + 14, summaryTop + 14, { width: summaryWidth - 28 });
-    doc.font('Helvetica').fontSize(11).fillColor('#111827').text(context.budget.status === 'finalApprovedBudget' ? 'Final Approved Budget' : 'Draft', doc.page.margins.left + 14, summaryTop + 28, { width: summaryWidth - 28 });
-    doc.font('Helvetica-Bold').fontSize(9).fillColor('#6B7280').text('Draw Total', doc.page.margins.left + summaryWidth + 14, summaryTop + 14, { width: summaryWidth - 28 });
-    doc.font('Helvetica').fontSize(11).fillColor('#111827').text(formatCurrency(context.totalAmount), doc.page.margins.left + summaryWidth + 14, summaryTop + 28, { width: summaryWidth - 28 });
-    doc.font('Helvetica-Bold').fontSize(9).fillColor('#6B7280').text('Remaining Budget', doc.page.margins.left + summaryWidth * 2 + 14, summaryTop + 14, { width: summaryWidth - 28 });
-    doc.font('Helvetica').fontSize(11).fillColor('#111827').text(formatCurrency(Math.max(context.budget.totalAmount - context.totalAmount, 0)), doc.page.margins.left + summaryWidth * 2 + 14, summaryTop + 28, { width: summaryWidth - 28 });
-    y = summaryTop + 84;
+    if (current) lines.push(current);
+    return lines.length > 0 ? lines : [''];
+  };
 
-    ensureSpace(28);
-    doc.font('Helvetica-Bold').fontSize(14).fillColor('#111827').text('Budget Draw Detail', { continued: false });
-    y = doc.y + 8;
-
-    const tableLeft = doc.page.margins.left;
-    const tableHeaders = ['Code', 'Item', 'Qty', 'Unit Cost', 'Markup', 'Total', 'Draw', 'Remaining'];
-    const tableWidths = [58, 150, 38, 68, 58, 68, 68, 70];
-
-    const renderTableHeader = () => {
-      ensureSpace(22);
-      let x = tableLeft;
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#6B7280');
-      tableHeaders.forEach((header, index) => {
-        doc.text(header, x, y, { width: tableWidths[index] });
-        x += tableWidths[index];
-      });
-      y += 14;
-      doc.moveTo(tableLeft, y).lineTo(tableLeft + pageWidth, y).strokeColor('#D1D5DB').lineWidth(1).stroke();
-      y += 6;
-    };
-
-    const renderGroupHeader = (group: { categoryCode: string; categoryName: string; totalAmount: number }) => {
-      ensureSpace(24);
-      doc.roundedRect(tableLeft, y, pageWidth, 22, 6).fillAndStroke('#F8F4EA', '#E5E7EB');
-      doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9).text(group.categoryCode, tableLeft + 10, y + 7, { width: 54 });
-      doc.text(group.categoryName, tableLeft + 66, y + 7, { width: pageWidth - 180 });
-      doc.text(formatCurrency(group.totalAmount), tableLeft + pageWidth - 110, y + 7, { width: 100, align: 'right' });
-      y += 28;
-    };
-
-    const renderRow = (lineItem: DrawInvoiceLineItem) => {
-      ensureSpace(34);
-      let x = tableLeft;
-      doc.font('Helvetica').fontSize(8.5).fillColor('#111827');
-      doc.text(lineItem.itemCode, x, y, { width: tableWidths[0] });
-      x += tableWidths[0];
-      doc.text(lineItem.itemName, x, y, { width: tableWidths[1] });
-      const itemBottom = doc.y;
-      doc.font('Helvetica').fontSize(7.5).fillColor('#6B7280').text([lineItem.description, lineItem.costType === 'laborMaterial' ? 'Labor & Material' : lineItem.costType[0].toUpperCase() + lineItem.costType.slice(1)].filter(Boolean).join(' | '), tableLeft + tableWidths[0], y + 12, { width: tableWidths[1] });
-      x += tableWidths[1];
-      doc.fillColor('#111827').font('Helvetica').fontSize(8.5).text(String(lineItem.quantity), x, y, { width: tableWidths[2], align: 'right' });
-      x += tableWidths[2];
-      doc.text(formatCurrency(lineItem.unitCost), x, y, { width: tableWidths[3], align: 'right' });
-      x += tableWidths[3];
-      doc.text(formatCurrency(lineItem.markup), x, y, { width: tableWidths[4], align: 'right' });
-      x += tableWidths[4];
-      doc.text(formatCurrency(lineItem.totalAmount), x, y, { width: tableWidths[5], align: 'right' });
-      x += tableWidths[5];
-      doc.text(formatCurrency(lineItem.currentDrawAmount), x, y, { width: tableWidths[6], align: 'right' });
-      x += tableWidths[6];
-      doc.text(formatCurrency(lineItem.remainingAmount), x, y, { width: tableWidths[7], align: 'right' });
-      y = Math.max(y + 18, itemBottom + 18);
-      doc.moveTo(tableLeft, y - 6).lineTo(tableLeft + pageWidth, y - 6).strokeColor('#E5E7EB').lineWidth(0.5).stroke();
-    };
-
-    if (groupedItems.length === 0) {
-      ensureSpace(24);
-      doc.font('Helvetica').fontSize(10).fillColor('#6B7280').text('No finalized budget line items were included in this draw.', tableLeft, y, { width: pageWidth });
-      y = doc.y + 12;
-    } else {
-      groupedItems.forEach((group) => {
-        renderGroupHeader(group);
-        renderTableHeader();
-        group.lineItems.forEach(renderRow);
-        y += 4;
-      });
-    }
-
-    ensureSpace(70);
-    doc.roundedRect(tableLeft, y, pageWidth, 54, 10).strokeColor('#E5E7EB').lineWidth(1).stroke();
-    doc.font('Helvetica-Bold').fontSize(11).fillColor('#111827').text('Total Invoice Amount', tableLeft + 14, y + 14);
-    doc.font('Helvetica-Bold').fontSize(15).fillColor('#0F172A').text(formatCurrency(context.totalAmount), tableLeft + 14, y + 28);
-
-    doc.font('Helvetica').fontSize(9).fillColor('#6B7280').text('Generated from final approved budget line items.', tableLeft + pageWidth - 220, y + 20, {
-      width: 186,
-      align: 'right',
+  const drawText = (
+    text: string,
+    x: number,
+    topY: number,
+    font = regularFont,
+    size = 10,
+    color = colors.text,
+    options: Record<string, unknown> = {}
+  ) => {
+    page.drawText(String(text ?? ''), {
+      x,
+      y: topToPdfY(topY, size),
+      size,
+      font,
+      color,
+      ...options,
     });
+  };
 
-    doc.end();
+  const drawWrappedText = (
+    text: string,
+    x: number,
+    topY: number,
+    width: number,
+    font = regularFont,
+    size = 10,
+    color = colors.text,
+    lineHeight = size + 2
+  ) => {
+    const lines = splitText(text, font, size, width);
+    lines.forEach((line, index) => {
+      drawText(line, x, topY + index * lineHeight, font, size, color, { maxWidth: width });
+    });
+    return Math.max(1, lines.length) * lineHeight;
+  };
+
+  const drawLine = (x1: number, yTop: number, x2: number, thickness = 1, color = colors.line) => {
+    page.drawLine({
+      start: { x: x1, y: topToPdfY(yTop) },
+      end: { x: x2, y: topToPdfY(yTop) },
+      thickness,
+      color,
+    });
+  };
+
+  const drawPanel = (x: number, topY: number, width: number, height: number, fill = colors.white, border = colors.line) => {
+    page.drawRectangle({
+      x,
+      y: topToPdfY(topY, height),
+      width,
+      height,
+      color: fill,
+      borderColor: border,
+      borderWidth: 1,
+    });
+  };
+
+  const groupedItems = Array.from(
+    context.lineItems.reduce((groups, item) => {
+      const groupKey = `${item.categoryCode}__${item.categoryName}`;
+      const group = groups.get(groupKey) || {
+        categoryCode: item.categoryCode,
+        categoryName: item.categoryName,
+        totalAmount: 0,
+        lineItems: [] as DrawInvoiceLineItem[],
+      };
+
+      group.totalAmount += item.totalAmount;
+      group.lineItems.push(item);
+      groups.set(groupKey, group);
+      return groups;
+    }, new Map<string, { categoryCode: string; categoryName: string; totalAmount: number; lineItems: DrawInvoiceLineItem[] }>())
+      .values()
+  );
+
+  drawText('Draw Invoice', marginLeft, cursorTop, boldFont, 24, colors.text);
+  cursorTop += 34;
+
+  drawText(`Invoice Number: ${context.invoiceNumber}`, marginLeft, cursorTop, regularFont, 10, colors.muted);
+  cursorTop += 14;
+  drawText(`Draw Number: ${context.drawNumber}`, marginLeft, cursorTop, regularFont, 10, colors.muted);
+  cursorTop += 14;
+  drawText(`Date: ${context.date}`, marginLeft, cursorTop, regularFont, 10, colors.muted);
+  cursorTop += 22;
+
+  const sectionWidth = contentWidth / 3;
+  const labelHeight = 12;
+  const valueHeight = 14;
+  const sectionHeight = 38;
+
+  ensureSpace(sectionHeight + 8);
+  drawText('Project', marginLeft, cursorTop, boldFont, 9, colors.muted);
+  drawText(String(context.project.name || 'Project'), marginLeft, cursorTop + labelHeight, regularFont, 11, colors.text);
+  drawText('Client', marginLeft + sectionWidth, cursorTop, boldFont, 9, colors.muted);
+  drawText(context.client?.name || 'Client not assigned', marginLeft + sectionWidth, cursorTop + labelHeight, regularFont, 11, colors.text);
+  drawText('Builder / Company', marginLeft + sectionWidth * 2, cursorTop, boldFont, 9, colors.muted);
+  drawText(context.builderOrg?.name || 'Builder', marginLeft + sectionWidth * 2, cursorTop + labelHeight, regularFont, 11, colors.text);
+  cursorTop += sectionHeight;
+
+  const projectAddress = typeof context.project.address === 'string' ? context.project.address : '';
+  if (projectAddress) {
+    cursorTop += drawWrappedText(projectAddress, marginLeft, cursorTop, contentWidth, regularFont, 10, colors.muted) + 8;
+  }
+
+  ensureSpace(72);
+  drawPanel(marginLeft, cursorTop, contentWidth, 64, colors.white, colors.panelBorder);
+  const summarySectionWidth = contentWidth / 3;
+  drawText('Budget Status', marginLeft + 14, cursorTop + 14, boldFont, 9, colors.muted);
+  drawText(context.budget.status === 'finalApprovedBudget' ? 'Final Approved Budget' : 'Draft', marginLeft + 14, cursorTop + 28, regularFont, 11, colors.text);
+  drawText('Draw Total', marginLeft + summarySectionWidth + 14, cursorTop + 14, boldFont, 9, colors.muted);
+  drawText(formatCurrency(context.totalAmount), marginLeft + summarySectionWidth + 14, cursorTop + 28, regularFont, 11, colors.text);
+  drawText('Remaining Budget', marginLeft + summarySectionWidth * 2 + 14, cursorTop + 14, boldFont, 9, colors.muted);
+  drawText(formatCurrency(Math.max(context.budget.totalAmount - context.totalAmount, 0)), marginLeft + summarySectionWidth * 2 + 14, cursorTop + 28, regularFont, 11, colors.text);
+  cursorTop += 84;
+
+  ensureSpace(28);
+  drawText('Budget Draw Detail', marginLeft, cursorTop, boldFont, 14, colors.text);
+  cursorTop += 18;
+
+  const tableHeaders = ['Code', 'Item', 'Qty', 'Unit Cost', 'Markup', 'Total', 'Draw', 'Remaining'];
+  const tableWidths = [58, 150, 38, 68, 58, 68, 68, 70];
+
+  const renderTableHeader = () => {
+    ensureSpace(22);
+    let x = marginLeft;
+    tableHeaders.forEach((header, index) => {
+      drawText(header, x, cursorTop, boldFont, 8, colors.muted, { maxWidth: tableWidths[index] });
+      x += tableWidths[index];
+    });
+    cursorTop += 14;
+    drawLine(marginLeft, cursorTop, marginLeft + contentWidth, 1, colors.line);
+    cursorTop += 8;
+  };
+
+  const renderGroupHeader = (group: { categoryCode: string; categoryName: string; totalAmount: number }) => {
+    ensureSpace(24);
+    drawPanel(marginLeft, cursorTop, contentWidth, 22, colors.panel, colors.panelBorder);
+    drawText(group.categoryCode, marginLeft + 10, cursorTop + 7, boldFont, 9, colors.text, { maxWidth: 54 });
+    drawText(group.categoryName, marginLeft + 66, cursorTop + 7, boldFont, 9, colors.text, { maxWidth: contentWidth - 180 });
+    drawText(formatCurrency(group.totalAmount), marginLeft + contentWidth - 110, cursorTop + 7, boldFont, 9, colors.text, { maxWidth: 100 });
+    cursorTop += 28;
+  };
+
+  const renderRow = (lineItem: DrawInvoiceLineItem) => {
+    const descriptor = [
+      lineItem.description,
+      lineItem.costType === 'laborMaterial' ? 'Labor & Material' : lineItem.costType[0].toUpperCase() + lineItem.costType.slice(1),
+    ].filter(Boolean).join(' | ');
+
+    const itemNameLines = splitText(lineItem.itemName, regularFont, 8.5, tableWidths[1]);
+    const descriptorLines = splitText(descriptor, regularFont, 7.5, tableWidths[1]);
+    const rowHeight = Math.max(26, itemNameLines.length * 10 + descriptorLines.length * 8 + 8);
+
+    ensureSpace(rowHeight + 6);
+
+    let x = marginLeft;
+    drawText(lineItem.itemCode, x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[0] });
+    x += tableWidths[0];
+
+    itemNameLines.forEach((line, index) => {
+      drawText(line, x, cursorTop + 2 + index * 10, regularFont, 8.5, colors.text, { maxWidth: tableWidths[1] });
+    });
+    descriptorLines.forEach((line, index) => {
+      drawText(line, x, cursorTop + 2 + itemNameLines.length * 10 + index * 8, regularFont, 7.5, colors.muted, { maxWidth: tableWidths[1] });
+    });
+    x += tableWidths[1];
+
+    drawText(String(lineItem.quantity), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[2], align: 'right' });
+    x += tableWidths[2];
+    drawText(formatCurrency(lineItem.unitCost), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[3], align: 'right' });
+    x += tableWidths[3];
+    drawText(formatCurrency(lineItem.markup), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[4], align: 'right' });
+    x += tableWidths[4];
+    drawText(formatCurrency(lineItem.totalAmount), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[5], align: 'right' });
+    x += tableWidths[5];
+    drawText(formatCurrency(lineItem.currentDrawAmount), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[6], align: 'right' });
+    x += tableWidths[6];
+    drawText(formatCurrency(lineItem.remainingAmount), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[7], align: 'right' });
+
+    cursorTop += rowHeight;
+    drawLine(marginLeft, cursorTop, marginLeft + contentWidth, 0.5, colors.line);
+    cursorTop += 4;
+  };
+
+  if (groupedItems.length === 0) {
+    ensureSpace(24);
+    drawText('No finalized budget line items were included in this draw.', marginLeft, cursorTop, regularFont, 10, colors.muted, { maxWidth: contentWidth });
+    cursorTop += 14;
+  } else {
+    groupedItems.forEach((group) => {
+      renderGroupHeader(group);
+      renderTableHeader();
+      group.lineItems.forEach((lineItem) => renderRow(lineItem));
+      cursorTop += 4;
+    });
+  }
+
+  ensureSpace(70);
+  drawPanel(marginLeft, cursorTop, contentWidth, 54, colors.white, colors.panelBorder);
+  drawText('Total Invoice Amount', marginLeft + 14, cursorTop + 14, boldFont, 11, colors.text);
+  drawText(formatCurrency(context.totalAmount), marginLeft + 14, cursorTop + 28, boldFont, 15, rgb(0.06, 0.09, 0.17));
+  drawText('Generated from final approved budget line items.', marginLeft + contentWidth - 220, cursorTop + 20, regularFont, 9, colors.muted, {
+    maxWidth: 186,
+    align: 'right',
   });
+
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
 }
 
 export function generateInvoiceNumber(projectId: string, drawNumber: number): string {

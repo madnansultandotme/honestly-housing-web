@@ -358,6 +358,30 @@ export default function QuestionnairePage() {
       const requiredQuestionIds = visibleQuestions
         .filter((q) => q.required !== false)
         .map((q) => String(q.questionId));
+
+      // Fetch current saved answers to avoid race conditions and provide friendly errors
+      const submission = await apiClient.get(
+        `/questionnaire/submission?projectId=${projectId}&clientId=${user?.uid}`
+      );
+
+      const savedAnswers = submission?.answers || {};
+      const missing = requiredQuestionIds.filter((id) => {
+        const a = savedAnswers[id];
+        return !(isNonEmpty(a?.value) || isNonEmpty(a?.customText) || isNonEmpty(a?.imageUrl));
+      });
+
+      if (missing.length > 0) {
+        // Map ids to human-friendly question text when available
+        const missingFriendly = missing.map((id) => {
+          const q = visibleQuestions.find((v) => String(v.questionId) === id);
+          return (q && q.question) ? `${q.question} (${id})` : id;
+        });
+
+        setSaveError(`Missing answers for: ${missingFriendly.join(', ')}`);
+        setSaving(false);
+        return;
+      }
+
       await apiClient.post('/questionnaire/complete', {
         projectId,
         clientId: user?.uid,

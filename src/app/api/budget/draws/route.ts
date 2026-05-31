@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase/admin';
+import { adminDb, adminStorage, isAdminInitialized } from '@/lib/firebase/admin';
 import {
   calculateInvoiceLineItems,
   ensureBudgetDocument,
@@ -84,19 +84,38 @@ export async function POST(request: NextRequest) {
     const drawId = adminDb.collection('projects').doc(projectId).collection('drawInvoices').doc().id;
     const invoiceDate = typeof date === 'string' && date ? date : new Date().toISOString().slice(0, 10);
 
-    const pdfBuffer = await buildInvoicePdfBuffer({
-      project: state.project,
-      client: toParticipant(state.client, 'Client'),
-      builderOrg: toParticipant(state.builderOrg, 'Builder'),
-      budget,
-      drawNumber,
-      invoiceNumber,
-      date: invoiceDate,
-      lineItems: calculation.lineItems,
-      totalAmount: calculation.totalAmount,
-    });
+    // Diagnostic logging for PDF generation/storage
+    console.log('PDF generation: FIREBASE_STORAGE_BUCKET=', process.env.FIREBASE_STORAGE_BUCKET);
+    console.log('PDF generation: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=', process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
+    console.log('PDF generation: admin initialized=', isAdminInitialized());
 
-    const pdfPath = await saveInvoicePdf(projectId, drawId, pdfBuffer);
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = await buildInvoicePdfBuffer({
+        project: state.project,
+        client: toParticipant(state.client, 'Client'),
+        builderOrg: toParticipant(state.builderOrg, 'Builder'),
+        budget,
+        drawNumber,
+        invoiceNumber,
+        date: invoiceDate,
+        lineItems: calculation.lineItems,
+        totalAmount: calculation.totalAmount,
+      });
+      console.log('PDF generation: buffer bytes=', Buffer.byteLength(pdfBuffer));
+    } catch (err) {
+      console.error('Error generating PDF buffer:', err instanceof Error ? err.stack || err.message : err);
+      throw err;
+    }
+
+    let pdfPath: string;
+    try {
+      pdfPath = await saveInvoicePdf(projectId, drawId, pdfBuffer);
+      console.log('PDF saved to path:', pdfPath);
+    } catch (err) {
+      console.error('Error saving PDF to storage:', err instanceof Error ? err.stack || err.message : err);
+      throw err;
+    }
     const downloadUrl = getInvoiceDownloadUrl(projectId, drawId);
     const createdAt = new Date().toISOString();
 

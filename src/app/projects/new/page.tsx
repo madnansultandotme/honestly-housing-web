@@ -191,12 +191,12 @@ export default function NewProjectPage() {
 
   const steps: { id: Step; title: string; description: string }[] = [
     { id: 'basic', title: 'Basic Info', description: 'Project name and client' },
+    { id: 'budgets', title: 'Budgets', description: 'Set allowances per category' },
     { id: 'rooms', title: 'Select Rooms', description: 'Choose which rooms apply' },
     { id: 'roomSelections', title: 'Room Selections', description: 'Choose options by room' },
     { id: 'exterior', title: 'Exterior', description: 'Outdoor selections and counts' },
     { id: 'cabinetry', title: 'Cabinetry', description: 'Cabinetry selections and assignments' },
     { id: 'categories', title: 'Categories', description: 'Required selection categories' },
-    { id: 'budgets', title: 'Budgets', description: 'Set allowances per category' },
     { id: 'template', title: 'Save Template', description: 'Optional: Save for reuse' },
   ];
 
