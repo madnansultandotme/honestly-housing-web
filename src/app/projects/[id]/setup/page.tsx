@@ -13,6 +13,7 @@ import RoomSelectionOptions from '@/components/ui/RoomSelectionOptions';
 import PaintBuilder, { PaintDetail } from '@/components/ui/PaintBuilder';
 import CabinetryBuilder, { CabinetryDetail } from '@/components/ui/CabinetryBuilder';
 import TemplateViewer from '@/components/templates/TemplateViewer';
+import ScopeOfWorkDownload from '@/components/ui/ScopeOfWorkDownload';
 import { apiClient } from '@/lib/api/client';
 import { countRoomsFromDetails } from '@/lib/projects/roomCounts';
 import { uploadProjectDocument } from '@/lib/api/upload';
@@ -796,9 +797,15 @@ export default function BuilderProjectSetup() {
                 Edit Project Configuration: {projectName}
               </h1>
             </div>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Configuration'}
-            </Button>
+            <div className="flex items-center gap-3">
+              <ScopeOfWorkDownload 
+                projectId={projectId} 
+                projectName={projectName}
+              />
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Configuration'}
+              </Button>
+            </div>
           </div>
         </div>
       </nav>

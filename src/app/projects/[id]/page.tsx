@@ -16,6 +16,7 @@ import InviteClientModal from '@/components/builder/InviteClientModal';
 import InvitationsList from '@/components/builder/InvitationsList';
 import AddTeamMemberModal from '@/components/projects/AddTeamMemberModal';
 import TeamMembersList from '@/components/projects/TeamMembersList';
+import ScopeOfWorkDownload from '@/components/ui/ScopeOfWorkDownload';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
 import { isSelectionCompleted, isSelectionPendingApproval } from '@/lib/selections/status';
@@ -134,6 +135,10 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
                   Invite Client
                 </Button>
               )}
+              <ScopeOfWorkDownload 
+                projectId={id} 
+                projectName={project.name}
+              />
               <Button
                 onClick={handleExportCSV}
                 disabled={exporting || completedSelections === 0}

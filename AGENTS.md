@@ -66,16 +66,25 @@ The system uses 3 main project statuses:
          - Welcome email sent to client with credentials
          - Client automatically selected
      - Enter budget (optional)
-   - **Step 2: Room & Fixture Configuration**
-     - **Add rooms dynamically** with custom names
-       - Enter room name (e.g., "Primary Bedroom", "Half Bath", "Pantry")
-       - Select room type (Bedroom, Bathroom, Kitchen, Living Room, etc.)
-       - Click "Add Room"
-     - **Add fixtures to each room**
+   - **Step 2: Room Counts** (NEW - Simplified Entry)
+     - **Enter number of bedrooms** using +/- buttons or direct input
+     - **Enter number of bathrooms** using +/- buttons or direct input
+     - System shows summary of total rooms
+   - **Step 3: Room Names** (NEW - Auto-Generated with Edit)
+     - **System auto-generates smart room names:**
+       - First bedroom becomes "Primary Bedroom"
+       - Subsequent bedrooms: "Bedroom 2", "Bedroom 3", etc.
+       - First bathroom becomes "Primary Bathroom"
+       - Last bathroom defaults to "Half Bath" (if multiple bathrooms)
+       - Other bathrooms: "Bathroom 2", "Bathroom 3", etc.
+     - **Click "Edit Name" next to any room** to customize the name
+     - All rooms shown grouped by type (Bedrooms/Bathrooms)
+   - **Step 4: Room & Fixture Configuration**
+     - **Add fixtures to each auto-generated room**
        - Expand room to see details
        - Click "Add Fixture"
        - Select category (Electrical, Plumbing, Flooring, Tile, etc.)
-       - **Note:** Paint is NOT in fixture categories - handled separately in Step 3
+       - **Note:** Paint is NOT in fixture categories - handled separately in dedicated Paint section
        - Enter fixture name (e.g., "Fan", "Down Rod", "Vanity Light")
        - Set quantity
        - **Upload sample image (optional)** - Builder can upload reference images
@@ -84,15 +93,15 @@ The system uses 3 main project statuses:
        - Living Room: Electrical (Fan, Down Rod), Flooring
        - Half Bath: Electrical (Vanity Light), Plumbing (Bathroom Faucet, Drain), Mirror
        - Kitchen: Electrical (multiple lights), Plumbing (Faucet), Countertops, Cabinetry, Appliances
-   - **Step 3: Paint Selections** (NEW - Dedicated Paint Section)
+   - **Step 5: Paint Selections** (Dedicated Paint Section - Not in fixtures)
      - **Add paint colors** separate from room fixtures
      - Paint data structure: image, color name, paint code, sheen, notes (NO price)
      - **Two assignment modes:**
        - **Entire Home:** Assign to Walls, Trim, Ceiling, Cabinets, Doors, etc.
-       - **Specific Rooms:** Assign to individual rooms created in Step 2
+       - **Specific Rooms:** Assign to individual rooms created in Steps 2-3
      - **Upload paint swatch images** (optional)
      - Paint selections stored in: `projects/{projectId}/paint/{paintId}`
-   - **Step 4: Categories**
+   - **Step 6: Categories**
      - Mark required categories (Flooring, Lighting, Plumbing, etc.)
      - Mark optional categories (Appliances, Cabinetry)
      - **Add custom categories** using "Add Custom Category" section
@@ -100,12 +109,12 @@ The system uses 3 main project statuses:
        - Click "Add Category" button
        - Custom category appears immediately in list
        - Can toggle custom categories between required/optional
-   - **Step 5: Allowances**
+   - **Step 7: Allowances**
      - Set budget for each category
      - Choose "Fixed Amount" or "Per Sq Ft"
-   - **Step 6: Template (Optional)**
+   - **Step 8: Template (Optional)**
      - Save configuration as template for future projects
-   - **Step 7: Review & Create**
+   - **Step 9: Review & Create**
      - Review all settings
      - Click "Create Project"
    - **Result**: Project created with status **"active"** and ready to use
@@ -694,6 +703,36 @@ Before marking a feature complete:
 
 ### Dynamic Room & Fixture Builder
 
+**NEW: Simplified Room Entry with Auto-Generated Names**
+
+The room configuration has been streamlined into 3 easy steps:
+
+**Step 1: Room Counts**
+- Builders enter just 2 numbers: bedroom count and bathroom count
+- Simple +/- buttons or direct number input
+- Visual cards for each room type
+- Real-time summary showing total room count
+
+**Step 2: Auto-Generated Room Names**
+- System automatically generates smart, professional room names:
+  - **Bedrooms:**
+    - First bedroom → "Primary Bedroom"
+    - Subsequent bedrooms → "Bedroom 2", "Bedroom 3", etc.
+  - **Bathrooms:**
+    - First bathroom → "Primary Bathroom"
+    - Last bathroom (if multiple) → "Half Bath"
+    - Other bathrooms → "Bathroom 2", "Bathroom 3", etc.
+- **Inline Edit Feature:**
+  - Click "Edit Name" next to any room to customize
+  - Save/Cancel buttons for each edit
+  - Keyboard shortcuts: Enter to save, Escape to cancel
+- Rooms grouped by type for easy review
+
+**Step 3: Fixture Assignment**
+- All auto-generated rooms appear in fixture builder
+- Add fixtures to each room as needed
+- Same fixture categories as before (Electrical, Plumbing, etc.)
+
 **Implementation Details:**
 - Builders can add unlimited rooms with custom names during project creation
 - Each room can have multiple fixtures across different categories
@@ -749,8 +788,10 @@ Before marking a feature complete:
 - `src/app/api/paint/[id]/route.ts` - Individual paint endpoint
 
 **Key Files:**
-- `src/components/ui/DynamicRoomBuilder.tsx` - Main room and fixture builder component
-- `src/app/projects/new/page.tsx` - Project creation wizard with dynamic room builder integration
+- `src/components/ui/RoomCountSelector.tsx` - Simple bedroom/bathroom count input with +/- buttons
+- `src/components/ui/AutoGeneratedRoomList.tsx` - Auto-generates room names with inline edit capability
+- `src/components/ui/DynamicRoomBuilder.tsx` - Main room and fixture builder component (used after room names are set)
+- `src/app/projects/new/page.tsx` - Project creation wizard with new 3-step room naming flow
 - `src/app/api/items/route.ts` - Items API (GET, POST, DELETE)
 - `src/app/api/items/[id]/route.ts` - Individual item API (GET, PUT, DELETE)
 - `src/app/api/rooms/route.ts` - Rooms API
@@ -796,7 +837,10 @@ Before marking a feature complete:
 - **Project Management** (view, delete projects)
 - Email normalization for consistent user search
 - **Auto-create client accounts during project creation** with credential email
-- **Room-based selection configuration** with category assignment
+- **Simplified room naming** - enter counts, auto-generate names with edit capability
+- **Room count selector** - simple bedroom/bathroom count input
+- **Auto-generated room names** - smart naming (Primary Bedroom, Bedroom 2, Half Bath, etc.)
+- **Inline room name editing** - customize any auto-generated name
 - **Dynamic room builder** - add any room with custom name and type
 - **Per-room fixture specification** - define exact fixtures needed per room
 - **Fixture categories** - Electrical, Plumbing, Flooring, Paint Colors, Tile, Hardware, etc.
@@ -834,6 +878,12 @@ Before marking a feature complete:
 - **Paint API endpoints** - full CRUD operations for paint selections
 - **Paint in project wizard** - Step 3 in project creation flow
 - **Paint in setup page** - dedicated section in project edit/configuration
+- **Scope of Work Download** - export scope of work documents in multiple formats
+- **Multiple export formats** - Plain Text (.txt), Markdown (.md), HTML (.html)
+- **Download from project detail** - scope of work download button in project header
+- **Download from setup page** - scope of work download button in configuration page
+- **Format selector menu** - choose export format with preview descriptions
+- **Styled HTML export** - professional printable HTML with project branding
 
 ### ❌ Not Implemented
 - AI Mood Board generation (marked as "coming soon")

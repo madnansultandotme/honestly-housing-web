@@ -1,4 +1,10 @@
 {
   "mcpServers": {
+    "devtrack": {
+      "url": "https://devtrack.zeppelinlabs.digital/api/mcp",
+      "headers": {
+        "x-api-key":"mcp_a8777df8131c1a78f18dd29a755f492459dc0f93967af757"
+      }
+    }
   }
 }
