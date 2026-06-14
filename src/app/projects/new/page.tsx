@@ -641,8 +641,8 @@ export default function NewProjectPage() {
       {/* Header */}
       <nav className="bg-white shadow-sm border-b border-neutral-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-4">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex min-w-0 items-center gap-4">
               <button
                 onClick={() => router.push('/projects')}
                 className="text-neutral-600 hover:text-neutral-900"
@@ -651,7 +651,7 @@ export default function NewProjectPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <h1 className="text-xl font-display font-bold text-neutral-900">
+              <h1 className="truncate text-xl font-display font-bold text-neutral-900">
                 Create New Project
               </h1>
             </div>
@@ -659,13 +659,13 @@ export default function NewProjectPage() {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <main className="max-w-5xl mx-auto py-6 px-4 sm:px-6 sm:py-8 lg:px-8">
         {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-start overflow-x-auto pb-3 sm:items-center sm:justify-between">
             {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center flex-1">
-                <div className="flex flex-col items-center flex-1">
+              <div key={step.id} className="flex min-w-[7.5rem] flex-1 items-center">
+                <div className="flex flex-1 flex-col items-center">
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
                       index < currentStepIndex
@@ -690,7 +690,7 @@ export default function NewProjectPage() {
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`h-1 flex-1 mx-2 transition-all ${
+                    className={`h-1 min-w-6 flex-1 mx-2 transition-all ${
                       index < currentStepIndex ? 'bg-brass-600' : 'bg-neutral-200'
                     }`}
                   />
@@ -806,7 +806,7 @@ export default function NewProjectPage() {
                         className="mb-3"
                       />
                       
-                      <div className="flex gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                         <Button
                           onClick={handleCreateNewClient}
                           disabled={creatingClient || !newClientName.trim()}
@@ -1006,7 +1006,7 @@ export default function NewProjectPage() {
                 <h3 className="text-md font-semibold text-neutral-900 mb-3">
                   Add Custom Category
                 </h3>
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row">
                   <Input
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
@@ -1017,6 +1017,7 @@ export default function NewProjectPage() {
                     onClick={handleAddCategory}
                     disabled={!newCategoryName.trim()}
                     variant="outline"
+                    className="w-full sm:w-auto"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1106,14 +1107,14 @@ export default function NewProjectPage() {
               </div>
 
               {/* Summary */}
-              <div className="mt-8 p-6 bg-taupe-50 rounded-button">
+              <div className="mt-8 rounded-button bg-taupe-50 p-4 sm:p-6">
                 <h3 className="text-lg font-semibold text-neutral-900 mb-4">Project Summary</h3>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                     <span className="text-neutral-600">Project Name:</span>
                     <span className="font-medium text-neutral-900">{projectName}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                     <span className="text-neutral-600">Square Footage:</span>
                     <span className="font-medium text-neutral-900">
                       {squareFootage.toLocaleString()} sq ft
@@ -1124,13 +1125,13 @@ export default function NewProjectPage() {
                   <div className="mt-3 pt-3 border-t border-neutral-300">
                     <div className="font-medium text-neutral-900 mb-2">Rooms:</div>
                     {roomSelections.filter(r => r.selected && r.quantity > 0).map(room => (
-                      <div key={room.type} className="flex justify-between ml-4">
+                      <div key={room.type} className="flex flex-col gap-1 sm:ml-4 sm:flex-row sm:justify-between">
                         <span className="text-neutral-600">{room.displayName}:</span>
                         <span className="font-medium text-neutral-900">{room.quantity}</span>
                       </div>
                     ))}
                     {customRooms.length > 0 && (
-                      <div className="flex justify-between ml-4">
+                      <div className="flex flex-col gap-1 sm:ml-4 sm:flex-row sm:justify-between">
                         <span className="text-neutral-600">Custom Rooms:</span>
                         <span className="font-medium text-neutral-900">{customRooms.length}</span>
                       </div>
@@ -1149,7 +1150,7 @@ export default function NewProjectPage() {
                           });
                         });
                         return Object.entries(fixtureCounts).map(([category, count]) => (
-                          <div key={category} className="flex justify-between ml-4">
+                          <div key={category} className="flex flex-col gap-1 sm:ml-4 sm:flex-row sm:justify-between">
                             <span className="text-neutral-600">{category}:</span>
                             <span className="font-medium text-neutral-900">{count}</span>
                           </div>
@@ -1159,19 +1160,19 @@ export default function NewProjectPage() {
                   )}
 
                   <div className="mt-3 pt-3 border-t border-neutral-300">
-                    <div className="flex justify-between">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                       <span className="text-neutral-600">Exterior Selections:</span>
                       <span className="font-medium text-neutral-900">
                         {exteriorDetails.reduce((sum, room) => sum + room.fixtures.length, 0)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                       <span className="text-neutral-600">Cabinetry Selections:</span>
                       <span className="font-medium text-neutral-900">
                         {cabinetrySelections.length}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:justify-between">
                       <span className="text-neutral-600">Required Categories:</span>
                       <span className="font-medium text-neutral-900">
                         {categories.filter(c => c.required).length}
@@ -1185,21 +1186,22 @@ export default function NewProjectPage() {
         </Card>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
           <Button
             variant="outline"
             onClick={handleBack}
             disabled={currentStepIndex === 0 || saving}
+            className="w-full sm:w-auto"
           >
             Back
           </Button>
 
           {currentStepIndex < steps.length - 1 ? (
-            <Button onClick={handleNext} disabled={!canProceed()}>
+            <Button onClick={handleNext} disabled={!canProceed()} className="w-full sm:w-auto">
               Next
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={saving || !canProceed()}>
+            <Button onClick={handleSubmit} disabled={saving || !canProceed()} className="w-full sm:w-auto">
               {saving ? 'Creating Project...' : 'Create Project'}
             </Button>
           )}

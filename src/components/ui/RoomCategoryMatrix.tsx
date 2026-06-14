@@ -191,7 +191,7 @@ export default function RoomCategoryMatrix({
                                 <div
                                   key={`${room.id}-${categoryName}-${fixture.name}`}
                                   className={`
-                                    grid w-full grid-cols-[minmax(0,1fr)_minmax(120px,190px)] items-center gap-4 py-1 pl-8 pr-2 text-left text-sm font-medium text-neutral-900 transition-colors
+                                    grid w-full grid-cols-1 gap-2 py-2 pl-2 pr-2 text-left text-sm font-medium text-neutral-900 transition-colors sm:grid-cols-[minmax(0,1fr)_minmax(120px,190px)] sm:items-center sm:gap-4 sm:py-1 sm:pl-8
                                     ${selected ? 'text-brass-900' : 'hover:text-brass-800'}
                                     ${disabled ? 'opacity-50' : ''}
                                   `}
@@ -200,7 +200,7 @@ export default function RoomCategoryMatrix({
                                     type="button"
                                     onClick={() => onToggleItem(room.id, category, fixture, !selected)}
                                     disabled={disabled}
-                                    className={`flex items-center gap-3 text-left ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                    className={`flex min-w-0 items-center gap-3 text-left ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                                   >
                                     <span
                                       className={`
@@ -214,10 +214,10 @@ export default function RoomCategoryMatrix({
                                         </svg>
                                       )}
                                     </span>
-                                    <span>{fixture.name}</span>
+                                    <span className="min-w-0 break-words">{fixture.name}</span>
                                   </button>
                                   {selected ? (
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 pl-8 sm:pl-0">
                                       <label className="text-sm font-normal text-neutral-700">{fixture.measureLabel}</label>
                                       <input
                                         type="number"
@@ -236,7 +236,7 @@ export default function RoomCategoryMatrix({
                                       />
                                     </div>
                                   ) : (
-                                    <span className="text-sm font-normal text-neutral-700">{fixture.measureLabel}</span>
+                                    <span className="pl-8 text-sm font-normal text-neutral-700 sm:pl-0">{fixture.measureLabel}</span>
                                   )}
                                 </div>
                               );
@@ -244,7 +244,7 @@ export default function RoomCategoryMatrix({
                           {customItems.map((item) => (
                             <div
                               key={item.id || `${room.id}-${category.id}-${item.name}`}
-                              className="grid w-full grid-cols-[minmax(0,1fr)_minmax(120px,190px)] items-center gap-4 py-1 pl-8 pr-2 text-left text-sm font-medium text-brass-900"
+                              className="grid w-full grid-cols-1 gap-2 py-2 pl-2 pr-2 text-left text-sm font-medium text-brass-900 sm:grid-cols-[minmax(0,1fr)_minmax(120px,190px)] sm:items-center sm:gap-4 sm:py-1 sm:pl-8"
                             >
                               <button
                                 type="button"
@@ -257,16 +257,16 @@ export default function RoomCategoryMatrix({
                                   )
                                 }
                                 disabled={disabled}
-                                className={`flex items-center gap-3 text-left ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                                className={`flex min-w-0 items-center gap-3 text-left ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                               >
                                 <span className="flex h-5 w-5 items-center justify-center rounded border-2 border-brass-600 bg-brass-600">
                                   <svg className="h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                   </svg>
                                 </span>
-                                <span>{item.name}</span>
+                                <span className="min-w-0 break-words">{item.name}</span>
                               </button>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 pl-8 sm:pl-0">
                                 <label className="text-sm font-normal text-neutral-700">Quantity</label>
                                 <input
                                   type="number"
@@ -288,7 +288,7 @@ export default function RoomCategoryMatrix({
                           ))}
                         </div>
                         {onAddCustomItem && (
-                          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 pl-8 pr-2">
+                          <div className="mt-3 grid grid-cols-1 gap-3 pl-2 pr-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:pl-8">
                             <input
                               type="text"
                               value={customItemNames[getCustomInputKey(room.id, category.id)] || ''}

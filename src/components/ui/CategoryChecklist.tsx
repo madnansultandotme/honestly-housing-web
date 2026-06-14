@@ -52,9 +52,9 @@ export default function CategoryChecklist({
         return (
           <div key={category.id}>
             <div
-              className="flex items-center justify-between p-3 bg-white border border-neutral-200 rounded-button hover:border-neutral-300 transition-colors"
+              className="flex flex-col gap-3 p-3 bg-white border border-neutral-200 rounded-button hover:border-neutral-300 transition-colors sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="flex items-center gap-3 flex-1">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 {/* Checkbox */}
                 <button
                   onClick={() => handleToggle(category.id)}
@@ -87,8 +87,8 @@ export default function CategoryChecklist({
                 </button>
 
                 {/* Category Name */}
-                <div className="flex-1">
-                  <div className="font-medium text-neutral-900">{category.name}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="break-words font-medium text-neutral-900">{category.name}</div>
                   {showProgress && (
                     <div className="text-sm text-neutral-600">
                       {category.completedCount} of {category.totalCount} completed
@@ -99,7 +99,7 @@ export default function CategoryChecklist({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                 {/* Status Badge */}
                 {showProgress && (
                   <div>
@@ -123,7 +123,7 @@ export default function CategoryChecklist({
 
             {/* Scope of Work Textarea */}
             {builderMode && onScopeChange && (
-              <div className="mt-2 ml-4 mr-4">
+              <div className="mt-2 sm:ml-4 sm:mr-4">
                 <label className="block text-xs font-medium text-neutral-700 mb-1">
                   Scope of Work{scopeRequired ? ' *' : ''}
                 </label>

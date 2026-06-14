@@ -45,6 +45,16 @@ export interface DrawInvoiceLineItem {
   remainingAmount: number;
 }
 
+export interface InvoiceCategorySummary {
+  categoryCode: string;
+  categoryName: string;
+  budgetTotal: number;
+  lastInvoiced: number;
+  totalInvoiced: number;
+  currentInvoice: number;
+  remainingAmount: number;
+}
+
 export interface DrawInvoice {
   id: string;
   drawNumber: number;

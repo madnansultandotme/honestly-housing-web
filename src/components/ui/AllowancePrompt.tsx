@@ -78,7 +78,7 @@ export default function AllowancePrompt({
       </div>
 
       {/* Amount Input */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="flex-1">
           <Input
             type="text"
@@ -90,14 +90,14 @@ export default function AllowancePrompt({
             className="text-right"
           />
         </div>
-        <span className="text-sm text-neutral-600 w-20">
+        <span className="text-sm text-neutral-600 sm:w-20">
           {type === 'fixed' ? 'total' : '/ sq ft'}
         </span>
       </div>
 
       {/* Calculated Total (for per sq ft) */}
       {type === 'perSqFt' && sqFt && (
-        <div className="flex items-center justify-between p-3 bg-taupe-50 rounded-button">
+        <div className="flex flex-col gap-1 p-3 bg-taupe-50 rounded-button sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm text-neutral-700">Total Allowance ({sqFt} sq ft)</span>
           <span className="text-sm font-semibold text-neutral-900">
             ${totalAllowance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

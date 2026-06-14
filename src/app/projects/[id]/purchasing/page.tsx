@@ -42,6 +42,16 @@ interface GroupedRows {
   lineItems: BudgetRow[];
 }
 
+interface CategoryFinancialSummary {
+  categoryCode: string;
+  categoryName: string;
+  totalAmount: number;
+  lastInvoiced: number;
+  totalInvoiced: number;
+  currentDrawAmount: number;
+  remainingAmount: number;
+}
+
 const initialRowForm: BudgetRowFormState = {
   categoryCode: '',
   categoryName: '',
@@ -93,6 +103,79 @@ function getPreviousDrawTotals(draws: DrawInvoice[]) {
   }, {});
 }
 
+function getLatestDraw(draws: DrawInvoice[]) {
+  return draws.reduce<DrawInvoice | null>((latest, draw) => {
+    if (!latest || draw.drawNumber > latest.drawNumber) return draw;
+    return latest;
+  }, null);
+}
+
+function getCategoryKey(categoryCode: string, categoryName: string) {
+  return `${categoryCode}__${categoryName}`;
+}
+
+function getDrawTotalsByCategory(draw: DrawInvoice | null) {
+  const totals: Record<string, number> = {};
+
+  draw?.lineItems.forEach((lineItem) => {
+    const key = getCategoryKey(lineItem.categoryCode, lineItem.categoryName);
+    totals[key] = (totals[key] || 0) + lineItem.currentDrawAmount;
+  });
+
+  return totals;
+}
+
+function getCumulativeDrawTotalsByCategory(draws: DrawInvoice[]) {
+  return draws.reduce<Record<string, number>>((totals, draw) => {
+    draw.lineItems.forEach((lineItem) => {
+      const key = getCategoryKey(lineItem.categoryCode, lineItem.categoryName);
+      totals[key] = (totals[key] || 0) + lineItem.currentDrawAmount;
+    });
+    return totals;
+  }, {});
+}
+
+function getCurrentDrawTotalsByCategory(rows: BudgetRow[], currentAmounts: Record<string, string>) {
+  return rows.reduce<Record<string, number>>((totals, row) => {
+    const amount = Number(currentAmounts[row.id] || 0);
+    const safeAmount = Number.isFinite(amount) && amount > 0 ? amount : 0;
+
+    if (safeAmount > 0) {
+      const key = getCategoryKey(row.categoryCode, row.categoryName);
+      totals[key] = (totals[key] || 0) + safeAmount;
+    }
+
+    return totals;
+  }, {});
+}
+
+function buildCategoryFinancialSummaries(
+  groupedRows: GroupedRows[],
+  rows: BudgetRow[],
+  draws: DrawInvoice[],
+  currentAmounts: Record<string, string> = {}
+): CategoryFinancialSummary[] {
+  const latestDrawTotals = getDrawTotalsByCategory(getLatestDraw(draws));
+  const cumulativeTotals = getCumulativeDrawTotalsByCategory(draws);
+  const currentDrawTotals = getCurrentDrawTotalsByCategory(rows, currentAmounts);
+
+  return groupedRows.map((group) => {
+    const key = getCategoryKey(group.categoryCode, group.categoryName);
+    const totalInvoiced = cumulativeTotals[key] || 0;
+    const currentDrawAmount = currentDrawTotals[key] || 0;
+
+    return {
+      categoryCode: group.categoryCode,
+      categoryName: group.categoryName,
+      totalAmount: group.totalAmount,
+      lastInvoiced: latestDrawTotals[key] || 0,
+      totalInvoiced,
+      currentDrawAmount,
+      remainingAmount: Math.max(group.totalAmount - totalInvoiced - currentDrawAmount, 0),
+    };
+  });
+}
+
 function getNextDrawNumber(draws: DrawInvoice[]) {
   return draws.reduce((max, draw) => Math.max(max, draw.drawNumber), 0) + 1;
 }
@@ -131,6 +214,46 @@ function buildDrawTotals(rows: BudgetRow[], draws: DrawInvoice[], currentAmounts
   return { summaries, totalAmount, warnings };
 }
 
+function CategorySummaryTable({
+  summaries,
+  showCurrentDraw = false,
+}: {
+  summaries: CategoryFinancialSummary[];
+  showCurrentDraw?: boolean;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-card border border-neutral-200">
+      <table className="min-w-full text-sm">
+        <thead>
+          <tr className="border-b border-neutral-200 text-left text-neutral-600 bg-white">
+            <th className="py-3 px-4">Category</th>
+            <th className="py-3 px-4 text-right">Budget Total</th>
+            <th className="py-3 px-4 text-right">Last Invoiced</th>
+            <th className="py-3 px-4 text-right">Total Invoiced</th>
+            {showCurrentDraw && <th className="py-3 px-4 text-right">Current Draw</th>}
+            <th className="py-3 px-4 text-right">Still Left</th>
+          </tr>
+        </thead>
+        <tbody>
+          {summaries.map((summary) => (
+            <tr key={`category-summary-${summary.categoryCode}-${summary.categoryName}`} className="border-b border-neutral-100">
+              <td className="py-3 px-4">
+                <div className="font-semibold text-neutral-900">{summary.categoryName}</div>
+                <div className="text-xs text-neutral-500">{summary.categoryCode || 'No code'}</div>
+              </td>
+              <td className="py-3 px-4 text-right text-neutral-700">{formatCurrency(summary.totalAmount)}</td>
+              <td className="py-3 px-4 text-right text-neutral-700">{formatCurrency(summary.lastInvoiced)}</td>
+              <td className="py-3 px-4 text-right text-neutral-700">{formatCurrency(summary.totalInvoiced)}</td>
+              {showCurrentDraw && <td className="py-3 px-4 text-right text-neutral-700">{formatCurrency(summary.currentDrawAmount)}</td>}
+              <td className="py-3 px-4 text-right font-semibold text-neutral-900">{formatCurrency(summary.remainingAmount)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { user, profile } = useAuth();
@@ -158,6 +281,14 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
   const remainingOverall = Math.max(totalBudget - totalDrawn, 0);
   const nextDrawNumber = getNextDrawNumber(draws);
   const currentDrawCalculation = useMemo(() => buildDrawTotals(budgetRows, draws, drawAmounts), [budgetRows, draws, drawAmounts]);
+  const categorySummaries = useMemo(
+    () => buildCategoryFinancialSummaries(groupedRows, budgetRows, draws),
+    [groupedRows, budgetRows, draws]
+  );
+  const draftCategorySummaries = useMemo(
+    () => buildCategoryFinancialSummaries(groupedRows, budgetRows, draws, drawAmounts),
+    [groupedRows, budgetRows, draws, drawAmounts]
+  );
 
   useEffect(() => {
     if (!user) {
@@ -372,6 +503,19 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
           </div>
         </Card>
 
+        {categorySummaries.length > 0 && (
+          <Card>
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-5">
+              <div>
+                <h3 className="text-lg font-semibold text-neutral-900">Category Invoice Ledger</h3>
+                <p className="text-sm text-neutral-600">Estimate categories with the latest invoiced amount, total invoiced to date, and remaining balance.</p>
+              </div>
+              <div className="text-sm text-neutral-500">{categorySummaries.length} categor{categorySummaries.length === 1 ? 'y' : 'ies'}</div>
+            </div>
+            <CategorySummaryTable summaries={categorySummaries} />
+          </Card>
+        )}
+
         {isBuilder && !isFinalApproved && (
           <Card>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -531,6 +675,16 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
                 <div><div className="text-xs uppercase tracking-wide text-neutral-500">Invoice Number</div><div className="font-semibold text-neutral-900">INV-{id.slice(0, 4).toUpperCase()}-{String(nextDrawNumber).padStart(3, '0')}</div></div>
                 <div className="text-right"><div className="text-xs uppercase tracking-wide text-neutral-500">Remaining Budget</div><div className="font-semibold text-neutral-900">{formatCurrency(remainingOverall)}</div></div>
               </div>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
+                <div>
+                  <h4 className="text-base font-semibold text-neutral-900">Current Draw by Category</h4>
+                  <p className="text-sm text-neutral-600">Use this table to verify the last saved invoice and what will still be left in each category after this draw.</p>
+                </div>
+              </div>
+              <CategorySummaryTable summaries={draftCategorySummaries} showCurrentDraw />
             </div>
 
             <div className="space-y-6">

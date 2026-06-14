@@ -5,6 +5,7 @@ import type {
   BudgetStatus,
   BudgetSummary,
   DrawInvoice,
+  InvoiceCategorySummary,
   DrawInvoiceLineItem,
 } from './types';
 
@@ -35,6 +36,7 @@ export interface InvoicePdfContext {
   invoiceNumber: string;
   date: string;
   lineItems: DrawInvoiceLineItem[];
+  categorySummaries: InvoiceCategorySummary[];
   totalAmount: number;
 }
 
@@ -187,6 +189,91 @@ export function getPreviousDrawTotals(draws: DrawInvoice[]): Record<string, numb
     });
     return totals;
   }, {});
+}
+
+function getCategoryKey(categoryCode: string, categoryName: string) {
+  return `${categoryCode}__${categoryName}`;
+}
+
+function getLatestDraw(draws: DrawInvoice[]) {
+  return draws.reduce<DrawInvoice | null>((latest, draw) => {
+    if (!latest || draw.drawNumber > latest.drawNumber) return draw;
+    return latest;
+  }, null);
+}
+
+function getDrawTotalsByCategory(draw: DrawInvoice | null) {
+  const totals: Record<string, number> = {};
+
+  draw?.lineItems.forEach((lineItem) => {
+    const key = getCategoryKey(lineItem.categoryCode, lineItem.categoryName);
+    totals[key] = (totals[key] || 0) + lineItem.currentDrawAmount;
+  });
+
+  return totals;
+}
+
+function getCumulativeDrawTotalsByCategory(draws: DrawInvoice[]) {
+  return draws.reduce<Record<string, number>>((totals, draw) => {
+    draw.lineItems.forEach((lineItem) => {
+      const key = getCategoryKey(lineItem.categoryCode, lineItem.categoryName);
+      totals[key] = (totals[key] || 0) + lineItem.currentDrawAmount;
+    });
+    return totals;
+  }, {});
+}
+
+function getCurrentDrawTotalsByCategory(rows: BudgetRow[], currentAmounts: Record<string, number>) {
+  return rows.reduce<Record<string, number>>((totals, row) => {
+    const amount = Number(currentAmounts[row.id] || 0);
+    const safeAmount = Number.isFinite(amount) && amount > 0 ? amount : 0;
+
+    if (safeAmount > 0) {
+      const key = getCategoryKey(row.categoryCode, row.categoryName);
+      totals[key] = (totals[key] || 0) + safeAmount;
+    }
+
+    return totals;
+  }, {});
+}
+
+export function buildInvoiceCategorySummaries(
+  rows: BudgetRow[],
+  draws: DrawInvoice[],
+  currentAmounts: Record<string, number>
+): InvoiceCategorySummary[] {
+  const groupedRows = rows.reduce<Map<string, { categoryCode: string; categoryName: string; budgetTotal: number }>>((groups, row) => {
+    const key = getCategoryKey(row.categoryCode, row.categoryName);
+    const group = groups.get(key) || {
+      categoryCode: row.categoryCode,
+      categoryName: row.categoryName,
+      budgetTotal: 0,
+    };
+
+    group.budgetTotal += row.totalAmount;
+    groups.set(key, group);
+    return groups;
+  }, new Map());
+
+  const latestDrawTotals = getDrawTotalsByCategory(getLatestDraw(draws));
+  const cumulativeTotals = getCumulativeDrawTotalsByCategory(draws);
+  const currentTotals = getCurrentDrawTotalsByCategory(rows, currentAmounts);
+
+  return Array.from(groupedRows.values()).map((group) => {
+    const key = getCategoryKey(group.categoryCode, group.categoryName);
+    const totalInvoiced = cumulativeTotals[key] || 0;
+    const currentInvoice = currentTotals[key] || 0;
+
+    return {
+      categoryCode: group.categoryCode,
+      categoryName: group.categoryName,
+      budgetTotal: group.budgetTotal,
+      lastInvoiced: latestDrawTotals[key] || 0,
+      totalInvoiced,
+      currentInvoice,
+      remainingAmount: Math.max(group.budgetTotal - totalInvoiced - currentInvoice, 0),
+    };
+  });
 }
 
 export function calculateInvoiceLineItems(
@@ -437,6 +524,9 @@ export async function buildInvoicePdfBuffer(context: InvoicePdfContext): Promise
     }, new Map<string, { categoryCode: string; categoryName: string; totalAmount: number; lineItems: DrawInvoiceLineItem[] }>())
       .values()
   );
+  const remainingBudget = context.categorySummaries.length > 0
+    ? context.categorySummaries.reduce((sum, summary) => sum + summary.remainingAmount, 0)
+    : Math.max(context.budget.totalAmount - context.totalAmount, 0);
 
   drawText('Draw Invoice', marginLeft, cursorTop, boldFont, 24, colors.text);
   cursorTop += 34;
@@ -475,8 +565,60 @@ export async function buildInvoicePdfBuffer(context: InvoicePdfContext): Promise
   drawText('Draw Total', marginLeft + summarySectionWidth + 14, cursorTop + 14, boldFont, 9, colors.muted);
   drawText(formatCurrency(context.totalAmount), marginLeft + summarySectionWidth + 14, cursorTop + 28, regularFont, 11, colors.text);
   drawText('Remaining Budget', marginLeft + summarySectionWidth * 2 + 14, cursorTop + 14, boldFont, 9, colors.muted);
-  drawText(formatCurrency(Math.max(context.budget.totalAmount - context.totalAmount, 0)), marginLeft + summarySectionWidth * 2 + 14, cursorTop + 28, regularFont, 11, colors.text);
+  drawText(formatCurrency(remainingBudget), marginLeft + summarySectionWidth * 2 + 14, cursorTop + 28, regularFont, 11, colors.text);
   cursorTop += 84;
+
+  if (context.categorySummaries.length > 0) {
+    ensureSpace(28);
+    drawText('Category Invoice Summary', marginLeft, cursorTop, boldFont, 14, colors.text);
+    cursorTop += 18;
+
+    const categoryHeaders = ['Code', 'Category', 'Budget', 'Last Invoiced', 'This Invoice', 'Still Left'];
+    const categoryWidths = [52, 154, 74, 78, 78, 74];
+
+    const renderCategorySummaryHeader = () => {
+      ensureSpace(22);
+      let x = marginLeft;
+      categoryHeaders.forEach((header, index) => {
+        drawText(header, x, cursorTop, boldFont, 8, colors.muted, {
+          maxWidth: categoryWidths[index],
+          align: index >= 2 ? 'right' : 'left',
+        });
+        x += categoryWidths[index];
+      });
+      cursorTop += 14;
+      drawLine(marginLeft, cursorTop, marginLeft + contentWidth, 1, colors.line);
+      cursorTop += 8;
+    };
+
+    renderCategorySummaryHeader();
+
+    context.categorySummaries.forEach((summary) => {
+      const categoryNameLines = splitText(summary.categoryName, regularFont, 8.5, categoryWidths[1]);
+      const rowHeight = Math.max(20, categoryNameLines.length * 10 + 6);
+
+      ensureSpace(rowHeight + 4);
+      let x = marginLeft;
+      drawText(summary.categoryCode, x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: categoryWidths[0] });
+      x += categoryWidths[0];
+      categoryNameLines.forEach((line, index) => {
+        drawText(line, x, cursorTop + 2 + index * 10, regularFont, 8.5, colors.text, { maxWidth: categoryWidths[1] });
+      });
+      x += categoryWidths[1];
+      drawText(formatCurrency(summary.budgetTotal), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: categoryWidths[2], align: 'right' });
+      x += categoryWidths[2];
+      drawText(formatCurrency(summary.lastInvoiced), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: categoryWidths[3], align: 'right' });
+      x += categoryWidths[3];
+      drawText(formatCurrency(summary.currentInvoice), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: categoryWidths[4], align: 'right' });
+      x += categoryWidths[4];
+      drawText(formatCurrency(summary.remainingAmount), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: categoryWidths[5], align: 'right' });
+      cursorTop += rowHeight;
+      drawLine(marginLeft, cursorTop, marginLeft + contentWidth, 0.5, colors.line);
+      cursorTop += 4;
+    });
+
+    cursorTop += 12;
+  }
 
   ensureSpace(28);
   drawText('Budget Draw Detail', marginLeft, cursorTop, boldFont, 14, colors.text);

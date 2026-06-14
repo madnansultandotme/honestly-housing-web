@@ -166,8 +166,8 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Project Info */}
         <Card className="mb-8">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
+          <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
               <h2 className="text-lg font-semibold text-neutral-900 mb-2">
                 Project Information
               </h2>
@@ -225,7 +225,7 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
             showLabel
           />
           
-          <div className="grid grid-cols-3 gap-4 mt-6">
+          <div className="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-3">
             <div className="text-center">
               <div className="text-2xl font-bold text-brass-700">{pendingApprovals}</div>
               <div className="text-sm text-neutral-600">Awaiting Approval</div>
@@ -246,13 +246,14 @@ export default function ProjectDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Team Members Section */}
         <Card className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="text-lg font-semibold text-neutral-900">Team Members</h3>
             {/* All roles can add team members except admin cannot be added */}
             <Button
               onClick={() => setShowAddTeamModal(true)}
               variant="outline"
               size="sm"
+              className="w-full sm:w-auto"
             >
               Add Team Member
             </Button>

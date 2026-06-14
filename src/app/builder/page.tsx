@@ -108,7 +108,7 @@ export default function BuilderDashboard() {
         <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <div className="h-8 bg-gray-200 rounded w-64 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-96 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-full max-w-96 animate-pulse"></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <LoadingCard count={4} />
@@ -265,15 +265,15 @@ export default function BuilderDashboard() {
               {notifications.slice(0, 5).map((notification) => (
                 <div
                   key={notification.id}
-                  className="flex items-center justify-between p-3 bg-taupe-50 rounded-button"
+                  className="flex flex-col gap-3 p-3 bg-taupe-50 rounded-button sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <div className="font-medium text-neutral-900">{notification.title}</div>
                     {notification.body && (
                       <div className="text-sm text-neutral-600">{notification.body}</div>
                     )}
                   </div>
-                  <span className="text-xs bg-brass-100 text-brass-800 px-2 py-1 rounded-full">
+                  <span className="self-start text-xs bg-brass-100 text-brass-800 px-2 py-1 rounded-full sm:self-center">
                     New
                   </span>
                 </div>

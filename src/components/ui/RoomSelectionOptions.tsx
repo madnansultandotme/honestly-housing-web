@@ -122,7 +122,7 @@ export default function RoomSelectionOptions({
                         return (
                           <div
                             key={`${room.id}-${category}-${option.name}`}
-                            className="grid grid-cols-[minmax(0,1fr)_minmax(120px,180px)] items-center gap-4 pl-8 pr-2 py-1"
+                            className="grid grid-cols-1 gap-2 py-2 pl-2 pr-2 sm:grid-cols-[minmax(0,1fr)_minmax(120px,180px)] sm:items-center sm:gap-4 sm:py-1 sm:pl-8"
                           >
                             <label className="flex cursor-pointer items-center gap-3 text-sm font-medium text-neutral-900">
                               <input
@@ -151,7 +151,7 @@ export default function RoomSelectionOptions({
                                 className="w-full rounded-button border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brass-500"
                               />
                             ) : (
-                              <span className="text-sm text-neutral-700">{option.measureLabel || 'Quantity'}</span>
+                              <span className="pl-8 text-sm text-neutral-700 sm:pl-0">{option.measureLabel || 'Quantity'}</span>
                             )}
                           </div>
                         );

@@ -9,6 +9,7 @@ import {
   getNextDrawNumber,
   loadBudgetState,
   buildInvoicePdfBuffer,
+  buildInvoiceCategorySummaries,
   saveInvoicePdf,
 } from '@/lib/budget/service';
 
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
         invoiceNumber,
         date: invoiceDate,
         lineItems: calculation.lineItems,
+        categorySummaries: buildInvoiceCategorySummaries(state.rows, state.draws, amounts || {}),
         totalAmount: calculation.totalAmount,
       });
       console.log('PDF generation: buffer bytes=', Buffer.byteLength(pdfBuffer));

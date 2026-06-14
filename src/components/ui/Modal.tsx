@@ -97,8 +97,8 @@ export default function Modal({
       />
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-card shadow-xl max-w-md w-full p-6 animate-scale-in">
+      <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
+        <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-card bg-white p-4 shadow-xl animate-scale-in sm:p-6">
           {/* Icon */}
           <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-full ${styles.iconBg} mb-4`}>
             <svg className={`h-6 w-6 ${styles.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +117,7 @@ export default function Modal({
           </div>
 
           {/* Actions */}
-          <div className={`flex gap-3 ${showCancel || type === 'confirm' ? 'justify-end' : 'justify-center'}`}>
+          <div className={`flex flex-col gap-3 sm:flex-row ${showCancel || type === 'confirm' ? 'sm:justify-end' : 'sm:justify-center'}`}>
             {(showCancel || type === 'confirm') && (
               <Button
                 variant="outline"

@@ -4,26 +4,26 @@ import Button from '@/components/ui/Button';
 export default function Home() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-white font-sans">
-      <main className="flex flex-1 w-full max-w-6xl flex-col items-center justify-center py-20 px-6">
+      <main className="flex flex-1 w-full max-w-6xl flex-col items-center justify-center px-4 py-12 sm:px-6 sm:py-20">
         <div className="flex flex-col items-center gap-8 text-center max-w-3xl">
-          <h1 className="text-5xl md:text-6xl font-display font-bold text-neutral-900 leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-display font-bold text-neutral-900 leading-tight">
             Welcome to Honestly Housing
           </h1>
           <p className="text-xl md:text-2xl text-neutral-600 leading-relaxed">
             Your boutique luxury home builder platform. Manage selections, track progress, and bring your dream home to life with elegance and ease.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-4 mt-12">
+        <div className="flex w-full max-w-sm flex-col gap-4 mt-12 sm:w-auto sm:max-w-none sm:flex-row">
           <Link href="/login">
-            <Button size="lg">Sign In</Button>
+            <Button size="lg" className="w-full sm:w-auto">Sign In</Button>
           </Link>
           <Link href="/signup">
-            <Button variant="outline" size="lg">Get Started</Button>
+            <Button variant="outline" size="lg" className="w-full sm:w-auto">Get Started</Button>
           </Link>
         </div>
         
         {/* Feature highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 w-full max-w-5xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mt-12 sm:mt-20 w-full max-w-5xl">
           <div className="card text-center">
             <div className="w-12 h-12 bg-brass-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-brass-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">

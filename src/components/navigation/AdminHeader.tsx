@@ -35,9 +35,9 @@ export default function AdminHeader({
     <header className="bg-white border-b border-red-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top Navigation Bar */}
-        <div className="flex items-center justify-between h-16">
+        <div className="flex h-16 items-center justify-between gap-3">
           {/* Left: Logo/Brand */}
-          <div className="flex items-center gap-8">
+          <div className="flex min-w-0 items-center gap-3 md:gap-8">
             <Link href="/admin" className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg overflow-hidden bg-white border border-red-200 flex items-center justify-center">
                 <Image
@@ -113,7 +113,7 @@ export default function AdminHeader({
           </div>
 
           {/* Right: Actions & User Menu */}
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             {actions && <div className="hidden sm:flex items-center gap-2">{actions}</div>}
 
             {/* User Menu */}
@@ -180,22 +180,33 @@ export default function AdminHeader({
         </div>
 
         {/* Page Title Section (if provided) */}
+        <nav className="flex gap-2 overflow-x-auto border-t border-neutral-100 py-2 md:hidden">
+          <Link href="/admin" className={`shrink-0 px-3 py-2 rounded-button text-sm font-medium ${pathname === '/admin' ? 'bg-red-50 text-red-700' : 'text-neutral-600'}`}>Dashboard</Link>
+          <Link href="/admin/users" className={`shrink-0 px-3 py-2 rounded-button text-sm font-medium ${isActive('/admin/users') ? 'bg-red-50 text-red-700' : 'text-neutral-600'}`}>Users</Link>
+          <Link href="/admin/projects" className={`shrink-0 px-3 py-2 rounded-button text-sm font-medium ${isActive('/admin/projects') ? 'bg-red-50 text-red-700' : 'text-neutral-600'}`}>Projects</Link>
+          <Link href="/admin/analytics" className={`shrink-0 px-3 py-2 rounded-button text-sm font-medium ${isActive('/admin/analytics') ? 'bg-red-50 text-red-700' : 'text-neutral-600'}`}>Analytics</Link>
+          <Link href="/admin/settings" className={`shrink-0 px-3 py-2 rounded-button text-sm font-medium ${isActive('/admin/settings') ? 'bg-red-50 text-red-700' : 'text-neutral-600'}`}>Settings</Link>
+        </nav>
+
         {title && (
-          <div className="flex items-center gap-4 py-4 border-t border-neutral-100">
+          <div className="flex flex-col gap-3 py-4 border-t border-neutral-100 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex min-w-0 items-start gap-4 sm:items-center">
             {showBackButton && (
               <button
                 onClick={() => router.back()}
-                className="text-neutral-600 hover:text-neutral-900 transition-colors"
+                className="mt-1 shrink-0 text-neutral-600 hover:text-neutral-900 transition-colors sm:mt-0"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
             )}
-            <div className="flex-1">
-              <h1 className="text-2xl font-display font-bold text-neutral-900">{title}</h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="break-words text-xl font-display font-bold text-neutral-900 sm:text-2xl">{title}</h1>
               {subtitle && <p className="text-sm text-neutral-600 mt-1">{subtitle}</p>}
             </div>
+            </div>
+            {actions && <div className="flex flex-wrap gap-2 sm:hidden">{actions}</div>}
           </div>
         )}
       </div>

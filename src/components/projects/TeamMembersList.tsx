@@ -108,23 +108,23 @@ export default function TeamMembersList({
       {teamMembers.map((member) => (
         <div
           key={member.id}
-          className="flex items-center justify-between p-4 bg-white border border-neutral-200 rounded-button hover:border-brass-300 transition-colors"
+          className="flex flex-col gap-3 p-4 bg-white border border-neutral-200 rounded-button hover:border-brass-300 transition-colors sm:flex-row sm:items-center sm:justify-between"
         >
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="w-10 h-10 bg-brass-100 rounded-full flex items-center justify-center">
                 <span className="text-brass-700 font-semibold text-sm">
                   {member.displayName?.charAt(0).toUpperCase() || member.email.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="font-medium text-neutral-900">{member.displayName || 'Unknown'}</p>
-                <p className="text-sm text-neutral-600">{member.email}</p>
+                <p className="break-all text-sm text-neutral-600">{member.email}</p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
             <span
               className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${getRoleBadgeColor(
                 member.role
