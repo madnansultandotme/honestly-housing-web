@@ -92,7 +92,16 @@ service firebase.storage {
                       isValidImageSize();
     }
     
-    // Builder organization logos
+    // Builder organization logos (in builderOrgs folder)
+    match /builderOrgs/{fileName} {
+      allow read: if isSignedIn();
+      
+      allow write: if isBuilderOrDesignerOrAdmin() && 
+                      isImage() && 
+                      isValidImageSize();
+    }
+    
+    // Builder organization logos (legacy path)
     match /builderOrgs/{orgId}/logo.png {
       allow read: if isSignedIn();
       

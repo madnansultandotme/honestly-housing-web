@@ -109,7 +109,10 @@ honestly-housing/
    - `FIREBASE_ADMIN_PROJECT_ID`
    - `FIREBASE_ADMIN_CLIENT_EMAIL`
    - `FIREBASE_ADMIN_PRIVATE_KEY`
-   - `RAINFOREST_API_KEY` (optional, for Amazon price scraping)
+   - `RAINFOREST_API_KEY` (optional - for Amazon price lookup feature)
+     - **Note**: Without this key, users must enter prices manually
+     - See `docs/amazon-price-lookup-setup.md` for setup instructions
+     - Rainforest API is a paid service - free trial available
 
 4. **Deploy Firestore indexes**
    ```bash

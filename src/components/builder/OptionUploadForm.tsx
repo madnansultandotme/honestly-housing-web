@@ -134,7 +134,7 @@ export default function OptionUploadForm({
 
   const handlePriceLookup = async () => {
     if (!formData.linkUrl) {
-      setPriceLookupMessage('Add an Amazon product link to pull pricing.');
+      setPriceLookupMessage('Please enter an Amazon product link first.');
       return;
     }
 
@@ -149,18 +149,26 @@ export default function OptionUploadForm({
       });
 
       const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to pull price');
+        // Check if it's a configuration issue
+        if (response.status === 503 && data.notConfigured) {
+          setPriceLookupMessage('⚠️ Price lookup feature not available. Please enter price manually.');
+        } else {
+          setPriceLookupMessage(data?.error || 'Could not retrieve price. Please enter manually.');
+        }
+        return;
       }
 
-      if (typeof data.price === 'number') {
+      if (typeof data.price === 'number' && data.price > 0) {
         setFormData({ ...formData, price: data.price });
-        setPriceLookupMessage('Price updated from Amazon.');
+        setPriceLookupMessage(`✓ Price updated: $${data.price.toFixed(2)}`);
       } else {
-        setPriceLookupMessage('Price not found for this link.');
+        setPriceLookupMessage('Price not found. Please enter manually.');
       }
     } catch (err) {
-      setPriceLookupMessage(err instanceof Error ? err.message : 'Failed to pull price');
+      console.error('Price lookup error:', err);
+      setPriceLookupMessage('Failed to retrieve price. Please enter manually.');
     } finally {
       setPriceLookupLoading(false);
     }
@@ -300,21 +308,40 @@ export default function OptionUploadForm({
           onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
           placeholder="https://..."
         />
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-2 space-y-2">
           <Button
             type="button"
             variant="outline"
             onClick={handlePriceLookup}
             disabled={!formData.linkUrl || priceLookupLoading}
+            className="w-full sm:w-auto"
           >
-            {priceLookupLoading ? 'Fetching price...' : 'Pull price from Amazon'}
+            {priceLookupLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Fetching price...
+              </>
+            ) : (
+              'Pull price from Amazon'
+            )}
           </Button>
           {priceLookupMessage && (
-            <span className="text-xs text-neutral-600">{priceLookupMessage}</span>
+            <div className={`text-sm p-2 rounded-button ${
+              priceLookupMessage.includes('✓') 
+                ? 'bg-green-50 text-green-700 border border-green-200' 
+                : priceLookupMessage.includes('⚠️')
+                ? 'bg-yellow-50 text-yellow-800 border border-yellow-200'
+                : 'bg-neutral-50 text-neutral-700 border border-neutral-200'
+            }`}>
+              {priceLookupMessage}
+            </div>
           )}
         </div>
-        <p className="text-xs text-neutral-500 mt-1">
-          Link to product page or affiliate link
+        <p className="text-xs text-neutral-500 mt-2">
+          Enter an Amazon product link to automatically fetch the current price
         </p>
       </div>
 

@@ -140,16 +140,21 @@ export default function RoomSelectionOptions({
                             </label>
 
                             {checked ? (
-                              <input
-                                type="number"
-                                min="1"
-                                value={selectedFixture?.quantity || 1}
-                                aria-label={`${option.name} ${option.measureLabel || 'Quantity'}`}
-                                onChange={(event) =>
-                                  updateQuantity(room.id, option, parseInt(event.target.value, 10) || 1)
-                                }
-                                className="w-full rounded-button border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brass-500"
-                              />
+                              <div className="flex flex-col gap-1">
+                                <label className="text-xs text-neutral-600 sm:hidden">
+                                  {option.measureLabel || 'Quantity'}
+                                </label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={selectedFixture?.quantity || 1}
+                                  aria-label={`${option.name} ${option.measureLabel || 'Quantity'}`}
+                                  onChange={(event) =>
+                                    updateQuantity(room.id, option, parseInt(event.target.value, 10) || 1)
+                                  }
+                                  className="w-full rounded-button border border-neutral-300 bg-white px-2 py-1 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-brass-500"
+                                />
+                              </div>
                             ) : (
                               <span className="pl-8 text-sm text-neutral-700 sm:pl-0">{option.measureLabel || 'Quantity'}</span>
                             )}

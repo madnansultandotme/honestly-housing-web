@@ -32,34 +32,36 @@
           "type": "string",
           "required": false,
           "nullable": true,
-          "description": "URL to organization logo"
+          "description": "URL to organization logo image (displayed on invoices and documents)"
         },
         "primaryColor": {
           "type": "string",
-          "required": true,
+          "required": false,
+          "nullable": true,
           "description": "Primary brand color (hex)"
         },
         "accentColor": {
           "type": "string",
-          "required": true,
+          "required": false,
+          "nullable": true,
           "description": "Accent brand color (hex)"
         }
       }
     },
     "settings": {
       "type": "map",
-      "required": true,
+      "required": false,
       "fields": {
         "defaultAllowanceType": {
           "type": "string",
-          "required": true,
+          "required": false,
           "enum": ["fixed", "perSqFt"],
           "description": "Default budget type"
         },
         "defaultCategories": {
           "type": "array",
           "items": "string",
-          "required": true,
+          "required": false,
           "description": "Default selection categories"
         }
       }

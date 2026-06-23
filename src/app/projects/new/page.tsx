@@ -21,6 +21,7 @@ import { countRoomsFromDetails } from '@/lib/projects/roomCounts';
 import defaultTemplates from '@/lib/templates/defaultProjectTemplates.json';
 import { useSetupDesign } from '@/hooks/useSetupDesign';
 import { DEFAULT_STANDARD_ROOMS } from '@/lib/setupDesign/defaults';
+import { getDefaultBudgetCategories, type BudgetCategory } from '@/lib/constants/budget-categories';
 
 interface CategoryAllowance {
   categoryId: string;
@@ -150,7 +151,16 @@ export default function NewProjectPage() {
   } | null>(null);
 
   // Step 2: Room Counts (Simple count selector)
-  const [roomCounts, setRoomCounts] = useState<RoomCounts>({ bedrooms: 0, bathrooms: 0 });
+  const [roomCounts, setRoomCounts] = useState<RoomCounts>({ 
+    bedrooms: 0, 
+    bathrooms: 0,
+    office: 0,
+    diningRoom: 0,
+    pantry: 0,
+    laundry: 0,
+    livingRoom: 0,
+    bonusRoom: 0,
+  });
   
   // Step 3: Room Names (Auto-generated with edit capability)
   const [generatedRooms, setGeneratedRooms] = useState<GeneratedRoom[]>([]);
@@ -173,8 +183,13 @@ export default function NewProjectPage() {
   const [categories, setCategories] = useState<CategoryItem[]>(DEFAULT_CATEGORIES);
   const [notesByRoomCategory, setNotesByRoomCategory] = useState<Record<string, string>>({});
 
-  // Step 8: Budgets
+  // Step 8: Budgets (Construction Budget Categories)
   const [allowances, setAllowances] = useState<CategoryAllowance[]>([]);
+  const [constructionBudget, setConstructionBudget] = useState<{
+    categoryCode: string;
+    categoryName: string;
+    budgetedAmount: number;
+  }[]>([]);
 
   // Step 9: Template
   const [templateName, setTemplateName] = useState('');
@@ -197,9 +212,21 @@ export default function NewProjectPage() {
     });
   }, [standardRooms]);
 
+  // Initialize construction budget with default categories
+  useEffect(() => {
+    const defaultBudgetCategories = getDefaultBudgetCategories();
+    setConstructionBudget(
+      defaultBudgetCategories.map((cat) => ({
+        categoryCode: cat.code,
+        categoryName: cat.name,
+        budgetedAmount: 0,
+      }))
+    );
+  }, []);
+
   const steps: { id: Step; title: string; description: string }[] = [
     { id: 'basic', title: 'Basic Info', description: 'Project name and client' },
-    { id: 'budgets', title: 'Budgets', description: 'Set allowances per category' },
+    { id: 'budgets', title: 'Construction Budget', description: 'Set budget per construction category' },
     { id: 'roomCounts', title: 'Room Counts', description: 'Bedrooms & bathrooms' },
     { id: 'roomNames', title: 'Room Names', description: 'Review & customize room names' },
     { id: 'roomSelections', title: 'Room Selections', description: 'Choose options by room' },
@@ -344,11 +371,26 @@ export default function NewProjectPage() {
       if (nextStep === 'roomCounts' && selectedTemplateId && selectedTemplateId !== 'empty') {
         const tmpl = templates.find((t: any) => t.id === selectedTemplateId);
         if (tmpl && Array.isArray(tmpl.rooms)) {
-          // Count bedrooms and bathrooms from template
+          // Count all room types from template
           const bedroomCount = tmpl.rooms.filter((r: any) => r.type === 'bedroom').reduce((sum: number, r: any) => sum + (r.quantity || 0), 0);
           const bathroomCount = tmpl.rooms.filter((r: any) => r.type === 'bathroom').reduce((sum: number, r: any) => sum + (r.quantity || 0), 0);
+          const officeCount = tmpl.rooms.filter((r: any) => r.type === 'office').reduce((sum: number, r: any) => sum + (r.quantity || 0), 0);
+          const diningRoomCount = tmpl.rooms.filter((r: any) => r.type === 'dining-room' || r.type === 'diningRoom').reduce((sum: number, r: any) => sum + (r.quantity || 0), 0);
+          const pantryCount = tmpl.rooms.filter((r: any) => r.type === 'pantry').reduce((sum: number, r: any) => sum + (r.quantity || 0), 0);
+          const laundryCount = tmpl.rooms.filter((r: any) => r.type === 'laundry').reduce((sum: number, r: any) => sum + (r.quantity || 0), 0);
+          const livingRoomCount = tmpl.rooms.filter((r: any) => r.type === 'living-room' || r.type === 'livingRoom').reduce((sum: number, r: any) => sum + (r.quantity || 0), 0);
+          const bonusRoomCount = tmpl.rooms.filter((r: any) => r.type === 'bonus-room' || r.type === 'bonusRoom').reduce((sum: number, r: any) => sum + (r.quantity || 0), 0);
           
-          setRoomCounts({ bedrooms: bedroomCount, bathrooms: bathroomCount });
+          setRoomCounts({ 
+            bedrooms: bedroomCount, 
+            bathrooms: bathroomCount,
+            office: officeCount,
+            diningRoom: diningRoomCount,
+            pantry: pantryCount,
+            laundry: laundryCount,
+            livingRoom: livingRoomCount,
+            bonusRoom: bonusRoomCount
+          });
         }
       }
 
@@ -401,6 +443,20 @@ export default function NewProjectPage() {
     });
   };
 
+  const handleConstructionBudgetChange = (categoryCode: string, amount: number) => {
+    setConstructionBudget(prev =>
+      prev.map(item =>
+        item.categoryCode === categoryCode
+          ? { ...item, budgetedAmount: isNaN(amount) ? 0 : amount }
+          : item
+      )
+    );
+  };
+
+  const getTotalConstructionBudget = () => {
+    return constructionBudget.reduce((sum, item) => sum + (item.budgetedAmount || 0), 0);
+  };
+
   const handleSubmit = async () => {
     try {
       setSaving(true);
@@ -441,7 +497,7 @@ export default function NewProjectPage() {
         templateId: selectedTemplateId || null,
         fixtureCounts: {
           plumbingFixtures: totalFixturesCount,
-          lightingFixtures: allRoomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
+          lightingFixtures: allRoomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Lighting').length, 0),
         },
         squareFootage: squareFootage || null,
         progress: {
@@ -565,6 +621,34 @@ export default function NewProjectPage() {
           roomNames: mapPersistedRoomNames(cabinetry.roomIds, cabinetry.roomNames),
           createdBy: user?.uid,
         });
+      }
+
+      // Save construction budget
+      const totalBudget = getTotalConstructionBudget();
+      if (totalBudget > 0) {
+        // Create the main budget document
+        await apiClient.post('/budget', {
+          projectId: createdProjectId,
+          totalAmount: totalBudget,
+          status: 'draft',
+        });
+
+        // Create budget rows for each category with a budget amount
+        for (const budgetItem of constructionBudget.filter(item => item.budgetedAmount > 0)) {
+          await apiClient.post('/budget/rows', {
+            projectId: createdProjectId,
+            categoryCode: budgetItem.categoryCode,
+            categoryName: budgetItem.categoryName,
+            itemCode: `${budgetItem.categoryCode}.000`,
+            itemName: budgetItem.categoryName,
+            description: `${budgetItem.categoryName} - Initial budget allocation`,
+            quantity: 1,
+            unitCost: budgetItem.budgetedAmount,
+            markup: 0,
+            totalAmount: budgetItem.budgetedAmount,
+            costType: 'material',
+          });
+        }
       }
 
       // Save as template if requested
@@ -908,6 +992,12 @@ export default function NewProjectPage() {
               <AutoGeneratedRoomList
                 bedroomCount={roomCounts.bedrooms}
                 bathroomCount={roomCounts.bathrooms}
+                officeCount={roomCounts.office}
+                diningRoomCount={roomCounts.diningRoom}
+                pantryCount={roomCounts.pantry}
+                laundryCount={roomCounts.laundry}
+                livingRoomCount={roomCounts.livingRoom}
+                bonusRoomCount={roomCounts.bonusRoom}
                 rooms={generatedRooms}
                 onChange={setGeneratedRooms}
               />
@@ -1029,42 +1119,79 @@ export default function NewProjectPage() {
             </div>
           )}
 
-          {/* Step 8: Budgets */}
+          {/* Step 2: Construction Budget */}
           {currentStep === 'budgets' && (
             <div className="space-y-6">
               <div>
                 <h2 className="text-2xl font-display font-bold text-neutral-900 mb-2">
-                  Category Budgets
+                  Construction Budget
                 </h2>
                 <p className="text-neutral-600">
-                  Set allowances for each required category. You can use a fixed amount or price per square foot.
+                  Enter budgeted amounts for each construction category. These will be used for budget tracking, draw requests, and invoices.
                 </p>
               </div>
 
-              <div className="space-y-6">
-                {categories
-                  .filter((cat) => cat.required)
-                  .map((category) => {
-                    const allowance = allowances.find((a) => a.categoryId === category.id) || {
-                      amount: 0,
-                      type: 'fixed' as AllowanceType,
-                    };
-                    return (
-                      <AllowancePrompt
-                        key={category.id}
-                        label={category.name}
-                        value={allowance.amount}
-                        type={allowance.type}
-                        onValueChange={(amount) =>
-                          handleAllowanceChange(category.id, amount, allowance.type)
-                        }
-                        onTypeChange={(type) =>
-                          handleAllowanceChange(category.id, allowance.amount, type)
-                        }
-                        sqFt={squareFootage}
-                      />
-                    );
-                  })}
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                {constructionBudget.map((item) => (
+                  <div 
+                    key={item.categoryCode} 
+                    className="flex items-center gap-3 p-4 bg-white border border-neutral-200 rounded-button hover:border-brass-300 transition-colors"
+                  >
+                    <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-brass-50 rounded-button">
+                      <span className="text-sm font-mono font-semibold text-brass-700">
+                        {item.categoryCode}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        {item.categoryName}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500">
+                          $
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="100"
+                          value={item.budgetedAmount || ''}
+                          onChange={(e) => handleConstructionBudgetChange(item.categoryCode, parseFloat(e.target.value) || 0)}
+                          placeholder="0.00"
+                          className="w-full pl-8 pr-4 py-2 border border-neutral-300 rounded-button focus:outline-none focus:ring-2 focus:ring-brass-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Total Budget Summary */}
+              <div className="mt-6 p-6 bg-gradient-to-br from-brass-50 to-brass-100 border-2 border-brass-300 rounded-button">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-brass-800 mb-1">
+                      Total Project Budget
+                    </div>
+                    <div className="text-xs text-brass-600">
+                      Sum of all construction categories
+                    </div>
+                  </div>
+                  <div className="text-3xl font-bold text-brass-900">
+                    ${getTotalConstructionBudget().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Help Text */}
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-button">
+                <div className="flex gap-3">
+                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm text-blue-800">
+                    <strong>Tip:</strong> You can skip categories you're not sure about and fill them in later. These budgets will be used in the Budget & Draw section for tracking expenses and generating invoices.
+                  </div>
+                </div>
               </div>
             </div>
           )}

@@ -42,7 +42,7 @@ const ROOM_TYPES = [
 ];
 
 const FIXTURE_CATEGORIES = [
-  'Electrical',
+  'Lighting',
   'Plumbing',
   'Flooring',
   'Tile',
@@ -56,7 +56,7 @@ const FIXTURE_CATEGORIES = [
 // Note: Paint Colors removed - now handled by dedicated PaintBuilder component
 
 const COMMON_FIXTURES: Record<string, string[]> = {
-  'Electrical': ['Fan', 'Down Rod', 'Vanity Light', 'Ceiling Light', 'Recessed Light', 'Chandelier', 'Pendant Light', 'Sconce'],
+  'Lighting': ['Fan', 'Down Rod', 'Vanity Light', 'Ceiling Light', 'Recessed Light', 'Chandelier', 'Pendant Light', 'Sconce'],
   'Plumbing': ['Bathroom Faucet', 'Drain', 'Shower Head', 'Tub Faucet', 'Kitchen Faucet', 'Toilet', 'Sink'],
   'Flooring': ['Hardwood', 'Tile', 'Carpet', 'Vinyl', 'Laminate'],
   'Tile': ['Floor Tile', 'Wall Tile', 'Backsplash', 'Shower Tile'],
@@ -72,7 +72,7 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
 
   // Add fixture states
   const [addingFixtureToRoom, setAddingFixtureToRoom] = useState<string | null>(null);
-  const [newFixtureCategory, setNewFixtureCategory] = useState('Electrical');
+  const [newFixtureCategory, setNewFixtureCategory] = useState('Lighting');
   const [newFixtureName, setNewFixtureName] = useState('');
   const [newFixtureQuantity, setNewFixtureQuantity] = useState(1);
   const [newFixtureImage, setNewFixtureImage] = useState<File | null>(null);
@@ -453,7 +453,7 @@ export default function DynamicRoomBuilder({ rooms, onChange }: DynamicRoomBuild
                     variant="outline"
                     onClick={() => {
                       setAddingFixtureToRoom(room.id);
-                      setNewFixtureCategory('Electrical');
+                      setNewFixtureCategory('Lighting');
                       setNewFixtureName('');
                       setNewFixtureQuantity(1);
                     }}

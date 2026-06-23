@@ -66,19 +66,65 @@ The system uses 3 main project statuses:
          - Welcome email sent to client with credentials
          - Client automatically selected
      - Enter budget (optional)
-   - **Step 2: Room Counts** (NEW - Simplified Entry)
-     - **Enter number of bedrooms** using +/- buttons or direct input
-     - **Enter number of bathrooms** using +/- buttons or direct input
-     - System shows summary of total rooms
-   - **Step 3: Room Names** (NEW - Auto-Generated with Edit)
-     - **System auto-generates smart room names:**
-       - First bedroom becomes "Primary Bedroom"
-       - Subsequent bedrooms: "Bedroom 2", "Bedroom 3", etc.
-       - First bathroom becomes "Primary Bathroom"
-       - Last bathroom defaults to "Half Bath" (if multiple bathrooms)
-       - Other bathrooms: "Bathroom 2", "Bathroom 3", etc.
+   - **Step 2: Construction Budget** (NEW - COMPREHENSIVE BUDGET SYSTEM)
+     - **Enter budgeted amounts for each construction category:**
+       - 01 - Site Work
+       - 02 - Foundation
+       - 03 - Framing
+       - 04 - Roofing
+       - 05 - Exterior Materials
+       - 06 - Windows & Doors
+       - 07 - Plumbing
+       - 08 - HVAC
+       - 09 - Electrical
+       - 10 - Insulation
+       - 11 - Drywall
+       - 12 - Interior Doors & Trim
+       - 13 - Cabinetry
+       - 14 - Countertops
+       - 15 - Flooring
+       - 16 - Tile
+       - 17 - Paint
+       - 18 - Lighting
+       - 19 - Plumbing Fixtures
+       - 20 - Appliances
+       - 21 - Fireplace (optional)
+       - 22 - Mirrors & Glass
+       - 23 - Hardware
+       - 24 - Garage (optional)
+       - 25 - Deck & Patio (optional)
+       - 26 - Permits & Fees
+       - 27 - Cleanup & Final
+       - 28 - Contingency
+     - **System shows running total of all categories**
+     - **Can skip categories and fill in later**
+     - **This budget feeds into Budget & Draw system**
+   - **Step 3: Room Counts** (Simplified Entry - Multiple Room Types)
+     - **Enter counts for 8 different room types:**
+       - **Bedrooms** - using +/- buttons or direct input
+       - **Bathrooms** - using +/- buttons or direct input
+       - **Office** - using +/- buttons or direct input
+       - **Dining Room** - using +/- buttons or direct input
+       - **Pantry** - using +/- buttons or direct input
+       - **Laundry** - using +/- buttons or direct input
+       - **Living Room** - using +/- buttons or direct input
+       - **Bonus Room** - using +/- buttons or direct input
+     - System shows summary of total rooms across all types
+   - **Step 4: Room Names** (Auto-Generated with Edit)
+     - **System auto-generates smart room names for all types:**
+       - **Bedrooms:**
+         - First bedroom becomes "Primary Bedroom"
+         - Subsequent bedrooms: "Bedroom 2", "Bedroom 3", etc.
+       - **Bathrooms:**
+         - First bathroom becomes "Primary Bathroom"
+         - Last bathroom defaults to "Half Bath" (if multiple bathrooms)
+         - Other bathrooms: "Bathroom 2", "Bathroom 3", etc.
+       - **Other Room Types:**
+         - Single room: "Office", "Dining Room", "Pantry", etc.
+         - Multiple rooms: "Office 2", "Living Room 2", etc.
      - **Click "Edit Name" next to any room** to customize the name
-     - All rooms shown grouped by type (Bedrooms/Bathrooms)
+     - All rooms shown grouped by type with emoji icons (🛏️ Bedrooms, 🚿 Bathrooms, 💼 Offices, etc.)
+     - Comprehensive summary at bottom shows all room types and counts
    - **Step 4: Room & Fixture Configuration**
      - **Add fixtures to each auto-generated room**
        - Expand room to see details
@@ -335,6 +381,33 @@ The system uses 3 main project statuses:
    - Active projects
    - System-wide metrics
 
+#### Phase 12: Organization Management (Builder/Designer/Admin)
+1. **Access Organization Settings**
+   - Go to `/builder/org`
+   - Or click "Organization" in navigation
+
+2. **Configure Organization Details**
+   - **Upload Company Logo**
+     - Click upload area or "Change Logo"
+     - Select image file (PNG, JPG up to 10MB)
+     - Preview displays immediately
+     - Logo appears on invoices and official documents
+   - **Enter Organization Name** (required)
+     - Your company name
+   - **Enter Business Email** (required)
+     - Primary contact email
+   - **Enter Business Phone** (required)
+     - Business phone number
+   - **Enter Business Address** (optional)
+     - Multi-line physical address
+   - Click "Update Organization" to save
+
+3. **Verify Changes**
+   - Settings save immediately
+   - Logo displays in invoice PDFs
+   - Contact information appears on all official documents
+   - Note: Information is used for invoices and scope of work documents
+
 ### Testing Checklist
 
 **Project Creation:**
@@ -344,6 +417,12 @@ The system uses 3 main project statuses:
 - [ ] Can create new client when no results found
 - [ ] New client receives welcome email with credentials
 - [ ] Newly created client is automatically selected
+- [ ] **Can enter counts for all 8 room types (bedrooms, bathrooms, office, dining room, pantry, laundry, living room, bonus room)**
+- [ ] **Room count selector shows all room types with icons**
+- [ ] **Auto-generated room names work correctly for all room types**
+- [ ] **Can edit auto-generated room names inline**
+- [ ] **Room groups display correctly with emoji icons**
+- [ ] **Summary shows comprehensive count of all room types**
 - [ ] Can add rooms dynamically with custom names
 - [ ] Can add fixtures to each room by category
 - [ ] Fixtures support quantity specification
@@ -409,6 +488,20 @@ The system uses 3 main project statuses:
 - [ ] Can delete projects
 - [ ] Statistics display correctly
 
+**Organization Settings:**
+- [ ] Can access organization settings page
+- [ ] Can upload company logo
+- [ ] Logo preview displays correctly
+- [ ] Can remove/cancel logo upload
+- [ ] Can update organization name
+- [ ] Can update business email
+- [ ] Can update business phone
+- [ ] Can update business address
+- [ ] Organization changes save correctly
+- [ ] Logo displays in invoice PDFs
+- [ ] Contact information appears in invoices
+- [ ] Settings accessible to builder/designer/admin roles
+
 **Profile/Settings:**
 - [ ] Can access settings page from user menu
 - [ ] Can upload profile avatar
@@ -450,6 +543,11 @@ The system uses 3 main project statuses:
 
 **Issue**: Custom category doesn't appear in selections dropdown
 **Solution**: Ensure project was saved after adding custom category. Selection modals fetch categories from database via `/api/categories`.
+
+**Issue**: Lighting category shows "0 of 0" even after configuring rooms with lighting fixtures
+**Solution**: Fixed category name mismatch - room builder was using "Electrical" but default categories use "Lighting". Updated DynamicRoomBuilder to use "Lighting" consistently with default categories. If you created projects before this fix, you'll need to either:
+1. Edit the project configuration and re-save the rooms (this will recreate items with correct category), OR
+2. Manually update existing items' `categoryName` from "Electrical" to "Lighting" in Firestore
 
 **Issue**: Edit configuration page not loading project data
 **Solution**: Fixed API response structure - APIs now return direct arrays instead of wrapped objects. Updated all API endpoints (`/api/rooms`, `/api/categories`, `/api/items`) to return arrays directly. Updated frontend to handle new response format.
@@ -838,9 +936,11 @@ The room configuration has been streamlined into 3 easy steps:
 - Email normalization for consistent user search
 - **Auto-create client accounts during project creation** with credential email
 - **Simplified room naming** - enter counts, auto-generate names with edit capability
-- **Room count selector** - simple bedroom/bathroom count input
-- **Auto-generated room names** - smart naming (Primary Bedroom, Bedroom 2, Half Bath, etc.)
+- **Room count selector** - supports 8 room types (bedrooms, bathrooms, office, dining room, pantry, laundry, living room, bonus room)
+- **Multiple room type support** - add office, dining room, pantry, laundry, living room, and bonus room (beyond just bedrooms/bathrooms)
+- **Auto-generated room names** - smart naming (Primary Bedroom, Bedroom 2, Half Bath, Office, Dining Room, etc.)
 - **Inline room name editing** - customize any auto-generated name
+- **Room grouping with icons** - organized display with emoji icons for each room type
 - **Dynamic room builder** - add any room with custom name and type
 - **Per-room fixture specification** - define exact fixtures needed per room
 - **Fixture categories** - Electrical, Plumbing, Flooring, Paint Colors, Tile, Hardware, etc.
@@ -884,12 +984,30 @@ The room configuration has been streamlined into 3 easy steps:
 - **Download from setup page** - scope of work download button in configuration page
 - **Format selector menu** - choose export format with preview descriptions
 - **Styled HTML export** - professional printable HTML with project branding
+- **Organization Settings** - comprehensive business information management
+- **Company logo upload** - upload and display company logo on invoices and documents
+- **Business contact information** - email, phone, address for invoices
+- **Organization branding** - logo and contact details appear on all official documents
+- **Construction Budget System** - comprehensive budget tracking for projects
+- **28 standard budget categories** - industry-standard construction line items
+- **Budget entry during project creation** - set budgeted amounts per category
+- **Automatic budget integration** - feeds into Budget & Draw system
+- **Running budget total** - see total project budget in real-time
 
 ### ❌ Not Implemented
 - AI Mood Board generation (marked as "coming soon")
 - Full affiliate links support
 - Admin Analytics (placeholder created)
 - Admin Settings (placeholder created)
+
+### 💰 Requires Configuration (Optional Features)
+- **Amazon Price Lookup** - "Pull price from Amazon" button
+  - **Status**: Feature exists but requires paid API key
+  - **Requirement**: `RAINFOREST_API_KEY` environment variable
+  - **Cost**: Rainforest API subscription (starts at $50/month)
+  - **Alternative**: Users can enter prices manually (current default)
+  - **Documentation**: See `docs/amazon-price-lookup-setup.md`
+  - **User Experience**: Button shows helpful message when not configured
 
 ## Getting Help
 

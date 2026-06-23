@@ -44,15 +44,18 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.RAINFOREST_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'RAINFOREST_API_KEY is not configured' },
-        { status: 500 }
+        { 
+          error: 'Amazon price lookup is not configured. Please contact your administrator to enable this feature by adding a RAINFOREST_API_KEY environment variable.',
+          notConfigured: true
+        },
+        { status: 503 } // Service Unavailable
       );
     }
 
     const amazonDomain = getAmazonDomain(linkUrl);
     if (!amazonDomain) {
       return NextResponse.json(
-        { error: 'linkUrl must be an Amazon product link' },
+        { error: 'Please enter a valid Amazon product link' },
         { status: 400 }
       );
     }
@@ -68,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: data?.error || 'Rainforest API request failed' },
+        { error: data?.error || 'Failed to retrieve price from Amazon' },
         { status: response.status }
       );
     }
@@ -76,7 +79,7 @@ export async function POST(request: NextRequest) {
     const price = extractPrice(data);
     if (price === null) {
       return NextResponse.json(
-        { error: 'Unable to extract price from Rainforest response' },
+        { error: 'Price not found for this product. Please enter the price manually.' },
         { status: 422 }
       );
     }
@@ -92,7 +95,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Price lookup error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch price' },
+      { error: 'Failed to retrieve price. Please enter the price manually.' },
       { status: 500 }
     );
   }

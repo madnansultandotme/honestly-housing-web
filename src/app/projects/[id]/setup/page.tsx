@@ -525,7 +525,7 @@ export default function BuilderProjectSetup() {
         rooms: roomsObject,
         fixtureCounts: {
           plumbingFixtures: totalFixturesCount,
-          lightingFixtures: uniqueRoomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
+          lightingFixtures: uniqueRoomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Lighting').length, 0),
         },
         squareFootage,
         allowances: allowances.reduce((acc, a) => {
@@ -746,7 +746,7 @@ export default function BuilderProjectSetup() {
           rooms: roomsObject,
           fixtureCounts: {
             plumbingFixtures: totalFixturesCount,
-            lightingFixtures: roomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Electrical').length, 0),
+            lightingFixtures: roomDetails.reduce((sum, room) => sum + room.fixtures.filter(f => f.category === 'Lighting').length, 0),
           },
           squareFootage,
           categories: requiredCategories.map(c => ({
