@@ -33,6 +33,7 @@ interface BudgetRowFormState {
   unitCost: string;
   markup: string;
   costType: CostType;
+  measureLabel: string;
 }
 
 interface GroupedRows {
@@ -62,6 +63,7 @@ const initialRowForm: BudgetRowFormState = {
   unitCost: '',
   markup: '0',
   costType: 'labor',
+  measureLabel: 'Quantity',
 };
 
 const costTypeLabels: Record<CostType, string> = {
@@ -328,6 +330,7 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
       unitCost: String(row.unitCost),
       markup: String(row.markup),
       costType: row.costType,
+      measureLabel: row.measureLabel || 'Quantity',
     });
   };
 
@@ -368,6 +371,7 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
         unitCost,
         markup,
         costType: rowForm.costType,
+        measureLabel: rowForm.measureLabel.trim() || 'Quantity',
       };
 
       if (editingRowId) {
@@ -530,7 +534,8 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
               <Input label="Item Name" value={rowForm.itemName} onChange={(e) => setRowForm((prev) => ({ ...prev, itemName: e.target.value }))} placeholder="Site Demolition + Earthwork" />
               <Input label="Description / Notes" value={rowForm.description} onChange={(e) => setRowForm((prev) => ({ ...prev, description: e.target.value }))} placeholder="Clearing for home site..." />
               <div><label className="block text-sm font-medium text-neutral-700 mb-2">Cost Type</label><select value={rowForm.costType} onChange={(e) => setRowForm((prev) => ({ ...prev, costType: e.target.value as CostType }))} className="w-full px-4 py-3 border border-neutral-300 rounded-button focus:outline-none focus:ring-2 focus:ring-brass-500 bg-white text-neutral-900"><option value="labor">Labor</option><option value="material">Material</option><option value="laborMaterial">Labor & Material</option></select></div>
-              <Input label="Quantity" type="number" min="0" step="1" value={rowForm.quantity} onChange={(e) => setRowForm((prev) => ({ ...prev, quantity: e.target.value }))} />
+              <div><label className="block text-sm font-medium text-neutral-700 mb-2">Unit Type</label><select value={rowForm.measureLabel} onChange={(e) => setRowForm((prev) => ({ ...prev, measureLabel: e.target.value }))} className="w-full px-4 py-3 border border-neutral-300 rounded-button focus:outline-none focus:ring-2 focus:ring-brass-500 bg-white text-neutral-900"><option value="Quantity">Quantity</option><option value="Length">Length</option><option value="Square Feet">Square Feet</option><option value="Linear Feet">Linear Feet</option><option value="Cubic Yards">Cubic Yards</option><option value="Hours">Hours</option><option value="Trips">Trips</option><option value="Lots">Lots</option></select></div>
+              <Input label={rowForm.measureLabel || "Quantity"} type="number" min="0" step="1" value={rowForm.quantity} onChange={(e) => setRowForm((prev) => ({ ...prev, quantity: e.target.value }))} />
               <Input label="Unit Cost" type="number" min="0" step="0.01" value={rowForm.unitCost} onChange={(e) => setRowForm((prev) => ({ ...prev, unitCost: e.target.value }))} />
               <Input label="Markup" type="number" min="0" step="0.01" value={rowForm.markup} onChange={(e) => setRowForm((prev) => ({ ...prev, markup: e.target.value }))} />
               <div className="flex items-end"><Button type="submit" disabled={savingRowId !== null} className="w-full">{savingRowId ? 'Saving...' : editingRowId ? 'Update Item' : 'Add Item'}</Button></div>
@@ -557,7 +562,7 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
                           <th className="py-3 px-4">Item Code</th>
                           <th className="py-3 px-4">Item Name</th>
                           <th className="py-3 px-4">Description / Notes</th>
-                          <th className="py-3 px-4">Qty</th>
+                          <th className="py-3 px-4">Qty / Unit</th>
                           <th className="py-3 px-4">Unit Cost</th>
                           <th className="py-3 px-4">Markup</th>
                           <th className="py-3 px-4">Total</th>
@@ -571,7 +576,12 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
                             <td className="py-3 px-4 font-medium text-neutral-900">{row.itemCode}</td>
                             <td className="py-3 px-4 text-neutral-900">{row.itemName}</td>
                             <td className="py-3 px-4 text-neutral-600 max-w-[320px] whitespace-pre-wrap">{row.description || '—'}</td>
-                            <td className="py-3 px-4 text-neutral-700">{row.quantity}</td>
+                            <td className="py-3 px-4 text-neutral-700">
+                              {row.quantity}
+                              {row.measureLabel && row.measureLabel !== 'Quantity' && (
+                                <span className="text-xs text-neutral-500 ml-1">{row.measureLabel}</span>
+                              )}
+                            </td>
                             <td className="py-3 px-4 text-neutral-700">{formatCurrency(row.unitCost)}</td>
                             <td className="py-3 px-4 text-neutral-700">{formatCurrency(row.markup)}</td>
                             <td className="py-3 px-4 text-neutral-700">{formatCurrency(row.totalAmount)}</td>
@@ -616,7 +626,7 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
                             <th className="py-3 px-4">Item Code</th>
                             <th className="py-3 px-4">Item Name</th>
                             <th className="py-3 px-4">Description / Notes</th>
-                            <th className="py-3 px-4">Qty</th>
+                            <th className="py-3 px-4">Qty / Unit</th>
                             <th className="py-3 px-4">Unit Cost</th>
                             <th className="py-3 px-4">Markup</th>
                             <th className="py-3 px-4">Total</th>
@@ -635,7 +645,12 @@ export default function BudgetWorkspacePage({ params }: { params: Promise<{ id: 
                                 <td className="py-3 px-4 font-medium text-neutral-900">{row.itemCode}</td>
                                 <td className="py-3 px-4 text-neutral-900">{row.itemName}</td>
                                 <td className="py-3 px-4 text-neutral-600 max-w-[320px] whitespace-pre-wrap">{row.description || '—'}</td>
-                                <td className="py-3 px-4 text-neutral-700">{row.quantity}</td>
+                                <td className="py-3 px-4 text-neutral-700">
+                                  {row.quantity}
+                                  {row.measureLabel && row.measureLabel !== 'Quantity' && (
+                                    <span className="text-xs text-neutral-500 ml-1">{row.measureLabel}</span>
+                                  )}
+                                </td>
                                 <td className="py-3 px-4 text-neutral-700">{formatCurrency(row.unitCost)}</td>
                                 <td className="py-3 px-4 text-neutral-700">{formatCurrency(row.markup)}</td>
                                 <td className="py-3 px-4 text-neutral-700">{formatCurrency(row.totalAmount)}</td>

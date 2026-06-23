@@ -38,6 +38,7 @@ export interface InvoicePdfContext {
   lineItems: DrawInvoiceLineItem[];
   categorySummaries: InvoiceCategorySummary[];
   totalAmount: number;
+  allDraws: DrawInvoice[]; // All historical draws including the current one
 }
 
 export interface InvoiceCalculationResult {
@@ -318,6 +319,7 @@ export function calculateInvoiceLineItems(
         markup: row.markup,
         totalAmount: row.totalAmount,
         costType: row.costType,
+        measureLabel: row.measureLabel || 'Quantity',
         previousDrawn,
         currentDrawAmount: safeCurrentDrawAmount,
         remainingAmount,
@@ -620,6 +622,143 @@ export async function buildInvoicePdfBuffer(context: InvoicePdfContext): Promise
     cursorTop += 12;
   }
 
+  // NEW: Draw History by Category Table
+  if (context.allDraws && context.allDraws.length > 0) {
+    // Get unique categories from all draws
+    const categoriesMap = new Map<string, { code: string; name: string; budgetTotal: number }>();
+    
+    // Collect all categories and their budgets
+    context.categorySummaries.forEach((summary) => {
+      const key = `${summary.categoryCode}__${summary.categoryName}`;
+      categoriesMap.set(key, {
+        code: summary.categoryCode,
+        name: summary.categoryName,
+        budgetTotal: summary.budgetTotal,
+      });
+    });
+
+    const categories = Array.from(categoriesMap.values());
+    const sortedDraws = [...context.allDraws].sort((a, b) => a.drawNumber - b.drawNumber);
+
+    // Calculate totals for each category across all draws
+    const drawsByCategory = new Map<string, Map<number, number>>(); // category key -> draw number -> amount
+    const categoryTotals = new Map<string, number>(); // category key -> total drawn
+    
+    sortedDraws.forEach((draw) => {
+      draw.lineItems.forEach((item) => {
+        const key = `${item.categoryCode}__${item.categoryName}`;
+        
+        if (!drawsByCategory.has(key)) {
+          drawsByCategory.set(key, new Map());
+          categoryTotals.set(key, 0);
+        }
+        
+        const categoryDraws = drawsByCategory.get(key)!;
+        const currentAmount = categoryDraws.get(draw.drawNumber) || 0;
+        categoryDraws.set(draw.drawNumber, currentAmount + item.currentDrawAmount);
+        
+        categoryTotals.set(key, categoryTotals.get(key)! + item.currentDrawAmount);
+      });
+    });
+
+    ensureSpace(28);
+    drawText('Draw History by Category', marginLeft, cursorTop, boldFont, 14, colors.text);
+    cursorTop += 8;
+    drawText('Shows amounts drawn from each category per draw invoice', marginLeft, cursorTop, regularFont, 9, colors.muted);
+    cursorTop += 18;
+
+    // Calculate column widths dynamically
+    const codeColWidth = 42;
+    const categoryColWidth = 110;
+    const budgetColWidth = 65;
+    const drawColWidth = Math.min(55, Math.max(45, (contentWidth - codeColWidth - categoryColWidth - budgetColWidth - 65 - 70) / sortedDraws.length));
+    const totalDrawnColWidth = 65;
+    const remainingColWidth = 70;
+
+    // Header row
+    ensureSpace(32);
+    let headerX = marginLeft;
+    drawText('Code', headerX, cursorTop, boldFont, 7, colors.muted);
+    headerX += codeColWidth;
+    drawText('Category', headerX, cursorTop, boldFont, 7, colors.muted);
+    headerX += categoryColWidth;
+    drawText('Budget', headerX, cursorTop, boldFont, 7, colors.muted, { align: 'right' });
+    headerX += budgetColWidth;
+    
+    // Draw number columns
+    sortedDraws.forEach((draw) => {
+      drawText(`Draw ${draw.drawNumber}`, headerX, cursorTop, boldFont, 7, colors.muted, { 
+        maxWidth: drawColWidth, 
+        align: 'right' 
+      });
+      headerX += drawColWidth;
+    });
+    
+    drawText('Total Drawn', headerX, cursorTop, boldFont, 7, colors.muted, { align: 'right' });
+    headerX += totalDrawnColWidth;
+    drawText('Remaining', headerX, cursorTop, boldFont, 7, colors.muted, { align: 'right' });
+    
+    cursorTop += 12;
+    drawLine(marginLeft, cursorTop, marginLeft + contentWidth, 1, colors.line);
+    cursorTop += 6;
+
+    // Data rows
+    categories.forEach((category) => {
+      const key = `${category.code}__${category.name}`;
+      const categoryDrawAmounts = drawsByCategory.get(key) || new Map();
+      const totalDrawn = categoryTotals.get(key) || 0;
+      const remaining = category.budgetTotal - totalDrawn;
+
+      const categoryNameLines = splitText(category.name, regularFont, 7.5, categoryColWidth - 4);
+      const rowHeight = Math.max(18, categoryNameLines.length * 9 + 4);
+
+      ensureSpace(rowHeight + 3);
+      
+      let dataX = marginLeft;
+      drawText(category.code, dataX, cursorTop + 2, regularFont, 7.5, colors.text);
+      dataX += codeColWidth;
+      
+      categoryNameLines.forEach((line, index) => {
+        drawText(line, dataX, cursorTop + 2 + index * 9, regularFont, 7.5, colors.text);
+      });
+      dataX += categoryColWidth;
+      
+      drawText(formatCurrency(category.budgetTotal), dataX, cursorTop + 2, regularFont, 7.5, colors.text, { 
+        maxWidth: budgetColWidth, 
+        align: 'right' 
+      });
+      dataX += budgetColWidth;
+      
+      // Draw amounts for each draw
+      sortedDraws.forEach((draw) => {
+        const amount = categoryDrawAmounts.get(draw.drawNumber) || 0;
+        const displayText = amount > 0 ? formatCurrency(amount) : '—';
+        drawText(displayText, dataX, cursorTop + 2, regularFont, 7.5, amount > 0 ? colors.text : colors.muted, { 
+          maxWidth: drawColWidth, 
+          align: 'right' 
+        });
+        dataX += drawColWidth;
+      });
+      
+      drawText(formatCurrency(totalDrawn), dataX, cursorTop + 2, boldFont, 7.5, colors.text, { 
+        maxWidth: totalDrawnColWidth, 
+        align: 'right' 
+      });
+      dataX += totalDrawnColWidth;
+      
+      drawText(formatCurrency(remaining), dataX, cursorTop + 2, boldFont, 7.5, remaining > 0 ? rgb(0.13, 0.59, 0.21) : colors.text, { 
+        maxWidth: remainingColWidth, 
+        align: 'right' 
+      });
+      
+      cursorTop += rowHeight;
+      drawLine(marginLeft, cursorTop, marginLeft + contentWidth, 0.5, colors.line);
+      cursorTop += 3;
+    });
+
+    cursorTop += 12;
+  }
+
   ensureSpace(28);
   drawText('Budget Draw Detail', marginLeft, cursorTop, boldFont, 14, colors.text);
   cursorTop += 18;
@@ -672,7 +811,11 @@ export async function buildInvoicePdfBuffer(context: InvoicePdfContext): Promise
     });
     x += tableWidths[1];
 
-    drawText(String(lineItem.quantity), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[2], align: 'right' });
+    // Show quantity with measureLabel (e.g., "12 Length" or "150 Square Feet")
+    const qtyLabel = lineItem.measureLabel && lineItem.measureLabel !== 'Quantity' 
+      ? `${lineItem.quantity} ${lineItem.measureLabel}` 
+      : String(lineItem.quantity);
+    drawText(qtyLabel, x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[2], align: 'right' });
     x += tableWidths[2];
     drawText(formatCurrency(lineItem.unitCost), x, cursorTop + 2, regularFont, 8.5, colors.text, { maxWidth: tableWidths[3], align: 'right' });
     x += tableWidths[3];

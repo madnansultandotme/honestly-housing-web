@@ -12,6 +12,7 @@ import {
   buildInvoiceCategorySummaries,
   saveInvoicePdf,
 } from '@/lib/budget/service';
+import type { DrawInvoice } from '@/lib/budget/types';
 
 function toParticipant(source: Record<string, unknown> & { id: string } | null, fallbackName: string) {
   if (!source) {
@@ -90,6 +91,20 @@ export async function POST(request: NextRequest) {
     console.log('PDF generation: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=', process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET);
     console.log('PDF generation: admin initialized=', isAdminInitialized());
 
+    // Create a temporary draw object to include in the PDF context
+    const currentDraw: DrawInvoice = {
+      id: drawId,
+      drawNumber,
+      invoiceNumber,
+      date: invoiceDate,
+      totalAmount: calculation.totalAmount,
+      pdfPath: '',
+      downloadUrl: '',
+      createdAt: new Date().toISOString(),
+      createdBy: typeof createdBy === 'string' ? createdBy : '',
+      lineItems: calculation.lineItems,
+    };
+
     let pdfBuffer: Buffer;
     try {
       pdfBuffer = await buildInvoicePdfBuffer({
@@ -103,6 +118,7 @@ export async function POST(request: NextRequest) {
         lineItems: calculation.lineItems,
         categorySummaries: buildInvoiceCategorySummaries(state.rows, state.draws, amounts || {}),
         totalAmount: calculation.totalAmount,
+        allDraws: [...state.draws, currentDraw], // Include all historical draws plus the current one
       });
       console.log('PDF generation: buffer bytes=', Buffer.byteLength(pdfBuffer));
     } catch (err) {

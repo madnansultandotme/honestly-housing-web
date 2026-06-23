@@ -40,6 +40,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (typeof payload.itemCode === 'string') updates.itemCode = payload.itemCode;
     if (typeof payload.itemName === 'string') updates.itemName = payload.itemName;
     if (typeof payload.description === 'string') updates.description = payload.description;
+    if (typeof payload.measureLabel === 'string') updates.measureLabel = payload.measureLabel || 'Quantity';
     if (typeof payload.costType === 'string') {
       if (!allowedCostTypes.has(payload.costType)) {
         return NextResponse.json(

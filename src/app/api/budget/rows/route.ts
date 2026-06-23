@@ -12,7 +12,7 @@ function toNumber(value: unknown) {
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
-    const { projectId, categoryCode, categoryName, itemCode, itemName, description, quantity, unitCost, markup, costType } = payload;
+    const { projectId, categoryCode, categoryName, itemCode, itemName, description, quantity, unitCost, markup, costType, measureLabel } = payload;
 
     if (!projectId || !categoryCode || !categoryName || !itemCode || !itemName || !costType) {
       return NextResponse.json(
@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         markup: numericMarkup,
         totalAmount,
         costType,
+        measureLabel: typeof measureLabel === 'string' && measureLabel ? measureLabel : 'Quantity',
         createdAt: now,
         updatedAt: now,
       });
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
         markup: numericMarkup,
         totalAmount,
         costType,
+        measureLabel: typeof measureLabel === 'string' && measureLabel ? measureLabel : 'Quantity',
         createdAt: now,
         updatedAt: now,
       },

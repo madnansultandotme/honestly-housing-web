@@ -14,6 +14,7 @@ export interface BudgetRow {
   markup: number;
   totalAmount: number;
   costType: CostType;
+  measureLabel?: string; // e.g., "Quantity", "Length", "Square Feet"
   createdAt?: string;
   updatedAt?: string;
 }
@@ -40,6 +41,7 @@ export interface DrawInvoiceLineItem {
   markup: number;
   totalAmount: number;
   costType: CostType;
+  measureLabel?: string; // e.g., "Quantity", "Length", "Square Feet"
   previousDrawn: number;
   currentDrawAmount: number;
   remainingAmount: number;
