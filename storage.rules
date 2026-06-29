@@ -225,6 +225,30 @@ service firebase.storage {
                       isValidImageSize();
     }
     
+    // Scope of Work files (documents and images)
+    match /scopeOfWork/{projectId}/{categoryId}/{fileName} {
+      // Allow anyone with project access to read scope of work files
+      allow read: if isSignedIn() && hasAccessToProject(projectId);
+      
+      // Allow builders, designers, and admins to upload scope of work files
+      allow write: if isBuilderOrDesignerOrAdmin() && 
+                      hasAccessToProject(projectId) &&
+                      ((isImage() && isValidImageSize()) || 
+                       (isDocument() && isValidDocumentSize()));
+    }
+    
+    // Construction Contracts
+    match /contracts/{projectId}/{fileName} {
+      // Allow anyone with project access to read contracts
+      allow read: if isSignedIn() && hasAccessToProject(projectId);
+      
+      // Allow builders, designers, and admins to upload/delete contracts
+      allow write: if isBuilderOrDesignerOrAdmin() && 
+                      hasAccessToProject(projectId) &&
+                      isDocument() && 
+                      isValidDocumentSize();
+    }
+    
     // Deny all other paths
     match /{allPaths=**} {
       allow read, write: if false;

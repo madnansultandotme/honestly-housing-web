@@ -12,6 +12,7 @@ export interface RoomCounts {
   laundry: number;
   livingRoom: number;
   bonusRoom: number;
+  other?: Array<{ name: string; count: number }>;
 }
 
 interface RoomCountSelectorProps {
@@ -19,7 +20,7 @@ interface RoomCountSelectorProps {
   onChange: (counts: RoomCounts) => void;
 }
 
-type RoomType = keyof RoomCounts;
+type RoomType = keyof Omit<RoomCounts, 'other'>;
 
 interface RoomTypeConfig {
   key: RoomType;
@@ -39,6 +40,8 @@ const ROOM_TYPES: RoomTypeConfig[] = [
 ];
 
 export default function RoomCountSelector({ value, onChange }: RoomCountSelectorProps) {
+  const [newOtherRoomName, setNewOtherRoomName] = useState('');
+
   const handleIncrement = (type: RoomType) => {
     onChange({
       ...value,
@@ -61,8 +64,43 @@ export default function RoomCountSelector({ value, onChange }: RoomCountSelector
     });
   };
 
+  const handleAddOtherRoom = () => {
+    if (!newOtherRoomName.trim()) return;
+
+    const otherRooms = value.other || [];
+    onChange({
+      ...value,
+      other: [...otherRooms, { name: newOtherRoomName.trim(), count: 1 }],
+    });
+    setNewOtherRoomName('');
+  };
+
+  const handleOtherRoomCountChange = (index: number, count: number) => {
+    const otherRooms = value.other || [];
+    const updatedOther = [...otherRooms];
+    updatedOther[index] = { ...updatedOther[index], count: Math.max(0, count) };
+    onChange({
+      ...value,
+      other: updatedOther,
+    });
+  };
+
+  const handleRemoveOtherRoom = (index: number) => {
+    const otherRooms = value.other || [];
+    onChange({
+      ...value,
+      other: otherRooms.filter((_, i) => i !== index),
+    });
+  };
+
   const getTotalRooms = () => {
-    return Object.values(value).reduce((sum, count) => sum + count, 0);
+    const standardRoomsTotal = Object.keys(value)
+      .filter(key => key !== 'other')
+      .reduce((sum, key) => sum + (value[key as RoomType] || 0), 0);
+    
+    const otherRoomsTotal = (value.other || []).reduce((sum, room) => sum + room.count, 0);
+    
+    return standardRoomsTotal + otherRoomsTotal;
   };
 
   return (
@@ -121,6 +159,102 @@ export default function RoomCountSelector({ value, onChange }: RoomCountSelector
         ))}
       </div>
 
+      {/* Other Rooms Section */}
+      <div className="mt-8">
+        <h4 className="text-sm font-semibold text-neutral-900 mb-3">
+          Other Room Types
+        </h4>
+        <p className="text-xs text-neutral-600 mb-4">
+          Add custom room types that aren't listed above (e.g., Theater, Gym, Wine Cellar, Mudroom).
+        </p>
+
+        {/* Existing Other Rooms */}
+        {value.other && value.other.length > 0 && (
+          <div className="space-y-3 mb-4">
+            {value.other.map((room, index) => (
+              <Card key={index} className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-xl">🏠</span>
+                      <label className="block text-sm font-medium text-neutral-700">
+                        {room.name}
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-center gap-3">
+                      <button
+                        onClick={() => handleOtherRoomCountChange(index, room.count - 1)}
+                        disabled={room.count === 0}
+                        className="w-9 h-9 flex items-center justify-center rounded-full border-2 border-brass-600 text-brass-600 hover:bg-brass-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors touch-manipulation"
+                        aria-label={`Decrease ${room.name}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" />
+                        </svg>
+                      </button>
+
+                      <input
+                        type="number"
+                        min="0"
+                        value={room.count}
+                        onChange={(e) => handleOtherRoomCountChange(index, parseInt(e.target.value) || 0)}
+                        className="w-16 px-2 py-2 text-center text-xl font-bold border-2 border-neutral-300 rounded-button focus:outline-none focus:ring-2 focus:ring-brass-500 focus:border-brass-500"
+                        aria-label={`Number of ${room.name}`}
+                      />
+
+                      <button
+                        onClick={() => handleOtherRoomCountChange(index, room.count + 1)}
+                        className="w-9 h-9 flex items-center justify-center rounded-full border-2 border-brass-600 bg-brass-600 text-white hover:bg-brass-700 transition-colors touch-manipulation"
+                        aria-label={`Increase ${room.name}`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveOtherRoom(index)}
+                    className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-button transition-colors"
+                    title="Remove room type"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Add New Other Room */}
+        <Card className="p-4 bg-neutral-50 border-neutral-300">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={newOtherRoomName}
+              onChange={(e) => setNewOtherRoomName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newOtherRoomName.trim()) {
+                  e.preventDefault();
+                  handleAddOtherRoom();
+                }
+              }}
+              placeholder="Enter custom room type (e.g., Theater, Gym, Wine Cellar)"
+              className="flex-1 px-4 py-2 border-2 border-neutral-300 rounded-button focus:outline-none focus:ring-2 focus:ring-brass-500 focus:border-brass-500"
+            />
+            <button
+              onClick={handleAddOtherRoom}
+              disabled={!newOtherRoomName.trim()}
+              className="px-6 py-2 bg-brass-600 text-white rounded-button hover:bg-brass-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              Add
+            </button>
+          </div>
+        </Card>
+      </div>
+
       {/* Summary */}
       {getTotalRooms() > 0 && (
         <Card className="p-3 sm:p-4 bg-brass-50 border-brass-200">
@@ -134,7 +268,13 @@ export default function RoomCountSelector({ value, onChange }: RoomCountSelector
                 {ROOM_TYPES.filter(rt => value[rt.key] > 0).map((rt, idx, arr) => (
                   <span key={rt.key}>
                     {value[rt.key]} {rt.label.toLowerCase()}
-                    {idx < arr.length - 1 ? ', ' : ''}
+                    {idx < arr.length - 1 || (value.other && value.other.length > 0) ? ', ' : ''}
+                  </span>
+                ))}
+                {value.other && value.other.map((room, idx) => (
+                  <span key={idx}>
+                    {room.count} {room.name.toLowerCase()}
+                    {idx < value.other!.length - 1 ? ', ' : ''}
                   </span>
                 ))}
               </div>

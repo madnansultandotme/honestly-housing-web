@@ -71,6 +71,7 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
   const [showEditSelection, setShowEditSelection] = useState(false);
   const [selectedSelection, setSelectedSelection] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'category' | 'room'>('category'); // View toggle
 
   useEffect(() => {
     if (!user) {
@@ -163,6 +164,50 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
 
   const getSelectionsByCategory = (categoryId: string) => {
     return selections.filter(s => s.categoryId === categoryId);
+  };
+
+  // Group selections by Category → Room
+  const groupByCategory = () => {
+    const grouped: Record<string, Record<string, any[]>> = {};
+    
+    selections.forEach(selection => {
+      const categoryName = selection.categoryName || 'Uncategorized';
+      const roomName = selection.roomName || 'General';
+      
+      if (!grouped[categoryName]) {
+        grouped[categoryName] = {};
+      }
+      
+      if (!grouped[categoryName][roomName]) {
+        grouped[categoryName][roomName] = [];
+      }
+      
+      grouped[categoryName][roomName].push(selection);
+    });
+    
+    return grouped;
+  };
+
+  // Group selections by Room → Category
+  const groupByRoom = () => {
+    const grouped: Record<string, Record<string, any[]>> = {};
+    
+    selections.forEach(selection => {
+      const roomName = selection.roomName || 'General';
+      const categoryName = selection.categoryName || 'Uncategorized';
+      
+      if (!grouped[roomName]) {
+        grouped[roomName] = {};
+      }
+      
+      if (!grouped[roomName][categoryName]) {
+        grouped[roomName][categoryName] = [];
+      }
+      
+      grouped[roomName][categoryName].push(selection);
+    });
+    
+    return grouped;
   };
 
   const groupBySubCategory = (items: any[]) => {
@@ -399,6 +444,236 @@ export default function SelectionsPage({ params }: { params: Promise<{ id: strin
 
         {/* Categories */}
         {!categoryId && (
+          <>
+            {/* View Toggle */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-display font-semibold text-neutral-900">
+                {viewMode === 'category' ? 'By Category' : 'By Room'}
+              </h3>
+              <div className="flex items-center gap-2 bg-white border border-neutral-200 rounded-button p-1">
+                <button
+                  onClick={() => setViewMode('category')}
+                  className={`px-4 py-2 rounded-button text-sm font-medium transition-colors ${
+                    viewMode === 'category'
+                      ? 'bg-brass-600 text-white'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  By Category
+                </button>
+                <button
+                  onClick={() => setViewMode('room')}
+                  className={`px-4 py-2 rounded-button text-sm font-medium transition-colors ${
+                    viewMode === 'room'
+                      ? 'bg-brass-600 text-white'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  By Room
+                </button>
+              </div>
+            </div>
+
+            {/* By Category View */}
+            {viewMode === 'category' && (
+              <div className="space-y-8">
+                {Object.entries(groupByCategory()).map(([categoryName, rooms]) => {
+                  const categorySelections = Object.values(rooms).flat();
+                  const completed = categorySelections.filter(s => isSelectionCompleted(s.status)).length;
+                  
+                  return (
+                    <Card key={categoryName} className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h4 className="text-xl font-semibold text-neutral-900 mb-2">
+                            {categoryName}
+                          </h4>
+                          <div className="text-sm text-neutral-600">
+                            {completed} of {categorySelections.length} completed
+                          </div>
+                        </div>
+                        <div className="w-48">
+                          <div className="w-full bg-neutral-100 rounded-full h-2">
+                            <div
+                              className="bg-brass-600 h-2 rounded-full transition-all"
+                              style={{ 
+                                width: `${categorySelections.length > 0 ? (completed / categorySelections.length) * 100 : 0}%` 
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        {Object.entries(rooms).map(([roomName, roomSelections]) => (
+                          <div key={roomName} className="border-t border-neutral-200 pt-4 first:border-t-0 first:pt-0">
+                            <h5 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide mb-3">
+                              {roomName}
+                            </h5>
+                            <div className="space-y-2">
+                              {roomSelections.map((selection: any) => (
+                                <div key={selection.id} className="bg-taupe-50 border border-neutral-200 rounded-button p-3 hover:shadow-sm transition-shadow">
+                                  <div className="flex items-center justify-between">
+                                    <Link href={`/projects/${id}/selections/${selection.id}`} className="flex-1">
+                                      <div className="font-medium text-neutral-900">{getSelectionDisplayName(selection)}</div>
+                                      {selection.quantity && selection.quantity > 1 && (
+                                        <div className="text-xs text-neutral-500 mt-1">Qty: {selection.quantity}</div>
+                                      )}
+                                    </Link>
+                                    <div className="flex items-center gap-2 ml-3">
+                                      <StatusBadge status={selection.status} />
+                                      {isBuilder && (
+                                        <div className="flex gap-1">
+                                          <button
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              handleEditSelection(selection);
+                                            }}
+                                            className="p-2 text-brass-600 hover:bg-brass-50 rounded-button transition-colors"
+                                            title="Edit"
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              handleDeleteSelection(selection.id);
+                                            }}
+                                            disabled={deletingId === selection.id}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-button transition-colors disabled:opacity-50"
+                                            title="Delete"
+                                          >
+                                            {deletingId === selection.id ? (
+                                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                              </svg>
+                                            ) : (
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                              </svg>
+                                            )}
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* By Room View */}
+            {viewMode === 'room' && (
+              <div className="space-y-8">
+                {Object.entries(groupByRoom()).map(([roomName, categories]) => {
+                  const roomSelections = Object.values(categories).flat();
+                  const completed = roomSelections.filter(s => isSelectionCompleted(s.status)).length;
+                  
+                  return (
+                    <Card key={roomName} className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h4 className="text-xl font-semibold text-neutral-900 mb-2">
+                            {roomName}
+                          </h4>
+                          <div className="text-sm text-neutral-600">
+                            {completed} of {roomSelections.length} completed
+                          </div>
+                        </div>
+                        <div className="w-48">
+                          <div className="w-full bg-neutral-100 rounded-full h-2">
+                            <div
+                              className="bg-brass-600 h-2 rounded-full transition-all"
+                              style={{ 
+                                width: `${roomSelections.length > 0 ? (completed / roomSelections.length) * 100 : 0}%` 
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        {Object.entries(categories).map(([categoryName, categorySelections]) => (
+                          <div key={categoryName} className="border-t border-neutral-200 pt-4 first:border-t-0 first:pt-0">
+                            <h5 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide mb-3">
+                              {categoryName}
+                            </h5>
+                            <div className="space-y-2">
+                              {categorySelections.map((selection: any) => (
+                                <div key={selection.id} className="bg-taupe-50 border border-neutral-200 rounded-button p-3 hover:shadow-sm transition-shadow">
+                                  <div className="flex items-center justify-between">
+                                    <Link href={`/projects/${id}/selections/${selection.id}`} className="flex-1">
+                                      <div className="font-medium text-neutral-900">{getSelectionDisplayName(selection)}</div>
+                                      {selection.quantity && selection.quantity > 1 && (
+                                        <div className="text-xs text-neutral-500 mt-1">Qty: {selection.quantity}</div>
+                                      )}
+                                    </Link>
+                                    <div className="flex items-center gap-2 ml-3">
+                                      <StatusBadge status={selection.status} />
+                                      {isBuilder && (
+                                        <div className="flex gap-1">
+                                          <button
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              handleEditSelection(selection);
+                                            }}
+                                            className="p-2 text-brass-600 hover:bg-brass-50 rounded-button transition-colors"
+                                            title="Edit"
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              handleDeleteSelection(selection.id);
+                                            }}
+                                            disabled={deletingId === selection.id}
+                                            className="p-2 text-red-600 hover:bg-red-50 rounded-button transition-colors disabled:opacity-50"
+                                            title="Delete"
+                                          >
+                                            {deletingId === selection.id ? (
+                                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                              </svg>
+                                            ) : (
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                              </svg>
+                                            )}
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* OLD Category Grid View - Remove or comment out */}
+        {false && !categoryId && (
           <div className="space-y-6">
             <h3 className="text-xl font-display font-semibold text-neutral-900">
               Selection Categories

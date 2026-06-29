@@ -9,8 +9,10 @@ export interface BudgetCategory {
   code: string;
   name: string;
   description: string;
-  displayOrder: number;
-  isDefault: boolean;
+  displayOrder?: number;
+  isDefault?: boolean;
+  isOptional?: boolean;
+  isCustom?: boolean;
 }
 
 /**
@@ -221,6 +223,31 @@ export const STANDARD_BUDGET_CATEGORIES: BudgetCategory[] = [
  */
 export function getDefaultBudgetCategories(): BudgetCategory[] {
   return STANDARD_BUDGET_CATEGORIES.filter(cat => cat.isDefault);
+}
+
+/**
+ * Get custom or default budget categories (prioritizes custom from localStorage)
+ * This function checks localStorage for custom categories first
+ */
+export function getBudgetCategories(): BudgetCategory[] {
+  if (typeof window === 'undefined') {
+    // Server-side: return defaults
+    return getDefaultBudgetCategories();
+  }
+  
+  try {
+    const saved = localStorage.getItem('customBudgetCategories');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load custom budget categories:', error);
+  }
+  
+  return getDefaultBudgetCategories();
 }
 
 /**

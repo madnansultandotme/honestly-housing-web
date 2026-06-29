@@ -24,10 +24,39 @@ class ApiClient {
     };
 
     try {
+      console.log(`🌐 API Request: ${options.method || 'GET'} ${url}`);
+      if (config.body) {
+        console.log('📦 Request body:', config.body);
+      }
+
       const response = await fetch(url, config);
-      const data = await response.json();
+      
+      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+      console.log(`📡 Response headers:`, Object.fromEntries(response.headers.entries()));
+
+      // Check if response has content
+      const contentType = response.headers.get('content-type');
+      const contentLength = response.headers.get('content-length');
+      
+      console.log(`📊 Content-Type: ${contentType}, Content-Length: ${contentLength}`);
+
+      // Get response text first to see what we're actually receiving
+      const responseText = await response.text();
+      console.log(`📄 Raw response text (first 500 chars):`, responseText.substring(0, 500));
+
+      // Try to parse as JSON
+      let data;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+        console.log('✅ Successfully parsed JSON response');
+      } catch (parseError) {
+        console.error('❌ Failed to parse JSON response:', parseError);
+        console.error('Raw response:', responseText);
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
+      }
 
       if (!response.ok) {
+        console.error('❌ Request failed:', data.error || response.statusText);
         throw new Error(data.error || 'Request failed');
       }
 
@@ -48,9 +77,16 @@ class ApiClient {
         if (Object.prototype.hasOwnProperty.call(data, 'builderOrg')) return data.builderOrg;
       }
 
+      console.log('✅ Returning data:', data);
       return data;
     } catch (error: any) {
-      console.error('API request error:', error);
+      console.error('❌ API request error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        url,
+        method: options.method || 'GET'
+      });
       throw error;
     }
   }

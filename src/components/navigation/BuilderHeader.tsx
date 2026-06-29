@@ -157,6 +157,20 @@ export default function BuilderHeader({
                   >
                     Organization Settings
                   </Link>
+                  <Link
+                    href="/builder/budget-structure"
+                    className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    Budget Structure
+                  </Link>
+                  <Link
+                    href="/builder/budget-categories"
+                    className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    Budget Categories (Legacy)
+                  </Link>
                   <button
                     onClick={() => {
                       setShowUserMenu(false);

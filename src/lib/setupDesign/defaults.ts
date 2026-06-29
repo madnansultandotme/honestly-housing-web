@@ -2,6 +2,9 @@ export interface SetupDesignOption {
   category: string;
   name: string;
   measureLabel: string;
+  inputType?: 'number' | 'select' | 'dual'; // dual = both quantity and select
+  selectOptions?: string[];
+  selectLabel?: string; // Label for the select input in dual mode
 }
 
 export interface SetupDesignGroup {
@@ -39,7 +42,7 @@ export const DEFAULT_SETUP_DESIGN: SetupDesignConfig = {
     appliesTo: 'Applies to primary bedrooms, additional bedrooms, foyers, and offices.',
     options: [
       { category: 'Electrical', name: 'Ceiling Fan', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Down Rod', measureLabel: 'Length' },
+      { category: 'Electrical', name: 'Down Rod', measureLabel: 'Quantity', inputType: 'dual', selectOptions: ['6"', '12"', '18"', '24"', '36"', '48"', '60"', '72"'], selectLabel: 'Length' },
       { category: 'Electrical', name: 'Chandelier', measureLabel: 'Quantity' },
       { category: 'Electrical', name: 'Sconce', measureLabel: 'Quantity' },
       { category: 'Hardware', name: 'Cabinet Pulls', measureLabel: 'Quantity' },
@@ -59,7 +62,7 @@ export const DEFAULT_SETUP_DESIGN: SetupDesignConfig = {
       { category: 'Plumbing', name: 'Sink Faucet', measureLabel: 'Quantity' },
       { category: 'Plumbing', name: 'Shower System', measureLabel: 'Number of Shower Heads' },
       { category: 'Plumbing', name: 'Shower Drain', measureLabel: 'Quantity' },
-      { category: 'Plumbing', name: 'Alcove Tub', measureLabel: 'Quantity' },
+      { category: 'Plumbing', name: 'Alcove Tub', measureLabel: 'Right or Left', inputType: 'select', selectOptions: ['Right', 'Left'] },
       { category: 'Plumbing', name: 'Drop In Tub', measureLabel: 'Quantity' },
       { category: 'Plumbing', name: 'Overflow + Drain', measureLabel: 'Quantity' },
       { category: 'Hardware', name: 'Toilet Paper Holder', measureLabel: 'Quantity' },
@@ -102,7 +105,7 @@ export const DEFAULT_SETUP_DESIGN: SetupDesignConfig = {
     appliesTo: 'Applies to living rooms, dining rooms, bonus rooms, and similar shared spaces.',
     options: [
       { category: 'Electrical', name: 'Ceiling Fan', measureLabel: 'Quantity' },
-      { category: 'Electrical', name: 'Down Rod', measureLabel: 'Length' },
+      { category: 'Electrical', name: 'Down Rod', measureLabel: 'Quantity', inputType: 'dual', selectOptions: ['6"', '12"', '18"', '24"', '36"', '48"', '60"', '72"'], selectLabel: 'Length' },
       { category: 'Electrical', name: 'Chandelier', measureLabel: 'Quantity' },
       { category: 'Electrical', name: 'Sconce', measureLabel: 'Quantity' },
       { category: 'Electrical', name: 'Recessed Light', measureLabel: 'Quantity' },

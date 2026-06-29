@@ -10,6 +10,7 @@ export interface RoomFixture {
   category: string;
   name: string;
   quantity: number;
+  value?: string; // For select inputs like "Right" or "Left"
   imageUrl?: string;
 }
 
