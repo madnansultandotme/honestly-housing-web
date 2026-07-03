@@ -6,11 +6,12 @@ import Card from './Card';
 export interface RoomCounts {
   bedrooms: number;
   bathrooms: number;
-  office: number;
+  kitchen: number;
+  livingRoom: number;
   diningRoom: number;
   pantry: number;
   laundry: number;
-  livingRoom: number;
+  office: number;
   bonusRoom: number;
   other?: Array<{ name: string; count: number }>;
 }
@@ -31,11 +32,12 @@ interface RoomTypeConfig {
 const ROOM_TYPES: RoomTypeConfig[] = [
   { key: 'bedrooms', label: 'Bedrooms', icon: '🛏️' },
   { key: 'bathrooms', label: 'Bathrooms', icon: '🚿' },
-  { key: 'office', label: 'Office', icon: '💼' },
+  { key: 'kitchen', label: 'Kitchen', icon: '🍳' },
+  { key: 'livingRoom', label: 'Living Room', icon: '🛋️' },
   { key: 'diningRoom', label: 'Dining Room', icon: '🍽️' },
   { key: 'pantry', label: 'Pantry', icon: '🥫' },
   { key: 'laundry', label: 'Laundry', icon: '🧺' },
-  { key: 'livingRoom', label: 'Living Room', icon: '🛋️' },
+  { key: 'office', label: 'Office', icon: '💼' },
   { key: 'bonusRoom', label: 'Bonus Room', icon: '✨' },
 ];
 

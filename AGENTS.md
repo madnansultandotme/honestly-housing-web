@@ -100,14 +100,15 @@ The system uses 3 main project statuses:
      - **Can skip categories and fill in later**
      - **This budget feeds into Budget & Draw system**
    - **Step 3: Room Counts** (Simplified Entry - Multiple Room Types)
-     - **Enter counts for 8 different room types:**
+     - **Enter counts for 9 different room types:**
        - **Bedrooms** - using +/- buttons or direct input
        - **Bathrooms** - using +/- buttons or direct input
-       - **Office** - using +/- buttons or direct input
+       - **Kitchen** - using +/- buttons or direct input
+       - **Living Room** - using +/- buttons or direct input
        - **Dining Room** - using +/- buttons or direct input
        - **Pantry** - using +/- buttons or direct input
        - **Laundry** - using +/- buttons or direct input
-       - **Living Room** - using +/- buttons or direct input
+       - **Office** - using +/- buttons or direct input
        - **Bonus Room** - using +/- buttons or direct input
      - System shows summary of total rooms across all types
    - **Step 4: Room Names** (Auto-Generated with Edit)
@@ -119,11 +120,14 @@ The system uses 3 main project statuses:
          - First bathroom becomes "Primary Bathroom"
          - Last bathroom defaults to "Half Bath" (if multiple bathrooms)
          - Other bathrooms: "Bathroom 2", "Bathroom 3", etc.
+       - **Kitchen:**
+         - Single kitchen: "Kitchen"
+         - Multiple kitchens: "Kitchen 2", "Kitchen 3", etc.
        - **Other Room Types:**
-         - Single room: "Office", "Dining Room", "Pantry", etc.
-         - Multiple rooms: "Office 2", "Living Room 2", etc.
+         - Single room: "Living Room", "Dining Room", "Pantry", "Laundry Room", "Office", "Bonus Room", etc.
+         - Multiple rooms: "Living Room 2", "Office 2", etc.
      - **Click "Edit Name" next to any room** to customize the name
-     - All rooms shown grouped by type with emoji icons (🛏️ Bedrooms, 🚿 Bathrooms, 💼 Offices, etc.)
+     - All rooms shown grouped by type with emoji icons (🛏️ Bedrooms, 🚿 Bathrooms, 🍳 Kitchen, 🛋️ Living Room, etc.)
      - Comprehensive summary at bottom shows all room types and counts
    - **Step 4: Room & Fixture Configuration**
      - **Add fixtures to each auto-generated room**
@@ -417,9 +421,9 @@ The system uses 3 main project statuses:
 - [ ] Can create new client when no results found
 - [ ] New client receives welcome email with credentials
 - [ ] Newly created client is automatically selected
-- [ ] **Can enter counts for all 8 room types (bedrooms, bathrooms, office, dining room, pantry, laundry, living room, bonus room)**
-- [ ] **Room count selector shows all room types with icons**
-- [ ] **Auto-generated room names work correctly for all room types**
+- [ ] **Can enter counts for all 9 room types (bedrooms, bathrooms, kitchen, living room, dining room, pantry, laundry, office, bonus room)**
+- [ ] **Room count selector shows all room types with icons including Kitchen (🍳)**
+- [ ] **Auto-generated room names work correctly for all room types including Kitchen**
 - [ ] **Can edit auto-generated room names inline**
 - [ ] **Room groups display correctly with emoji icons**
 - [ ] **Summary shows comprehensive count of all room types**
@@ -936,9 +940,9 @@ The room configuration has been streamlined into 3 easy steps:
 - Email normalization for consistent user search
 - **Auto-create client accounts during project creation** with credential email
 - **Simplified room naming** - enter counts, auto-generate names with edit capability
-- **Room count selector** - supports 8 room types (bedrooms, bathrooms, office, dining room, pantry, laundry, living room, bonus room)
-- **Multiple room type support** - add office, dining room, pantry, laundry, living room, and bonus room (beyond just bedrooms/bathrooms)
-- **Auto-generated room names** - smart naming (Primary Bedroom, Bedroom 2, Half Bath, Office, Dining Room, etc.)
+- **Room count selector** - supports 9 room types (bedrooms, bathrooms, kitchen, living room, dining room, pantry, laundry, office, bonus room)
+- **Multiple room type support** - add kitchen, living room, dining room, pantry, laundry, office, and bonus room (beyond just bedrooms/bathrooms)
+- **Auto-generated room names** - smart naming (Primary Bedroom, Bedroom 2, Half Bath, Kitchen, Living Room, Dining Room, Office, etc.)
 - **Inline room name editing** - customize any auto-generated name
 - **Room grouping with icons** - organized display with emoji icons for each room type
 - **Dynamic room builder** - add any room with custom name and type
