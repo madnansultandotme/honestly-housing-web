@@ -143,7 +143,23 @@ The system uses 3 main project statuses:
        - Living Room: Electrical (Fan, Down Rod), Flooring
        - Half Bath: Electrical (Vanity Light), Plumbing (Bathroom Faucet, Drain), Mirror
        - Kitchen: Electrical (multiple lights), Plumbing (Faucet), Countertops, Cabinetry, Appliances
-   - **Step 5: Paint Selections** (Dedicated Paint Section - Not in fixtures)
+   - **Step 5: Systems Configuration** (NEW)
+     - **HVAC System:**
+       - Enter tonnage (ton capacity)
+       - Enter brand (e.g., Carrier, Trane)
+       - Enter location (e.g., Attic, Garage)
+     - **Septic System:**
+       - Select if Aerobic system (yes/no)
+       - If yes: Choose Spray Heads or Drip System
+       - Select if has Tank (yes/no)
+     - **Propane Tank:**
+       - Select size: 250 gallon, 500 gallon, or Other (custom)
+     - **Water Heater:**
+       - Select fuel type: Gas, Propane, or Electric
+       - Select type: Tankless or Tank
+       - If Tank: Enter size in gallons
+     - **Auto-population:** This data automatically feeds into HVAC and Plumbing scope of work
+   - **Step 6: Paint Selections** (Dedicated Paint Section - Not in fixtures)
      - **Add paint colors** separate from room fixtures
      - Paint data structure: image, color name, paint code, sheen, notes (NO price)
      - **Two assignment modes:**
@@ -997,6 +1013,8 @@ The room configuration has been streamlined into 3 easy steps:
 - **Budget entry during project creation** - set budgeted amounts per category
 - **Automatic budget integration** - feeds into Budget & Draw system
 - **Running budget total** - see total project budget in real-time
+- **Systems Configuration** - configure HVAC, plumbing, septic, propane, and water heater specifications
+- **Systems auto-population** - systems data automatically populates HVAC and Plumbing scope of work sections
 
 ### ❌ Not Implemented
 - AI Mood Board generation (marked as "coming soon")

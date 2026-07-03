@@ -16,7 +16,7 @@ import PlumbingScope from './PlumbingScope';
 import ElectricalScope from './ElectricalScope';
 import MasonryScope from './MasonryScope';
 import CabinetryScope from './CabinetryScope';
-import { generatePlumbingScope, generateElectricalScope } from '@/lib/scope-of-work/integration';
+import { generatePlumbingScope, generateElectricalScope, mergeSystemsIntoPlumbing, extractHVACFromSystems, generateSepticNotes } from '@/lib/scope-of-work/integration';
 
 interface RoomFixture {
   category: string;
@@ -49,6 +49,7 @@ interface ScopeOfWorkStepProps {
   }) => void;
   projectId?: string;
   roomDetails?: RoomDetail[]; // Optional: for auto-populating plumbing/electrical
+  systemsData?: any; // Optional: for auto-populating HVAC, plumbing systems
 }
 
 export default function ScopeOfWorkStep({
@@ -57,6 +58,7 @@ export default function ScopeOfWorkStep({
   onScopeChange,
   projectId = 'temp',
   roomDetails = [],
+  systemsData,
 }: ScopeOfWorkStepProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
@@ -88,12 +90,27 @@ export default function ScopeOfWorkStep({
 
     // Auto-populate plumbing and electrical data if not already populated
     let initialData = scope.data;
+    let initialNotes = scope.notes;
     const lowerName = categoryName.toLowerCase();
     
     if (lowerName.includes('plumbing') && roomDetails.length > 0 && !scope.data?.roomSummary) {
       initialData = generatePlumbingScope(roomDetails);
+      // Merge systems data if available
+      if (systemsData) {
+        initialData = mergeSystemsIntoPlumbing(initialData, systemsData);
+      }
     } else if (lowerName.includes('electrical') && roomDetails.length > 0 && !scope.data?.roomSummary) {
       initialData = generateElectricalScope(roomDetails);
+    } else if (lowerName.includes('hvac') && systemsData?.hvac && !scope.data?.brand) {
+      initialData = extractHVACFromSystems(systemsData);
+    }
+
+    // Add septic notes to Site Work or Foundation categories
+    if ((lowerName.includes('site') || lowerName.includes('foundation')) && systemsData && !scope.notes) {
+      const septicNotes = generateSepticNotes(systemsData);
+      if (septicNotes) {
+        initialNotes = septicNotes;
+      }
     }
 
     const commonProps = {
@@ -103,7 +120,7 @@ export default function ScopeOfWorkStep({
       onChange: (data: any) => onScopeChange(categoryId, { ...scope, data, status: 'completed' }),
       onStatusChange: (status: ScopeStatus) => onScopeChange(categoryId, { ...scope, status }),
       status: scope.status,
-      notes: scope.notes,
+      notes: initialNotes,
       onNotesChange: (notes: string) => onScopeChange(categoryId, { ...scope, notes }),
       files: scope.files,
       onFilesChange: (files: string[]) => onScopeChange(categoryId, { ...scope, files }),

@@ -199,3 +199,87 @@ export function formatElectricalSummary(room: ElectricalRoomSummary): string {
     .map(f => `${f.count} ${f.type}${f.count > 1 ? 's' : ''}`)
     .join(', ');
 }
+
+/**
+ * Merge systems data into plumbing scope
+ */
+export function mergeSystemsIntoPlumbing(
+  plumbingData: PlumbingData,
+  systemsData: any
+): PlumbingData {
+  if (!systemsData) return plumbingData;
+
+  const merged = { ...plumbingData };
+
+  // Merge water heater data
+  if (systemsData.waterHeater) {
+    // Map fuel type to PlumbingData type
+    let heaterType: 'gas' | 'electric' | 'propaneTank' | 'tankless' | '' = '';
+    if (systemsData.waterHeater.type === 'tankless') {
+      heaterType = 'tankless';
+    } else if (systemsData.waterHeater.fuelType === 'gas') {
+      heaterType = 'gas';
+    } else if (systemsData.waterHeater.fuelType === 'electric') {
+      heaterType = 'electric';
+    } else if (systemsData.waterHeater.fuelType === 'propane') {
+      heaterType = 'propaneTank';
+    }
+
+    merged.waterHeater = {
+      type: heaterType,
+      location: 'other',
+      otherLocation: systemsData.waterHeater.tankSize ? 
+        `${systemsData.waterHeater.tankSize} Gallon Tank` : 
+        'See systems configuration',
+    };
+  }
+
+  // Merge propane data
+  if (systemsData.propane && systemsData.propane.size) {
+    merged.propane = true;
+    merged.propaneLocation = systemsData.propane.size === 'other' 
+      ? systemsData.propane.otherSize 
+      : `${systemsData.propane.size} Gallon`;
+  }
+
+  return merged;
+}
+
+/**
+ * Generate septic notes from systems data
+ */
+export function generateSepticNotes(systemsData: any): string {
+  if (!systemsData?.septic) return '';
+
+  const notes: string[] = [];
+
+  if (systemsData.septic.isAerobic) {
+    notes.push('Septic System: Aerobic');
+    if (systemsData.septic.aerobicType === 'sprayHeads') {
+      notes.push('Type: Spray Heads');
+    } else if (systemsData.septic.aerobicType === 'dripSystem') {
+      notes.push('Type: Drip System');
+    }
+  }
+
+  if (systemsData.septic.hasTank) {
+    notes.push('Has septic tank');
+  }
+
+  return notes.length > 0 ? `\n\nSeptic System Configuration:\n${notes.join('\n')}` : '';
+}
+
+/**
+ * Extract HVAC data from systems configuration
+ */
+export function extractHVACFromSystems(systemsData: any): any {
+  if (!systemsData?.hvac) return {};
+
+  return {
+    systemType: '', // This would need to be determined from heating/cooling type
+    size: parseFloat(systemsData.hvac.tonnage) || 0,
+    brand: systemsData.hvac.brand || '',
+    interiorUnitLocation: systemsData.hvac.location || '',
+    exteriorUnitLocation: '',
+  };
+}
