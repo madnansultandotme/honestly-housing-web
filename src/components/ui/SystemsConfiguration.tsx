@@ -3,6 +3,27 @@
 import { useState } from 'react';
 import Card from './Card';
 import Input from './Input';
+import Button from './Button';
+import { TrashIcon, PencilIcon, PlusIcon } from '@heroicons/react/24/outline';
+
+// Standard trade categories that map to scope of work sections
+export const TRADE_CATEGORIES = [
+  { id: 'hvac', name: 'HVAC', icon: '❄️' },
+  { id: 'plumbing', name: 'Plumbing', icon: '🚿' },
+  { id: 'electrical', name: 'Electrical', icon: '⚡' },
+  { id: 'septic', name: 'Septic', icon: '🏗️' },
+  { id: 'propane', name: 'Propane/Gas', icon: '🔥' },
+  { id: 'general', name: 'General', icon: '📋' },
+] as const;
+
+export type TradeCategory = typeof TRADE_CATEGORIES[number]['id'];
+
+export interface CustomSystem {
+  id: string;
+  name: string;
+  trade: TradeCategory;
+  specifications: Record<string, string>; // Key-value pairs for custom fields
+}
 
 export interface SystemsData {
   hvac: {
@@ -24,6 +45,7 @@ export interface SystemsData {
     type: 'tankless' | 'tank' | '';
     tankSize: string;
   };
+  customSystems?: CustomSystem[];
 }
 
 interface SystemsConfigurationProps {
@@ -32,6 +54,13 @@ interface SystemsConfigurationProps {
 }
 
 export default function SystemsConfiguration({ value, onChange }: SystemsConfigurationProps) {
+  const [showAddSystem, setShowAddSystem] = useState(false);
+  const [newSystemName, setNewSystemName] = useState('');
+  const [newSystemTrade, setNewSystemTrade] = useState<TradeCategory>('general');
+  const [editingSystemId, setEditingSystemId] = useState<string | null>(null);
+
+  const customSystems = value.customSystems || [];
+
   const updateHvac = (field: keyof SystemsData['hvac'], val: string) => {
     onChange({
       ...value,
@@ -58,6 +87,98 @@ export default function SystemsConfiguration({ value, onChange }: SystemsConfigu
       ...value,
       waterHeater: { ...value.waterHeater, [field]: val },
     });
+  };
+
+  const handleAddCustomSystem = () => {
+    if (!newSystemName.trim()) return;
+
+    const newSystem: CustomSystem = {
+      id: `custom-system-${Date.now()}`,
+      name: newSystemName.trim(),
+      trade: newSystemTrade,
+      specifications: {},
+    };
+
+    onChange({
+      ...value,
+      customSystems: [...customSystems, newSystem],
+    });
+
+    setNewSystemName('');
+    setNewSystemTrade('general');
+    setShowAddSystem(false);
+  };
+
+  const handleDeleteSystem = (systemId: string) => {
+    if (!confirm('Delete this system?')) return;
+
+    onChange({
+      ...value,
+      customSystems: customSystems.filter(s => s.id !== systemId),
+    });
+  };
+
+  const handleUpdateSystemSpec = (systemId: string, key: string, val: string) => {
+    onChange({
+      ...value,
+      customSystems: customSystems.map(s => {
+        if (s.id === systemId) {
+          return {
+            ...s,
+            specifications: {
+              ...s.specifications,
+              [key]: val,
+            },
+          };
+        }
+        return s;
+      }),
+    });
+  };
+
+  const handleAddSpecField = (systemId: string, key: string) => {
+    if (!key.trim()) return;
+
+    onChange({
+      ...value,
+      customSystems: customSystems.map(s => {
+        if (s.id === systemId) {
+          return {
+            ...s,
+            specifications: {
+              ...s.specifications,
+              [key.trim()]: '',
+            },
+          };
+        }
+        return s;
+      }),
+    });
+  };
+
+  const handleDeleteSpecField = (systemId: string, key: string) => {
+    onChange({
+      ...value,
+      customSystems: customSystems.map(s => {
+        if (s.id === systemId) {
+          const newSpecs = { ...s.specifications };
+          delete newSpecs[key];
+          return {
+            ...s,
+            specifications: newSpecs,
+          };
+        }
+        return s;
+      }),
+    });
+  };
+
+  const getTradeName = (tradeId: TradeCategory) => {
+    return TRADE_CATEGORIES.find(t => t.id === tradeId)?.name || tradeId;
+  };
+
+  const getTradeIcon = (tradeId: TradeCategory) => {
+    return TRADE_CATEGORIES.find(t => t.id === tradeId)?.icon || '📋';
   };
 
   return (
@@ -388,6 +509,180 @@ export default function SystemsConfiguration({ value, onChange }: SystemsConfigu
           </div>
         </div>
       </Card>
+
+      {/* Custom Systems Section */}
+      <div className="border-t-2 border-brass-200 pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h4 className="text-base font-semibold text-neutral-900">Additional Systems</h4>
+            <p className="text-sm text-neutral-600 mt-1">
+              Add any other systems not covered above (Generator, Well Pump, etc.)
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowAddSystem(true)}
+            variant="outline"
+            size="sm"
+          >
+            <PlusIcon className="w-4 h-4 mr-2" />
+            Add System
+          </Button>
+        </div>
+
+        {/* Add System Form */}
+        {showAddSystem && (
+          <Card className="p-6 mb-4 border-brass-300 bg-brass-50">
+            <h5 className="text-sm font-semibold text-neutral-900 mb-4">Add New System</h5>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  System Name *
+                </label>
+                <Input
+                  type="text"
+                  placeholder="e.g., Generator, Well Pump, Solar Panels"
+                  value={newSystemName}
+                  onChange={(e) => setNewSystemName(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Select Trade/Scope *
+                </label>
+                <select
+                  value={newSystemTrade}
+                  onChange={(e) => setNewSystemTrade(e.target.value as TradeCategory)}
+                  className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brass-500 focus:border-brass-500 bg-white"
+                >
+                  {TRADE_CATEGORIES.map((trade) => (
+                    <option key={trade.id} value={trade.id}>
+                      {trade.icon} {trade.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-neutral-500 mt-1">
+                  This system will be attached to the selected trade's scope of work
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button onClick={handleAddCustomSystem} disabled={!newSystemName.trim()}>
+                  Add System
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setShowAddSystem(false);
+                  setNewSystemName('');
+                  setNewSystemTrade('general');
+                }}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Custom Systems List */}
+        {customSystems.length > 0 && (
+          <div className="space-y-4">
+            {customSystems.map((system) => (
+              <Card key={system.id} className="p-6 border-neutral-300">
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-brass-100 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xl">{getTradeIcon(system.trade)}</span>
+                      </div>
+                      <div>
+                        <h5 className="text-base font-semibold text-neutral-900">{system.name}</h5>
+                        <p className="text-xs text-neutral-600 mt-0.5">
+                          Trade: <span className="font-medium text-brass-700">{getTradeName(system.trade)}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteSystem(system.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete system"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Specifications */}
+                  <div className="space-y-3 pl-13">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm font-medium text-neutral-700">
+                        Specifications
+                      </label>
+                      <button
+                        onClick={() => {
+                          const fieldName = prompt('Enter specification name (e.g., Brand, Model, Size):');
+                          if (fieldName) handleAddSpecField(system.id, fieldName);
+                        }}
+                        className="text-xs text-brass-600 hover:text-brass-700 font-medium flex items-center gap-1"
+                      >
+                        <PlusIcon className="w-3 h-3" />
+                        Add Field
+                      </button>
+                    </div>
+
+                    {Object.keys(system.specifications).length === 0 ? (
+                      <div className="p-3 bg-neutral-50 rounded-lg border border-neutral-200 text-center">
+                        <p className="text-xs text-neutral-600">
+                          No specifications added yet. Click "Add Field" to add custom fields.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {Object.entries(system.specifications).map(([key, value]) => (
+                          <div key={key} className="flex items-center gap-2">
+                            <div className="flex-1 grid grid-cols-2 gap-3">
+                              <div className="flex items-center">
+                                <span className="text-sm font-medium text-neutral-700 min-w-0 truncate">
+                                  {key}
+                                </span>
+                              </div>
+                              <Input
+                                type="text"
+                                placeholder={`Enter ${key.toLowerCase()}`}
+                                value={value}
+                                onChange={(e) => handleUpdateSystemSpec(system.id, key, e.target.value)}
+                              />
+                            </div>
+                            <button
+                              onClick={() => handleDeleteSpecField(system.id, key)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+                              title="Delete field"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {customSystems.length === 0 && !showAddSystem && (
+          <Card className="p-6 bg-neutral-50 border-neutral-200">
+            <div className="text-center">
+              <svg className="w-12 h-12 text-neutral-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <p className="text-sm text-neutral-600 mb-2">No additional systems added</p>
+              <p className="text-xs text-neutral-500">
+                Click "Add System" to add custom systems like generators, wells, solar panels, etc.
+              </p>
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

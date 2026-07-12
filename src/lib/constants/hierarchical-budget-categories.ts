@@ -9,6 +9,8 @@ export interface BudgetSubcategory {
   name: string;
   description?: string;
   amount?: number;
+  roomId?: string; // Optional room assignment
+  roomName?: string; // Optional room name for display
 }
 
 export interface HierarchicalBudgetCategory {
